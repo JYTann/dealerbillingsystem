@@ -210,6 +210,47 @@
         .customer-actions {
             margin-top: 10px;
         }
+        
+        /* Inventory specific styles */
+        .low-stock {
+            background-color: #ffe6e6;
+        }
+        
+        .out-of-stock {
+            background-color: #ffcccc;
+        }
+        
+        .in-stock {
+            background-color: #e6ffe6;
+        }
+        
+        .stock-alert {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .alert-low {
+            background-color: #ffcccc;
+            color: #cc0000;
+        }
+        
+        .alert-out {
+            background-color: #ff9999;
+            color: #990000;
+        }
+        
+        .inventory-card {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        
+        .inventory-actions {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -279,6 +320,7 @@
             <a href="#" data-page="yearly-bills"><i class="fas fa-calendar"></i> Yearly Bills</a>
             <a href="#" data-page="profit-loss"><i class="fas fa-chart-line"></i> Profit & Loss</a>
             <a href="#" data-page="customer-management"><i class="fas fa-users"></i> Customer Management</a>
+            <a href="#" data-page="inventory-tracking"><i class="fas fa-box"></i> Inventory Tracking</a>
             <a href="#" data-page="more"><i class="fas fa-ellipsis-h"></i> More</a>
             <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -300,6 +342,10 @@
                     <div class="stat-card">
                         <h5>Net Profit</h5>
                         <p class="stat-value profit" id="net-profit">RM 0.00</p>
+                    </div>
+                    <div class="stat-card">
+                        <h5>Inventory Value</h5>
+                        <p class="stat-value" id="inventory-value">RM 0.00</p>
                     </div>
                 </div>
                 
@@ -328,13 +374,10 @@
                     </div>
                     <div class="col-md-6">
                         <div class="summary-card">
-                            <h5>Upcoming Tasks</h5>
-                            <ul class="list-group">
-                                <li class="list-group-item">Prepare monthly financial report</li>
-                                <li class="list-group-item">Submit quarterly tax filing</li>
-                                <li class="list-group-item">Review supplier contracts</li>
-                                <li class="list-group-item">Update product pricing</li>
-                            </ul>
+                            <h5>Low Stock Alerts</h5>
+                            <div id="low-stock-alerts">
+                                <!-- Low stock alerts will be populated here -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -824,6 +867,162 @@
                 </div>
             </div>
 
+            <!-- Inventory Tracking Page -->
+            <div id="inventory-tracking" class="page">
+                <h2>Inventory Tracking</h2>
+                
+                <div class="form-section">
+                    <h5>Add New Product</h5>
+                    <form id="inventory-form">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="product-name" class="form-label">Product Name</label>
+                                    <input type="text" class="form-control" id="product-name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="product-sku" class="form-label">SKU</label>
+                                    <input type="text" class="form-control" id="product-sku" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="product-category" class="form-label">Category</label>
+                                    <select class="form-select" id="product-category">
+                                        <option value="">Select Category</option>
+                                        <option value="Electronics">Electronics</option>
+                                        <option value="Clothing">Clothing</option>
+                                        <option value="Food">Food</option>
+                                        <option value="Books">Books</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="product-quantity" class="form-label">Quantity</label>
+                                    <input type="number" class="form-control" id="product-quantity" required min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="product-low-stock" class="form-label">Low Stock Threshold</label>
+                                    <input type="number" class="form-control" id="product-low-stock" required min="1" value="10">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="product-cost" class="form-label">Cost Price (RM)</label>
+                                    <input type="number" class="form-control" id="product-cost" step="0.01" required min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="product-price" class="form-label">Selling Price (RM)</label>
+                                    <input type="number" class="form-control" id="product-price" step="0.01" required min="0">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="product-supplier" class="form-label">Supplier</label>
+                                    <input type="text" class="form-control" id="product-supplier">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label for="product-description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="product-description" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">Add Product</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Inventory List</h5>
+                        <div>
+                            <button class="btn btn-success" id="generate-inventory-pdf">
+                                <i class="fas fa-file-pdf"></i> Generate PDF
+                            </button>
+                            <button class="btn btn-info" id="export-inventory-csv">
+                                <i class="fas fa-file-csv"></i> Export CSV
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search products..." id="inventory-search">
+                                <button class="btn btn-outline-secondary" type="button" id="inventory-search-btn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="inventory-category-filter">
+                                <option value="">All Categories</option>
+                                <option value="Electronics">Electronics</option>
+                                <option value="Clothing">Clothing</option>
+                                <option value="Food">Food</option>
+                                <option value="Books">Books</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="inventory-stock-filter">
+                                <option value="">All Stock Status</option>
+                                <option value="low">Low Stock</option>
+                                <option value="out">Out of Stock</option>
+                                <option value="in">In Stock</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="bill-table">
+                            <thead>
+                                <tr>
+                                    <th>Product Name</th>
+                                    <th>SKU</th>
+                                    <th>Category</th>
+                                    <th>Quantity</th>
+                                    <th>Cost Price (RM)</th>
+                                    <th>Selling Price (RM)</th>
+                                    <th>Stock Value (RM)</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-list">
+                                <!-- Inventory items will be added here dynamically -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="6" style="text-align: right; font-weight: bold;">Total Inventory Value:</td>
+                                    <td id="inventory-total-value" style="font-weight: bold;">RM 0.00</td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- More Page -->
             <div id="more" class="page">
                 <h2>Additional Features</h2>
@@ -844,7 +1043,7 @@
                                 <i class="fas fa-box fa-3x mb-3 text-primary"></i>
                                 <h5>Inventory Tracking</h5>
                                 <p>Monitor stock levels and receive low inventory alerts</p>
-                                <button class="btn btn-outline-primary">Explore</button>
+                                <button class="btn btn-outline-primary" data-page="inventory-tracking">Explore</button>
                             </div>
                         </div>
                     </div>
@@ -999,6 +1198,7 @@
         const yearlyForm = document.getElementById('yearly-bill-form');
         const profitLossForm = document.getElementById('profit-loss-form');
         const customerForm = document.getElementById('customer-form');
+        const inventoryForm = document.getElementById('inventory-form');
         
         // Bill Lists
         const periodicBillsList = document.getElementById('periodic-bills-list');
@@ -1006,18 +1206,22 @@
         const monthlyBillsList = document.getElementById('monthly-bills-list');
         const yearlyBillsList = document.getElementById('yearly-bills-list');
         const customersList = document.getElementById('customers-list');
+        const inventoryList = document.getElementById('inventory-list');
         
         // Grand Totals
         const periodicGrandTotal = document.getElementById('periodic-grand-total');
         const individualGrandTotal = document.getElementById('individual-grand-total');
         const monthlyGrandTotal = document.getElementById('monthly-grand-total');
         const yearlyGrandTotal = document.getElementById('yearly-grand-total');
+        const inventoryTotalValue = document.getElementById('inventory-total-value');
         
         // PDF Generation Buttons
         const generatePeriodicPdf = document.getElementById('generate-periodic-pdf');
         const generateIndividualPdf = document.getElementById('generate-individual-pdf');
         const generateMonthlyPdf = document.getElementById('generate-monthly-pdf');
         const generateYearlyPdf = document.getElementById('generate-yearly-pdf');
+        const generateInventoryPdf = document.getElementById('generate-inventory-pdf');
+        const exportInventoryCsv = document.getElementById('export-inventory-csv');
         
         // Profit/Loss Calculation
         const profitLossResult = document.getElementById('profit-loss-result');
@@ -1027,12 +1231,20 @@
         const totalRevenue = document.getElementById('total-revenue');
         const totalExpenses = document.getElementById('total-expenses');
         const netProfit = document.getElementById('net-profit');
+        const inventoryValue = document.getElementById('inventory-value');
         const recentBills = document.getElementById('recent-bills');
+        const lowStockAlerts = document.getElementById('low-stock-alerts');
         const plRevenue = document.getElementById('pl-revenue');
         const plExpenses = document.getElementById('pl-expenses');
         const revenueComparison = document.getElementById('revenue-comparison');
         const expensesComparison = document.getElementById('expenses-comparison');
         const plBreakdown = document.getElementById('pl-breakdown');
+        
+        // Inventory elements
+        const inventorySearch = document.getElementById('inventory-search');
+        const inventorySearchBtn = document.getElementById('inventory-search-btn');
+        const inventoryCategoryFilter = document.getElementById('inventory-category-filter');
+        const inventoryStockFilter = document.getElementById('inventory-stock-filter');
         
         // Sample data for charts
         const monthlyData = {
@@ -1051,6 +1263,9 @@
         
         // Store customers data
         let customers = [];
+        
+        // Store inventory data
+        let inventory = [];
         
         // Event Listeners
         showRegister.addEventListener('click', function(e) {
@@ -1088,100 +1303,103 @@
                 if (targetPage === 'profit-loss') {
                     updateProfitLoss();
                 }
+                
+                // If navigating to inventory-tracking, update it
+                if (targetPage === 'inventory-tracking') {
+                    updateInventoryList();
+                }
             });
         });
         
         // Setup bill form handlers
         function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId, billType) {
-    const quantityInput = document.getElementById(quantityId);
-    const priceInput = document.getElementById(priceId);
-    const totalInput = document.getElementById(totalId);
-    const billList = document.getElementById(listId);
-    const grandTotal = document.getElementById(grandTotalId);
-
-    // 计算总价
-    quantityInput.addEventListener('input', calculateTotal);
-    priceInput.addEventListener('input', calculateTotal);
-
-    function calculateTotal() {
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const price = parseFloat(priceInput.value) || 0;
-        const total = quantity * price;
-        totalInput.value = total.toFixed(2);
-    }
-
-    // 表单提交事件
-    form.addEventListener('submit', function (e) {
-        e.preventDefault();
-
-        const dateInput = document.getElementById(`${billType}-date`);
-        const billNoInput = document.getElementById(`${billType}-billno`);
-        const descriptionInput = document.getElementById(`${billType}-description`);
-
-        const date = dateInput.value;
-        const billNo = billNoInput.value;
-        const description = descriptionInput.value;
-        const quantity = parseFloat(quantityInput.value);
-        const price = parseFloat(priceInput.value);
-        const total = quantity * price;
-
-        // 构造账单对象
-        const bill = {
-            id: Date.now().toString(),
-            date,
-            billNo,
-            description,
-            quantity,
-            price,
-            total,
-            type: billType
-        };
-
-        // 存入本地数组
-        bills[billType].push(bill);
-
-        // 添加到 UI 表格
-        const newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td>${date}</td>
-            <td>${billNo}</td>
-            <td>${description}</td>
-            <td>${quantity}</td>
-            <td>${price.toFixed(2)}</td>
-            <td>${total.toFixed(2)}</td>
-            <td>
-                <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
-                <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
-            </td>
-        `;
-        billList.appendChild(newRow);
-
-        // 更新总计
-        updateGrandTotal();
-
-        // 保存到 Firebase
-        saveBillToFirebase(bill);
-
-        // 重置表单
-        form.reset();
-        totalInput.value = '0.00';
-    });
-
-    function updateGrandTotal() {
-        let total = 0;
-        const rows = billList.querySelectorAll('tr');
-
-        rows.forEach(row => {
-            const totalCell = row.cells[5];
-            total += parseFloat(totalCell.textContent);
-        });
-
-        grandTotal.textContent = `RM ${total.toFixed(2)}`;
-    }
-
-    return updateGrandTotal;
-}
-
+            const quantityInput = document.getElementById(quantityId);
+            const priceInput = document.getElementById(priceId);
+            const totalInput = document.getElementById(totalId);
+            const billList = document.getElementById(listId);
+            const grandTotal = document.getElementById(grandTotalId);
+            
+            // Calculate total
+            quantityInput.addEventListener('input', calculateTotal);
+            priceInput.addEventListener('input', calculateTotal);
+            
+            function calculateTotal() {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = quantity * price;
+                totalInput.value = total.toFixed(2);
+            }
+            
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const dateInput = document.getElementById(`${billType}-date`);
+                const billNoInput = document.getElementById(`${billType}-billno`);
+                const descriptionInput = document.getElementById(`${billType}-description`);
+                
+                const date = dateInput.value;
+                const billNo = billNoInput.value;
+                const description = descriptionInput.value;
+                const quantity = parseFloat(quantityInput.value);
+                const price = parseFloat(priceInput.value);
+                const total = quantity * price;
+                
+                const bill = {
+                    id: Date.now().toString(),
+                    date,
+                    billNo,
+                    description,
+                    quantity,
+                    price,
+                    total,
+                    type: billType
+                };
+                
+                // Add to bills array
+                bills[billType].push(bill);
+                
+                // Add to UI
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${date}</td>
+                    <td>${billNo}</td>
+                    <td>${description}</td>
+                    <td>${quantity}</td>
+                    <td>${price.toFixed(2)}</td>
+                    <td>${total.toFixed(2)}</td>
+                    <td>
+                        <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
+                        <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
+                    </td>
+                `;
+                billList.appendChild(newRow);
+                
+                // Update grand total
+                updateGrandTotal();
+                
+                // Save to Firebase
+                saveBillToFirebase(bill);
+                
+                // Reset form
+                form.reset();
+                totalInput.value = '0.00';
+            });
+            
+            function updateGrandTotal() {
+                let total = 0;
+                const rows = billList.querySelectorAll('tr');
+                
+                rows.forEach(row => {
+                    const totalCell = row.cells[5];
+                    total += parseFloat(totalCell.textContent);
+                });
+                
+                grandTotal.textContent = `RM ${total.toFixed(2)}`;
+            }
+            
+            return updateGrandTotal;
+        }
         
         // Setup all bill forms
         const updatePeriodicTotal = setupBillForm(
@@ -1224,6 +1442,213 @@
             'yearly'
         );
         
+        // Inventory Form Handling
+        inventoryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('product-name').value;
+            const sku = document.getElementById('product-sku').value;
+            const category = document.getElementById('product-category').value;
+            const quantity = parseInt(document.getElementById('product-quantity').value);
+            const lowStockThreshold = parseInt(document.getElementById('product-low-stock').value);
+            const costPrice = parseFloat(document.getElementById('product-cost').value);
+            const sellingPrice = parseFloat(document.getElementById('product-price').value);
+            const supplier = document.getElementById('product-supplier').value;
+            const description = document.getElementById('product-description').value;
+            
+            const product = {
+                id: Date.now().toString(),
+                name,
+                sku,
+                category,
+                quantity,
+                lowStockThreshold,
+                costPrice,
+                sellingPrice,
+                supplier,
+                description,
+                stockValue: costPrice * quantity,
+                createdAt: new Date().toISOString()
+            };
+            
+            // Add to inventory array
+            inventory.push(product);
+            
+            // Add to UI
+            addProductToUI(product);
+            
+            // Save to Firebase
+            saveProductToFirebase(product);
+            
+            // Reset form
+            inventoryForm.reset();
+            document.getElementById('product-low-stock').value = '10';
+            
+            // Update inventory total value
+            updateInventoryTotalValue();
+            
+            // Update dashboard
+            updateDashboard();
+        });
+        
+        function addProductToUI(product) {
+            const status = getStockStatus(product.quantity, product.lowStockThreshold);
+            const statusClass = status === 'Out of Stock' ? 'out-of-stock' : 
+                               status === 'Low Stock' ? 'low-stock' : 'in-stock';
+            
+            const newRow = document.createElement('tr');
+            newRow.className = statusClass;
+            newRow.innerHTML = `
+                <td>${product.name}</td>
+                <td>${product.sku}</td>
+                <td>${product.category}</td>
+                <td>${product.quantity}</td>
+                <td>${product.costPrice.toFixed(2)}</td>
+                <td>${product.sellingPrice.toFixed(2)}</td>
+                <td>${product.stockValue.toFixed(2)}</td>
+                <td><span class="stock-alert ${status === 'Out of Stock' ? 'alert-out' : status === 'Low Stock' ? 'alert-low' : ''}">${status}</span></td>
+                <td>
+                    <i class="fas fa-edit action-btn text-primary" onclick="editProduct('${product.id}')"></i>
+                    <i class="fas fa-trash action-btn text-danger" onclick="deleteProduct('${product.id}')"></i>
+                </td>
+            `;
+            inventoryList.appendChild(newRow);
+        }
+        
+        function getStockStatus(quantity, threshold) {
+            if (quantity === 0) {
+                return 'Out of Stock';
+            } else if (quantity <= threshold) {
+                return 'Low Stock';
+            } else {
+                return 'In Stock';
+            }
+        }
+        
+        function updateInventoryTotalValue() {
+            let totalValue = 0;
+            const rows = inventoryList.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const valueCell = row.cells[6];
+                totalValue += parseFloat(valueCell.textContent);
+            });
+            
+            inventoryTotalValue.textContent = `RM ${totalValue.toFixed(2)}`;
+            document.getElementById('inventory-value').textContent = `RM ${totalValue.toFixed(2)}`;
+        }
+        
+        function updateInventoryList() {
+            inventoryList.innerHTML = '';
+            inventory.forEach(product => {
+                addProductToUI(product);
+            });
+            updateInventoryTotalValue();
+        }
+        
+        // Inventory search and filter
+        inventorySearchBtn.addEventListener('click', filterInventory);
+        inventorySearch.addEventListener('keyup', filterInventory);
+        inventoryCategoryFilter.addEventListener('change', filterInventory);
+        inventoryStockFilter.addEventListener('change', filterInventory);
+        
+        function filterInventory() {
+            const searchTerm = inventorySearch.value.toLowerCase();
+            const categoryFilter = inventoryCategoryFilter.value;
+            const stockFilter = inventoryStockFilter.value;
+            
+            inventoryList.innerHTML = '';
+            
+            inventory.forEach(product => {
+                const matchesSearch = product.name.toLowerCase().includes(searchTerm) || 
+                                     product.sku.toLowerCase().includes(searchTerm) ||
+                                     product.description.toLowerCase().includes(searchTerm);
+                
+                const matchesCategory = !categoryFilter || product.category === categoryFilter;
+                
+                let matchesStock = true;
+                if (stockFilter) {
+                    if (stockFilter === 'low') {
+                        matchesStock = product.quantity > 0 && product.quantity <= product.lowStockThreshold;
+                    } else if (stockFilter === 'out') {
+                        matchesStock = product.quantity === 0;
+                    } else if (stockFilter === 'in') {
+                        matchesStock = product.quantity > product.lowStockThreshold;
+                    }
+                }
+                
+                if (matchesSearch && matchesCategory && matchesStock) {
+                    addProductToUI(product);
+                }
+            });
+            
+            updateInventoryTotalValue();
+        }
+        
+        // Product editing and deletion
+        window.editProduct = function(productId) {
+            const productIndex = inventory.findIndex(p => p.id === productId);
+            if (productIndex === -1) return;
+            
+            const product = inventory[productIndex];
+            
+            // Populate form with product data
+            document.getElementById('product-name').value = product.name;
+            document.getElementById('product-sku').value = product.sku;
+            document.getElementById('product-category').value = product.category;
+            document.getElementById('product-quantity').value = product.quantity;
+            document.getElementById('product-low-stock').value = product.lowStockThreshold;
+            document.getElementById('product-cost').value = product.costPrice;
+            document.getElementById('product-price').value = product.sellingPrice;
+            document.getElementById('product-supplier').value = product.supplier || '';
+            document.getElementById('product-description').value = product.description || '';
+            
+            // Remove the product from array
+            inventory.splice(productIndex, 1);
+            
+            // Remove from UI
+            const productRows = inventoryList.querySelectorAll('tr');
+            
+            for (let row of productRows) {
+                const editBtn = row.querySelector('.fa-edit');
+                if (editBtn && editBtn.onclick.toString().includes(productId)) {
+                    row.remove();
+                    break;
+                }
+            }
+            
+            // Update inventory total value
+            updateInventoryTotalValue();
+            
+            // Delete from Firebase
+            deleteProductFromFirebase(productId);
+        };
+        
+        window.deleteProduct = function(productId) {
+            const productIndex = inventory.findIndex(p => p.id === productId);
+            if (productIndex === -1) return;
+            
+            // Remove the product from array
+            inventory.splice(productIndex, 1);
+            
+            // Remove from UI
+            const productRows = inventoryList.querySelectorAll('tr');
+            
+            for (let row of productRows) {
+                const deleteBtn = row.querySelector('.fa-trash');
+                if (deleteBtn && deleteBtn.onclick.toString().includes(productId)) {
+                    row.remove();
+                    break;
+                }
+            }
+            
+            // Update inventory total value
+            updateInventoryTotalValue();
+            
+            // Delete from Firebase
+            deleteProductFromFirebase(productId);
+        };
+        
         // PDF Generation
         function setupPdfGeneration(button, listId, title) {
             button.addEventListener('click', function() {
@@ -1262,6 +1687,55 @@
             });
         }
         
+        // Inventory PDF Generation
+        generateInventoryPdf.addEventListener('click', function() {
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Inventory Report', 14, 22);
+            
+            // Add date
+            doc.setFontSize(12);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+            
+            // Add table
+            doc.autoTable({
+                startY: 40,
+                head: [['Product Name', 'SKU', 'Category', 'Quantity', 'Cost Price (RM)', 'Selling Price (RM)', 'Stock Value (RM)', 'Status']],
+                body: getInventoryTableData()
+            });
+            
+            // Add total value
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(12);
+            doc.text(`Total Inventory Value: RM ${inventoryTotalValue.textContent.replace('RM ', '')}`, 14, finalY);
+            
+            // Save the PDF
+            doc.save('inventory-report.pdf');
+        });
+        
+        function getInventoryTableData() {
+            const data = [];
+            const rows = inventoryList.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const rowData = [];
+                for (let i = 0; i < 8; i++) {
+                    if (i === 7) {
+                        // Get status from span text
+                        const statusSpan = row.cells[i].querySelector('.stock-alert');
+                        rowData.push(statusSpan ? statusSpan.textContent : '');
+                    } else {
+                        rowData.push(row.cells[i].textContent);
+                    }
+                }
+                data.push(rowData);
+            });
+            
+            return data;
+        }
+        
         function getTableData(listId) {
             const data = [];
             const rows = document.querySelectorAll(`#${listId} tr`);
@@ -1282,6 +1756,44 @@
         setupPdfGeneration(generateIndividualPdf, 'individual-bills-list', 'Individual Bills');
         setupPdfGeneration(generateMonthlyPdf, 'monthly-bills-list', 'Monthly Bills');
         setupPdfGeneration(generateYearlyPdf, 'yearly-bills-list', 'Yearly Bills');
+        
+        // CSV Export for Inventory
+        exportInventoryCsv.addEventListener('click', function() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Add headers
+            csvContent += "Product Name,SKU,Category,Quantity,Cost Price (RM),Selling Price (RM),Stock Value (RM),Status\n";
+            
+            // Add data
+            const rows = inventoryList.querySelectorAll('tr');
+            rows.forEach(row => {
+                const rowData = [];
+                for (let i = 0; i < 8; i++) {
+                    if (i === 7) {
+                        // Get status from span text
+                        const statusSpan = row.cells[i].querySelector('.stock-alert');
+                        rowData.push(statusSpan ? `"${statusSpan.textContent}"` : '');
+                    } else {
+                        rowData.push(`"${row.cells[i].textContent}"`);
+                    }
+                }
+                csvContent += rowData.join(',') + '\n';
+            });
+            
+            // Add total value
+            csvContent += `\nTotal Inventory Value,${inventoryTotalValue.textContent.replace('RM ', '')}`;
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "inventory_report.csv");
+            document.body.appendChild(link);
+            
+            // Trigger download
+            link.click();
+            document.body.removeChild(link);
+        });
         
         // Profit/Loss Calculation
         profitLossForm.addEventListener('submit', function(e) {
@@ -1519,6 +2031,24 @@
                 });
         }
         
+        function saveProductToFirebase(product) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('inventory').doc(product.id).set(product)
+                .catch(error => {
+                    console.error("Error saving product: ", error);
+                });
+        }
+        
+        function deleteProductFromFirebase(productId) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('inventory').doc(productId).delete()
+                .catch(error => {
+                    console.error("Error deleting product: ", error);
+                });
+        }
+        
         function loadUserData() {
             if (!auth.currentUser) return;
             
@@ -1585,6 +2115,30 @@
                 .catch(error => {
                     console.error("Error loading customers: ", error);
                 });
+                
+            // Load inventory
+            db.collection('users').doc(auth.currentUser.uid).collection('inventory').get()
+                .then(querySnapshot => {
+                    inventory = [];
+                    inventoryList.innerHTML = '';
+                    
+                    querySnapshot.forEach(doc => {
+                        const product = doc.data();
+                        inventory.push(product);
+                        
+                        // Add to UI
+                        addProductToUI(product);
+                    });
+                    
+                    // Update inventory total value
+                    updateInventoryTotalValue();
+                    
+                    // Update dashboard
+                    updateDashboard();
+                })
+                .catch(error => {
+                    console.error("Error loading inventory: ", error);
+                });
         }
         
         // Dashboard functions
@@ -1608,8 +2162,14 @@
             totalExpenses.textContent = `RM ${expenses.toFixed(2)}`;
             netProfit.textContent = `RM ${profit.toFixed(2)}`;
             
+            // Update inventory value
+            updateInventoryTotalValue();
+            
             // Update recent bills
             updateRecentBills();
+            
+            // Update low stock alerts
+            updateLowStockAlerts();
         }
         
         function updateRecentBills() {
@@ -1635,6 +2195,63 @@
                 `;
                 recentBills.appendChild(row);
             });
+        }
+        
+        function updateLowStockAlerts() {
+            lowStockAlerts.innerHTML = '';
+            
+            // Get low stock and out of stock items
+            const lowStockItems = inventory.filter(product => 
+                product.quantity > 0 && product.quantity <= product.lowStockThreshold
+            );
+            
+            const outOfStockItems = inventory.filter(product => 
+                product.quantity === 0
+            );
+            
+            // Show alerts
+            if (outOfStockItems.length > 0) {
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-danger';
+                alert.innerHTML = `<strong>${outOfStockItems.length} products are out of stock!</strong>`;
+                lowStockAlerts.appendChild(alert);
+            }
+            
+            if (lowStockItems.length > 0) {
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-warning';
+                alert.innerHTML = `<strong>${lowStockItems.length} products are low on stock!</strong>`;
+                lowStockAlerts.appendChild(alert);
+            }
+            
+            if (lowStockItems.length === 0 && outOfStockItems.length === 0) {
+                const alert = document.createElement('div');
+                alert.className = 'alert alert-success';
+                alert.innerHTML = `<strong>All products are in stock.</strong>`;
+                lowStockAlerts.appendChild(alert);
+            }
+            
+            // Show detailed list
+            const detailList = document.createElement('ul');
+            detailList.className = 'list-group mt-3';
+            
+            outOfStockItems.forEach(product => {
+                const item = document.createElement('li');
+                item.className = 'list-group-item list-group-item-danger';
+                item.textContent = `${product.name} - Out of Stock`;
+                detailList.appendChild(item);
+            });
+            
+            lowStockItems.forEach(product => {
+                const item = document.createElement('li');
+                item.className = 'list-group-item list-group-item-warning';
+                item.textContent = `${product.name} - Low Stock (${product.quantity} left)`;
+                detailList.appendChild(item);
+            });
+            
+            if (outOfStockItems.length > 0 || lowStockItems.length > 0) {
+                lowStockAlerts.appendChild(detailList);
+            }
         }
         
         function updateProfitLoss() {
@@ -1753,7 +2370,7 @@
                         alert('Registration successful! You can now login.');
                         showLogin.click();
                     })
-                    .catch((error) => {
+                    .catch((error) {
                         registerError.style.display = 'block';
                         console.error("Registration error: ", error);
                     });
@@ -1769,14 +2386,15 @@
                 authContainer.style.display = 'block';
                 mainContainer.style.display = 'none';
                 
-                // Clear all bills from UI
+                // Clear all data from UI
                 document.getElementById('periodic-bills-list').innerHTML = '';
                 document.getElementById('individual-bills-list').innerHTML = '';
                 document.getElementById('monthly-bills-list').innerHTML = '';
                 document.getElementById('yearly-bills-list').innerHTML = '';
                 document.getElementById('customers-list').innerHTML = '';
+                document.getElementById('inventory-list').innerHTML = '';
                 
-                // Reset bills data
+                // Reset data
                 bills = {
                     periodic: [],
                     individual: [],
@@ -1786,6 +2404,9 @@
                 
                 // Reset customers data
                 customers = [];
+                
+                // Reset inventory data
+                inventory = [];
             });
         });
         
