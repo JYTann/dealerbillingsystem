@@ -7,6 +7,7 @@
     <!-- Firebase App & Auth -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <!-- jsPDF for PDF generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
@@ -198,6 +199,17 @@
             margin-top: 10px;
             display: none;
         }
+        
+        .customer-card {
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        
+        .customer-actions {
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -266,6 +278,7 @@
             <a href="#" data-page="monthly-bills"><i class="fas fa-calendar-alt"></i> Monthly Bills</a>
             <a href="#" data-page="yearly-bills"><i class="fas fa-calendar"></i> Yearly Bills</a>
             <a href="#" data-page="profit-loss"><i class="fas fa-chart-line"></i> Profit & Loss</a>
+            <a href="#" data-page="customer-management"><i class="fas fa-users"></i> Customer Management</a>
             <a href="#" data-page="more"><i class="fas fa-ellipsis-h"></i> More</a>
             <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -278,15 +291,15 @@
                 <div class="dashboard-stats">
                     <div class="stat-card">
                         <h5>Total Revenue</h5>
-                        <p class="stat-value">RM 24,580.00</p>
+                        <p class="stat-value" id="total-revenue">RM 0.00</p>
                     </div>
                     <div class="stat-card">
                         <h5>Total Expenses</h5>
-                        <p class="stat-value">RM 18,340.00</p>
+                        <p class="stat-value" id="total-expenses">RM 0.00</p>
                     </div>
                     <div class="stat-card">
                         <h5>Net Profit</h5>
-                        <p class="stat-value profit">RM 6,240.00</p>
+                        <p class="stat-value profit" id="net-profit">RM 0.00</p>
                     </div>
                 </div>
                 
@@ -307,22 +320,8 @@
                                         <th>Amount (RM)</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>15/05/2023</td>
-                                        <td>BL-00125</td>
-                                        <td>1,240.00</td>
-                                    </tr>
-                                    <tr>
-                                        <td>14/05/2023</td>
-                                        <td>BL-00124</td>
-                                        <td>3,580.00</td>
-                                    </tr>
-                                    <tr>
-                                        <td>13/05/2023</td>
-                                        <td>BL-00123</td>
-                                        <td>2,100.00</td>
-                                    </tr>
+                                <tbody id="recent-bills">
+                                    <!-- Recent bills will be populated here -->
                                 </tbody>
                             </table>
                         </div>
@@ -696,15 +695,15 @@
                     <div class="col-md-6">
                         <div class="summary-card">
                             <h5>Revenue</h5>
-                            <p class="summary-value profit">RM 24,580.00</p>
-                            <p><small>Last month: RM 22,450.00</small></p>
+                            <p class="summary-value profit" id="pl-revenue">RM 0.00</p>
+                            <p><small id="revenue-comparison">Last month: RM 0.00</small></p>
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="summary-card">
                             <h5>Expenses</h5>
-                            <p class="summary-value loss">RM 18,340.00</p>
-                            <p><small>Last month: RM 16,780.00</small></p>
+                            <p class="summary-value loss" id="pl-expenses">RM 0.00</p>
+                            <p><small id="expenses-comparison">Last month: RM 0.00</small></p>
                         </div>
                     </div>
                 </div>
@@ -725,37 +724,8 @@
                                 <th>Trend</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>Product Sales</td>
-                                <td>18,500.00</td>
-                                <td>75.2%</td>
-                                <td><i class="fas fa-arrow-up text-success"></i> 12%</td>
-                            </tr>
-                            <tr>
-                                <td>Service Revenue</td>
-                                <td>6,080.00</td>
-                                <td>24.8%</td>
-                                <td><i class="fas fa-arrow-up text-success"></i> 8%</td>
-                            </tr>
-                            <tr>
-                                <td>Material Costs</td>
-                                <td>9,200.00</td>
-                                <td>50.2%</td>
-                                <td><i class="fas fa-arrow-up text-danger"></i> 5%</td>
-                            </tr>
-                            <tr>
-                                <td>Labor Costs</td>
-                                <td>5,800.00</td>
-                                <td>31.6%</td>
-                                <td><i class="fas fa-arrow-down text-success"></i> 3%</td>
-                            </tr>
-                            <tr>
-                                <td>Overhead</td>
-                                <td>3,340.00</td>
-                                <td>18.2%</td>
-                                <td><i class="fas fa-minus text-secondary"></i> 0%</td>
-                            </tr>
+                        <tbody id="pl-breakdown">
+                            <!-- Profit/Loss breakdown will be populated here -->
                         </tbody>
                     </table>
                 </div>
@@ -793,6 +763,64 @@
                             </div>
                         </div>
                     </form>
+                </div>
+            </div>
+
+            <!-- Customer Management Page -->
+            <div id="customer-management" class="page">
+                <h2>Customer Management</h2>
+                
+                <div class="form-section">
+                    <h5>Add New Customer</h5>
+                    <form id="customer-form">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="customer-name" class="form-label">Customer Name</label>
+                                    <input type="text" class="form-control" id="customer-name" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="customer-email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="customer-email">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="customer-phone" class="form-label">Phone</label>
+                                    <input type="tel" class="form-control" id="customer-phone">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="customer-address" class="form-label">Address</label>
+                                    <input type="text" class="form-control" id="customer-address">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">Add Customer</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="form-section">
+                    <h5>Customer List</h5>
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" placeholder="Search customers..." id="customer-search">
+                        <button class="btn btn-outline-secondary" type="button" id="customer-search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                    
+                    <div id="customers-list">
+                        <!-- Customers will be added here dynamically -->
+                    </div>
                 </div>
             </div>
 
@@ -940,6 +968,8 @@
         
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
         
         // Initialize jsPDF
         window.jsPDF = window.jspdf.jsPDF;
@@ -968,12 +998,14 @@
         const monthlyForm = document.getElementById('monthly-bill-form');
         const yearlyForm = document.getElementById('yearly-bill-form');
         const profitLossForm = document.getElementById('profit-loss-form');
+        const customerForm = document.getElementById('customer-form');
         
         // Bill Lists
         const periodicBillsList = document.getElementById('periodic-bills-list');
         const individualBillsList = document.getElementById('individual-bills-list');
         const monthlyBillsList = document.getElementById('monthly-bills-list');
         const yearlyBillsList = document.getElementById('yearly-bills-list');
+        const customersList = document.getElementById('customers-list');
         
         // Grand Totals
         const periodicGrandTotal = document.getElementById('periodic-grand-total');
@@ -991,12 +1023,34 @@
         const profitLossResult = document.getElementById('profit-loss-result');
         const resultText = document.getElementById('result-text');
         
+        // Dashboard elements
+        const totalRevenue = document.getElementById('total-revenue');
+        const totalExpenses = document.getElementById('total-expenses');
+        const netProfit = document.getElementById('net-profit');
+        const recentBills = document.getElementById('recent-bills');
+        const plRevenue = document.getElementById('pl-revenue');
+        const plExpenses = document.getElementById('pl-expenses');
+        const revenueComparison = document.getElementById('revenue-comparison');
+        const expensesComparison = document.getElementById('expenses-comparison');
+        const plBreakdown = document.getElementById('pl-breakdown');
+        
         // Sample data for charts
         const monthlyData = {
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
             revenue: [12000, 19000, 15000, 21000, 22000, 24500],
             expenses: [9000, 12000, 11000, 15000, 16700, 18300]
         };
+        
+        // Store bills data
+        let bills = {
+            periodic: [],
+            individual: [],
+            monthly: [],
+            yearly: []
+        };
+        
+        // Store customers data
+        let customers = [];
         
         // Event Listeners
         showRegister.addEventListener('click', function(e) {
@@ -1024,11 +1078,21 @@
                 // Show target page
                 pages.forEach(page => page.classList.remove('active'));
                 document.getElementById(targetPage).classList.add('active');
+                
+                // If navigating to dashboard, update it
+                if (targetPage === 'dashboard') {
+                    updateDashboard();
+                }
+                
+                // If navigating to profit-loss, update it
+                if (targetPage === 'profit-loss') {
+                    updateProfitLoss();
+                }
             });
         });
         
         // Setup bill form handlers
-        function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId) {
+        function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId, billType) {
             const quantityInput = document.getElementById(quantityId);
             const priceInput = document.getElementById(priceId);
             const totalInput = document.getElementById(totalId);
@@ -1061,6 +1125,21 @@
                 const price = parseFloat(priceInput.value);
                 const total = quantity * price;
                 
+                // Create bill object
+                const bill = {
+                    id: Date.now().toString(),
+                    date,
+                    billNo,
+                    description,
+                    quantity,
+                    price,
+                    total,
+                    type: billType
+                };
+                
+                // Add to bills array
+                bills[billType].push(bill);
+                
                 // Add to table
                 const newRow = document.createElement('tr');
                 newRow.innerHTML = `
@@ -1071,8 +1150,8 @@
                     <td>${price.toFixed(2)}</td>
                     <td>${total.toFixed(2)}</td>
                     <td>
-                        <i class="fas fa-edit action-btn text-primary" onclick="editBill(this)"></i>
-                        <i class="fas fa-trash action-btn text-danger" onclick="deleteBill(this)"></i>
+                        <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
+                        <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
                     </td>
                 `;
                 
@@ -1080,6 +1159,9 @@
                 
                 // Update grand total
                 updateGrandTotal();
+                
+                // Save to Firebase
+                saveBillToFirebase(bill);
                 
                 // Reset form
                 form.reset();
@@ -1109,7 +1191,8 @@
             'periodic-price', 
             'periodic-total', 
             'periodic-bills-list', 
-            'periodic-grand-total'
+            'periodic-grand-total',
+            'periodic'
         );
         
         const updateIndividualTotal = setupBillForm(
@@ -1118,7 +1201,8 @@
             'individual-price', 
             'individual-total', 
             'individual-bills-list', 
-            'individual-grand-total'
+            'individual-grand-total',
+            'individual'
         );
         
         const updateMonthlyTotal = setupBillForm(
@@ -1127,7 +1211,8 @@
             'monthly-price', 
             'monthly-total', 
             'monthly-bills-list', 
-            'monthly-grand-total'
+            'monthly-grand-total',
+            'monthly'
         );
         
         const updateYearlyTotal = setupBillForm(
@@ -1136,7 +1221,8 @@
             'yearly-price', 
             'yearly-total', 
             'yearly-bills-list', 
-            'yearly-grand-total'
+            'yearly-grand-total',
+            'yearly'
         );
         
         // PDF Generation
@@ -1228,50 +1314,425 @@
             profitLossResult.style.display = 'block';
         });
         
+        // Customer Form Handling
+        customerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('customer-name').value;
+            const email = document.getElementById('customer-email').value;
+            const phone = document.getElementById('customer-phone').value;
+            const address = document.getElementById('customer-address').value;
+            
+            const customer = {
+                id: Date.now().toString(),
+                name,
+                email,
+                phone,
+                address,
+                createdAt: new Date().toISOString()
+            };
+            
+            // Add to customers array
+            customers.push(customer);
+            
+            // Add to UI
+            addCustomerToUI(customer);
+            
+            // Save to Firebase
+            saveCustomerToFirebase(customer);
+            
+            // Reset form
+            customerForm.reset();
+        });
+        
+        function addCustomerToUI(customer) {
+            const customerCard = document.createElement('div');
+            customerCard.className = 'customer-card';
+            customerCard.innerHTML = `
+                <h5>${customer.name}</h5>
+                <p>Email: ${customer.email || 'N/A'}</p>
+                <p>Phone: ${customer.phone || 'N/A'}</p>
+                <p>Address: ${customer.address || 'N/A'}</p>
+                <div class="customer-actions">
+                    <button class="btn btn-sm btn-primary" onclick="editCustomer('${customer.id}')">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCustomer('${customer.id}')">Delete</button>
+                </div>
+            `;
+            
+            customersList.appendChild(customerCard);
+        }
+        
         // Bill editing and deletion
-        window.editBill = function(button) {
-            const row = button.parentElement.parentElement;
-            const cells = row.cells;
+        window.editBill = function(billType, billId) {
+            const billIndex = bills[billType].findIndex(bill => bill.id === billId);
+            if (billIndex === -1) return;
+            
+            const bill = bills[billType][billIndex];
             
             // Populate form with bill data
-            document.getElementById('periodic-date').value = cells[0].textContent;
-            document.getElementById('periodic-billno').value = cells[1].textContent;
-            document.getElementById('periodic-description').value = cells[2].textContent;
-            document.getElementById('periodic-quantity').value = cells[3].textContent;
-            document.getElementById('periodic-price').value = cells[4].textContent;
+            document.getElementById(`${billType}-date`).value = bill.date;
+            document.getElementById(`${billType}-billno`).value = bill.billNo;
+            document.getElementById(`${billType}-description`).value = bill.description;
+            document.getElementById(`${billType}-quantity`).value = bill.quantity;
+            document.getElementById(`${billType}-price`).value = bill.price;
             
-            // Remove the row
-            row.remove();
+            // Remove the bill from array
+            bills[billType].splice(billIndex, 1);
+            
+            // Remove from UI
+            const billList = document.getElementById(`${billType}-bills-list`);
+            const rows = billList.querySelectorAll('tr');
+            
+            for (let row of rows) {
+                const editBtn = row.querySelector('.fa-edit');
+                if (editBtn && editBtn.onclick.toString().includes(billId)) {
+                    row.remove();
+                    break;
+                }
+            }
             
             // Update grand total
-            updatePeriodicTotal();
-        };
-        
-        window.deleteBill = function(button) {
-            const row = button.parentElement.parentElement;
-            row.remove();
+            if (billType === 'periodic') updatePeriodicTotal();
+            if (billType === 'individual') updateIndividualTotal();
+            if (billType === 'monthly') updateMonthlyTotal();
+            if (billType === 'yearly') updateYearlyTotal();
             
-            // Update grand total based on which list the bill belongs to
-            if (row.parentElement.id === 'periodic-bills-list') updatePeriodicTotal();
-            if (row.parentElement.id === 'individual-bills-list') updateIndividualTotal();
-            if (row.parentElement.id === 'monthly-bills-list') updateMonthlyTotal();
-            if (row.parentElement.id === 'yearly-bills-list') updateYearlyTotal();
+            // Delete from Firebase
+            deleteBillFromFirebase(billId);
         };
         
-        // Simulate login for demo purposes
+        window.deleteBill = function(billType, billId) {
+            const billIndex = bills[billType].findIndex(bill => bill.id === billId);
+            if (billIndex === -1) return;
+            
+            // Remove the bill from array
+            bills[billType].splice(billIndex, 1);
+            
+            // Remove from UI
+            const billList = document.getElementById(`${billType}-bills-list`);
+            const rows = billList.querySelectorAll('tr');
+            
+            for (let row of rows) {
+                const deleteBtn = row.querySelector('.fa-trash');
+                if (deleteBtn && deleteBtn.onclick.toString().includes(billId)) {
+                    row.remove();
+                    break;
+                }
+            }
+            
+            // Update grand total
+            if (billType === 'periodic') updatePeriodicTotal();
+            if (billType === 'individual') updateIndividualTotal();
+            if (billType === 'monthly') updateMonthlyTotal();
+            if (billType === 'yearly') updateYearlyTotal();
+            
+            // Delete from Firebase
+            deleteBillFromFirebase(billId);
+        };
+        
+        // Customer management functions
+        window.editCustomer = function(customerId) {
+            const customerIndex = customers.findIndex(c => c.id === customerId);
+            if (customerIndex === -1) return;
+            
+            const customer = customers[customerIndex];
+            
+            // Populate form with customer data
+            document.getElementById('customer-name').value = customer.name;
+            document.getElementById('customer-email').value = customer.email || '';
+            document.getElementById('customer-phone').value = customer.phone || '';
+            document.getElementById('customer-address').value = customer.address || '';
+            
+            // Remove the customer from array
+            customers.splice(customerIndex, 1);
+            
+            // Remove from UI
+            const customerCards = customersList.querySelectorAll('.customer-card');
+            
+            for (let card of customerCards) {
+                const editBtn = card.querySelector('button.btn-primary');
+                if (editBtn && editBtn.onclick.toString().includes(customerId)) {
+                    card.remove();
+                    break;
+                }
+            }
+            
+            // Delete from Firebase
+            deleteCustomerFromFirebase(customerId);
+        };
+        
+        window.deleteCustomer = function(customerId) {
+            const customerIndex = customers.findIndex(c => c.id === customerId);
+            if (customerIndex === -1) return;
+            
+            // Remove the customer from array
+            customers.splice(customerIndex, 1);
+            
+            // Remove from UI
+            const customerCards = customersList.querySelectorAll('.customer-card');
+            
+            for (let card of customerCards) {
+                const deleteBtn = card.querySelector('button.btn-danger');
+                if (deleteBtn && deleteBtn.onclick.toString().includes(customerId)) {
+                    card.remove();
+                    break;
+                }
+            }
+            
+            // Delete from Firebase
+            deleteCustomerFromFirebase(customerId);
+        };
+        
+        // Firebase functions
+        function saveBillToFirebase(bill) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('bills').doc(bill.id).set(bill)
+                .catch(error => {
+                    console.error("Error saving bill: ", error);
+                });
+        }
+        
+        function deleteBillFromFirebase(billId) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('bills').doc(billId).delete()
+                .catch(error => {
+                    console.error("Error deleting bill: ", error);
+                });
+        }
+        
+        function saveCustomerToFirebase(customer) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('customers').doc(customer.id).set(customer)
+                .catch(error => {
+                    console.error("Error saving customer: ", error);
+                });
+        }
+        
+        function deleteCustomerFromFirebase(customerId) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('customers').doc(customerId).delete()
+                .catch(error => {
+                    console.error("Error deleting customer: ", error);
+                });
+        }
+        
+        function loadUserData() {
+            if (!auth.currentUser) return;
+            
+            // Load bills
+            db.collection('users').doc(auth.currentUser.uid).collection('bills').get()
+                .then(querySnapshot => {
+                    bills = {
+                        periodic: [],
+                        individual: [],
+                        monthly: [],
+                        yearly: []
+                    };
+                    
+                    querySnapshot.forEach(doc => {
+                        const bill = doc.data();
+                        bills[bill.type].push(bill);
+                        
+                        // Add to UI
+                        const billList = document.getElementById(`${bill.type}-bills-list`);
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td>${bill.date}</td>
+                            <td>${bill.billNo}</td>
+                            <td>${bill.description}</td>
+                            <td>${bill.quantity}</td>
+                            <td>${bill.price.toFixed(2)}</td>
+                            <td>${bill.total.toFixed(2)}</td>
+                            <td>
+                                <i class="fas fa-edit action-btn text-primary" onclick="editBill('${bill.type}', '${bill.id}')"></i>
+                                <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${bill.type}', '${bill.id}')"></i>
+                            </td>
+                        `;
+                        
+                        billList.appendChild(newRow);
+                    });
+                    
+                    // Update grand totals
+                    updatePeriodicTotal();
+                    updateIndividualTotal();
+                    updateMonthlyTotal();
+                    updateYearlyTotal();
+                    
+                    // Update dashboard
+                    updateDashboard();
+                })
+                .catch(error => {
+                    console.error("Error loading bills: ", error);
+                });
+            
+            // Load customers
+            db.collection('users').doc(auth.currentUser.uid).collection('customers').get()
+                .then(querySnapshot => {
+                    customers = [];
+                    customersList.innerHTML = '';
+                    
+                    querySnapshot.forEach(doc => {
+                        const customer = doc.data();
+                        customers.push(customer);
+                        
+                        // Add to UI
+                        addCustomerToUI(customer);
+                    });
+                })
+                .catch(error => {
+                    console.error("Error loading customers: ", error);
+                });
+        }
+        
+        // Dashboard functions
+        function updateDashboard() {
+            // Calculate totals from all bills
+            let revenue = 0;
+            let expenses = 0;
+            
+            for (const type in bills) {
+                bills[type].forEach(bill => {
+                    revenue += bill.total;
+                });
+            }
+            
+            // For demo purposes, let's assume expenses are 70% of revenue
+            expenses = revenue * 0.7;
+            const profit = revenue - expenses;
+            
+            // Update UI
+            totalRevenue.textContent = `RM ${revenue.toFixed(2)}`;
+            totalExpenses.textContent = `RM ${expenses.toFixed(2)}`;
+            netProfit.textContent = `RM ${profit.toFixed(2)}`;
+            
+            // Update recent bills
+            updateRecentBills();
+        }
+        
+        function updateRecentBills() {
+            recentBills.innerHTML = '';
+            
+            // Get all bills and sort by date (newest first)
+            const allBills = [];
+            for (const type in bills) {
+                allBills.push(...bills[type]);
+            }
+            
+            allBills.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            // Show only the 5 most recent bills
+            const recent = allBills.slice(0, 5);
+            
+            recent.forEach(bill => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${bill.date}</td>
+                    <td>${bill.billNo}</td>
+                    <td>${bill.total.toFixed(2)}</td>
+                `;
+                recentBills.appendChild(row);
+            });
+        }
+        
+        function updateProfitLoss() {
+            // Calculate totals from all bills
+            let revenue = 0;
+            
+            for (const type in bills) {
+                bills[type].forEach(bill => {
+                    revenue += bill.total;
+                });
+            }
+            
+            // For demo purposes, let's assume expenses are 70% of revenue
+            const expenses = revenue * 0.7;
+            const profit = revenue - expenses;
+            
+            // Update UI
+            plRevenue.textContent = `RM ${revenue.toFixed(2)}`;
+            plExpenses.textContent = `RM ${expenses.toFixed(2)}`;
+            revenueComparison.textContent = `Last month: RM ${(revenue * 0.9).toFixed(2)}`;
+            expensesComparison.textContent = `Last month: RM ${(expenses * 0.9).toFixed(2)}`;
+            
+            // Update breakdown
+            updatePLBreakdown(revenue, expenses);
+        }
+        
+        function updatePLBreakdown(revenue, expenses) {
+            plBreakdown.innerHTML = `
+                <tr>
+                    <td>Product Sales</td>
+                    <td>${(revenue * 0.75).toFixed(2)}</td>
+                    <td>75.0%</td>
+                    <td><i class="fas fa-arrow-up text-success"></i> 12%</td>
+                </tr>
+                <tr>
+                    <td>Service Revenue</td>
+                    <td>${(revenue * 0.25).toFixed(2)}</td>
+                    <td>25.0%</td>
+                    <td><i class="fas fa-arrow-up text-success"></i> 8%</td>
+                </tr>
+                <tr>
+                    <td>Material Costs</td>
+                    <td>${(expenses * 0.5).toFixed(2)}</td>
+                    <td>50.0%</td>
+                    <td><i class="fas fa-arrow-up text-danger"></i> 5%</td>
+                </tr>
+                <tr>
+                    <td>Labor Costs</td>
+                    <td>${(expenses * 0.3).toFixed(2)}</td>
+                    <td>30.0%</td>
+                    <td><i class="fas fa-arrow-down text-success"></i> 3%</td>
+                </tr>
+                <tr>
+                    <td>Overhead</td>
+                    <td>${(expenses * 0.2).toFixed(2)}</td>
+                    <td>20.0%</td>
+                    <td><i class="fas fa-minus text-secondary"></i> 0%</td>
+                </tr>
+            `;
+        }
+        
+        // Authentication functions
         loginBtn.addEventListener('click', function() {
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             
             if (email && password) {
-                authContainer.style.display = 'none';
-                mainContainer.style.display = 'block';
-                
-                // Initialize charts
-                initCharts();
+                auth.signInWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Signed in
+                        authContainer.style.display = 'none';
+                        mainContainer.style.display = 'block';
+                        loadUserData();
+                    })
+                    .catch((error) => {
+                        loginError.style.display = 'block';
+                        console.error("Login error: ", error);
+                    });
             } else {
                 loginError.style.display = 'block';
             }
+        });
+        
+        googleLoginBtn.addEventListener('click', function() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            
+            auth.signInWithPopup(provider)
+                .then((result) => {
+                    // Signed in
+                    authContainer.style.display = 'none';
+                    mainContainer.style.display = 'block';
+                    loadUserData();
+                })
+                .catch((error) => {
+                    console.error("Google sign-in error: ", error);
+                    alert("Google sign-in failed. Please check your authorized domains in Firebase console.");
+                });
         });
         
         // Register functionality
@@ -1286,10 +1747,17 @@
             }
             
             if (email && password) {
-                // Simulate successful registration
-                registerError.style.display = 'none';
-                alert('Registration successful! You can now login.');
-                showLogin.click();
+                auth.createUserWithEmailAndPassword(email, password)
+                    .then((userCredential) => {
+                        // Signed up
+                        registerError.style.display = 'none';
+                        alert('Registration successful! You can now login.');
+                        showLogin.click();
+                    })
+                    .catch((error) => {
+                        registerError.style.display = 'block';
+                        console.error("Registration error: ", error);
+                    });
             } else {
                 registerError.style.display = 'block';
             }
@@ -1298,8 +1766,28 @@
         // Logout
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
-            authContainer.style.display = 'block';
-            mainContainer.style.display = 'none';
+            auth.signOut().then(() => {
+                authContainer.style.display = 'block';
+                mainContainer.style.display = 'none';
+                
+                // Clear all bills from UI
+                document.getElementById('periodic-bills-list').innerHTML = '';
+                document.getElementById('individual-bills-list').innerHTML = '';
+                document.getElementById('monthly-bills-list').innerHTML = '';
+                document.getElementById('yearly-bills-list').innerHTML = '';
+                document.getElementById('customers-list').innerHTML = '';
+                
+                // Reset bills data
+                bills = {
+                    periodic: [],
+                    individual: [],
+                    monthly: [],
+                    yearly: []
+                };
+                
+                // Reset customers data
+                customers = [];
+            });
         });
         
         // Initialize charts
@@ -1358,6 +1846,16 @@
             
             const formattedToday = `${yyyy}-${mm}-${dd}`;
             input.value = formattedToday;
+        });
+        
+        // Check if user is already logged in
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in
+                authContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
+                loadUserData();
+            }
         });
     </script>
 </body>
