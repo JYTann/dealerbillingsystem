@@ -1093,96 +1093,95 @@
         
         // Setup bill form handlers
         function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId, billType) {
-            const quantityInput = document.getElementById(quantityId);
-            const priceInput = document.getElementById(priceId);
-            const totalInput = document.getElementById(totalId);
-            const billList = document.getElementById(listId);
-            const grandTotal = document.getElementById(grandTotalId);
-            
-            // Calculate total when quantity or price changes
-            quantityInput.addEventListener('input', calculateTotal);
-            priceInput.addEventListener('input', calculateTotal);
-            
-            function calculateTotal() {
-                const quantity = parseFloat(quantityInput.value) || 0;
-                const price = parseFloat(priceInput.value) || 0;
-                const total = quantity * price;
-                totalInput.value = total.toFixed(2);
-            }
-            
-            // Handle form submission
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const dateInput = form.querySelector('input[type="date"]');
-                const billNoInput = form.querySelector('input[placeholder="Bill Number"]');
-                const descriptionInput = form.querySelector('input[placeholder="Description"]');
-                
-                const date = dateInput.value;
-                const billNo = billNoInput.value;
-                const description = descriptionInput.value;
-                const quantity = parseFloat(quantityInput.value);
-                const price = parseFloat(priceInput.value);
-                const total = quantity * price;
-                
-                // Create bill object
-                const bill = {
-                    id: Date.now().toString(),
-                    date,
-                    billNo,
-                    description,
-                    quantity,
-                    price,
-                    total,
-                    type: billType
-                };
-                
-                // Add to bills array
-                bills[billType].push(bill);
-                
-                // Add to table
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td>${date}</td>
-                    <td>${billNo}</td>
-                    <td>${description}</td>
-                    <td>${quantity}</td>
-                    <td>${price.toFixed(2)}</td>
-                    <td>${total.toFixed(2)}</td>
-                    <td>
-                        <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
-                        <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
-                    </td>
-                `;
-                
-                billList.appendChild(newRow);
-                
-                // Update grand total
-                updateGrandTotal();
-                
-                // Save to Firebase
-                saveBillToFirebase(bill);
-                
-                // Reset form
-                form.reset();
-                totalInput.value = '0.00';
-            });
-            
-            function updateGrandTotal() {
-                let total = 0;
-                const rows = billList.querySelectorAll('tr');
-                
-                rows.forEach(row => {
-                    const totalCell = row.cells[5];
-                    total += parseFloat(totalCell.textContent);
-                });
-                
-                grandTotal.textContent = `RM ${total.toFixed(2)}`;
-            }
-            
-            // Return the update function for external use
-            return updateGrandTotal;
-        }
+    const quantityInput = document.getElementById(quantityId);
+    const priceInput = document.getElementById(priceId);
+    const totalInput = document.getElementById(totalId);
+    const billList = document.getElementById(listId);
+    const grandTotal = document.getElementById(grandTotalId);
+
+    // 计算总价
+    quantityInput.addEventListener('input', calculateTotal);
+    priceInput.addEventListener('input', calculateTotal);
+
+    function calculateTotal() {
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        const total = quantity * price;
+        totalInput.value = total.toFixed(2);
+    }
+
+    // 表单提交事件
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const dateInput = document.getElementById(`${billType}-date`);
+        const billNoInput = document.getElementById(`${billType}-billno`);
+        const descriptionInput = document.getElementById(`${billType}-description`);
+
+        const date = dateInput.value;
+        const billNo = billNoInput.value;
+        const description = descriptionInput.value;
+        const quantity = parseFloat(quantityInput.value);
+        const price = parseFloat(priceInput.value);
+        const total = quantity * price;
+
+        // 构造账单对象
+        const bill = {
+            id: Date.now().toString(),
+            date,
+            billNo,
+            description,
+            quantity,
+            price,
+            total,
+            type: billType
+        };
+
+        // 存入本地数组
+        bills[billType].push(bill);
+
+        // 添加到 UI 表格
+        const newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${date}</td>
+            <td>${billNo}</td>
+            <td>${description}</td>
+            <td>${quantity}</td>
+            <td>${price.toFixed(2)}</td>
+            <td>${total.toFixed(2)}</td>
+            <td>
+                <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
+                <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
+            </td>
+        `;
+        billList.appendChild(newRow);
+
+        // 更新总计
+        updateGrandTotal();
+
+        // 保存到 Firebase
+        saveBillToFirebase(bill);
+
+        // 重置表单
+        form.reset();
+        totalInput.value = '0.00';
+    });
+
+    function updateGrandTotal() {
+        let total = 0;
+        const rows = billList.querySelectorAll('tr');
+
+        rows.forEach(row => {
+            const totalCell = row.cells[5];
+            total += parseFloat(totalCell.textContent);
+        });
+
+        grandTotal.textContent = `RM ${total.toFixed(2)}`;
+    }
+
+    return updateGrandTotal;
+}
+
         
         // Setup all bill forms
         const updatePeriodicTotal = setupBillForm(
