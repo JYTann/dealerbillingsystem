@@ -2370,7 +2370,7 @@
                         alert('Registration successful! You can now login.');
                         showLogin.click();
                     })
-                    .catch((error) {
+                    .catch((error) => {
                         registerError.style.display = 'block';
                         console.error("Registration error: ", error);
                     });
