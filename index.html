@@ -1114,9 +1114,9 @@
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-               const billNoInput = document.getElementById(`${billType}-billno`);
-const descriptionInput = document.getElementById(`${billType}-description`);
-const dateInput = document.getElementById(`${billType}-date`);
+                const dateInput = form.querySelector('input[type="date"]');
+                const billNoInput = form.querySelector('input[placeholder="Bill Number"]');
+                const descriptionInput = form.querySelector('input[placeholder="Description"]');
                 
                 const date = dateInput.value;
                 const billNo = billNoInput.value;
