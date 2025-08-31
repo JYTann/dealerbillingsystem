@@ -184,6 +184,20 @@
         .logo span {
             color: var(--secondary-color);
         }
+        
+        .form-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .login-error {
+            color: #e74c3c;
+            margin-top: 10px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -194,20 +208,25 @@
             <p>Billing Management System</p>
         </div>
         
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" class="form-control" id="email" placeholder="Enter your email">
-        </div>
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" class="form-control" id="password" placeholder="Enter your password">
-        </div>
-        <button id="login-btn" class="btn btn-primary w-100 mb-3">Login</button>
-        <button id="google-login-btn" class="btn btn-outline-danger w-100">
-            <i class="fab fa-google"></i> Sign in with Google
-        </button>
-        <div class="text-center mt-3">
-            <a href="#" id="show-register">Don't have an account? Register</a>
+        <div id="login-section">
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" placeholder="Enter your email">
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" placeholder="Enter your password">
+            </div>
+            <div id="login-error" class="login-error">
+                Invalid email or password. Please try again.
+            </div>
+            <button id="login-btn" class="btn btn-primary w-100 mb-3">Login</button>
+            <button id="google-login-btn" class="btn btn-outline-danger w-100">
+                <i class="fab fa-google"></i> Sign in with Google
+            </button>
+            <div class="text-center mt-3">
+                <a href="#" id="show-register">Don't have an account? Register</a>
+            </div>
         </div>
         
         <div id="register-section" style="display: none;">
@@ -219,6 +238,13 @@
             <div class="mb-3">
                 <label for="register-password" class="form-label">Password</label>
                 <input type="password" class="form-control" id="register-password" placeholder="Create a password">
+            </div>
+            <div class="mb-3">
+                <label for="confirm-password" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="confirm-password" placeholder="Confirm your password">
+            </div>
+            <div id="register-error" class="login-error">
+                Passwords do not match or email is invalid.
             </div>
             <button id="register-btn" class="btn btn-success w-100 mb-3">Register</button>
             <div class="text-center">
@@ -318,115 +344,349 @@
             <!-- Periodic Bills Page -->
             <div id="periodic-bills" class="page">
                 <h2>Periodic Bills</h2>
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5>Add New Bill</h5>
-                    </div>
-                    <div class="card-body">
-                        <form id="periodic-bill-form">
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label for="periodic-date" class="form-label">Date</label>
-                                        <input type="date" class="form-control" id="periodic-date" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label for="periodic-billno" class="form-label">Bill Number</label>
-                                        <input type="text" class="form-control" id="periodic-billno" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="mb-3">
-                                        <label for="periodic-description" class="form-label">Description</label>
-                                        <input type="text" class="form-control" id="periodic-description" required>
-                                    </div>
+                <div class="form-section">
+                    <h5>Add New Bill</h5>
+                    <form id="periodic-bill-form">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="periodic-date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="periodic-date" required>
                                 </div>
                             </div>
-                            <div class="row">
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label for="periodic-quantity" class="form-label">Quantity</label>
-                                        <input type="number" class="form-control" id="periodic-quantity" step="0.01" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label for="periodic-price" class="form-label">Unit Price (RM)</label>
-                                        <input type="number" class="form-control" id="periodic-price" step="0.01" required>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3">
-                                        <label for="periodic-total" class="form-label">Total (RM)</label>
-                                        <input type="text" class="form-control" id="periodic-total" readonly>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="mb-3 d-flex align-items-end" style="height: 42px;">
-                                        <button type="submit" class="btn btn-primary w-100">Add Item</button>
-                                    </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="periodic-billno" class="form-label">Bill Number</label>
+                                    <input type="text" class="form-control" id="periodic-billno" required>
                                 </div>
                             </div>
-                        </form>
-                    </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="periodic-description" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="periodic-description" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="periodic-quantity" class="form-label">Quantity</label>
+                                    <input type="number" class="form-control" id="periodic-quantity" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="periodic-price" class="form-label">Unit Price (RM)</label>
+                                    <input type="number" class="form-control" id="periodic-price" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="periodic-total" class="form-label">Total (RM)</label>
+                                    <input type="text" class="form-control" id="periodic-total" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3 d-flex align-items-end" style="height: 42px;">
+                                    <button type="submit" class="btn btn-primary w-100">Add Item</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
                 
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center">
                         <h5>Bill Items</h5>
                         <button class="btn btn-success" id="generate-periodic-pdf">
                             <i class="fas fa-file-pdf"></i> Generate PDF
                         </button>
                     </div>
-                    <div class="card-body">
-                        <table class="bill-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Bill No</th>
-                                    <th>Description</th>
-                                    <th>Quantity</th>
-                                    <th>Unit Price (RM)</th>
-                                    <th>Total (RM)</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="periodic-bills-list">
-                                <!-- Bills will be added here dynamically -->
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="5" style="text-align: right; font-weight: bold;">Grand Total:</td>
-                                    <td id="periodic-grand-total" style="font-weight: bold;">RM 0.00</td>
-                                    <td></td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                    <table class="bill-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill No</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price (RM)</th>
+                                <th>Total (RM)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="periodic-bills-list">
+                            <!-- Bills will be added here dynamically -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" style="text-align: right; font-weight: bold;">Grand Total:</td>
+                                <td id="periodic-grand-total" style="font-weight: bold;">RM 0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
             </div>
 
             <!-- Individual Bills Page -->
             <div id="individual-bills" class="page">
                 <h2>Individual Bills</h2>
-                <!-- Similar structure to Periodic Bills but for individual bills -->
-                <p>This section allows you to create and manage individual bills.</p>
+                <div class="form-section">
+                    <h5>Add New Individual Bill</h5>
+                    <form id="individual-bill-form">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="individual-date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="individual-date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="individual-billno" class="form-label">Bill Number</label>
+                                    <input type="text" class="form-control" id="individual-billno" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="individual-description" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="individual-description" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="individual-quantity" class="form-label">Quantity</label>
+                                    <input type="number" class="form-control" id="individual-quantity" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="individual-price" class="form-label">Unit Price (RM)</label>
+                                    <input type="number" class="form-control" id="individual-price" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="individual-total" class="form-label">Total (RM)</label>
+                                    <input type="text" class="form-control" id="individual-total" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3 d-flex align-items-end" style="height: 42px;">
+                                    <button type="submit" class="btn btn-primary w-100">Add Item</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Individual Bill Items</h5>
+                        <button class="btn btn-success" id="generate-individual-pdf">
+                            <i class="fas fa-file-pdf"></i> Generate PDF
+                        </button>
+                    </div>
+                    <table class="bill-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill No</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price (RM)</th>
+                                <th>Total (RM)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="individual-bills-list">
+                            <!-- Bills will be added here dynamically -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" style="text-align: right; font-weight: bold;">Grand Total:</td>
+                                <td id="individual-grand-total" style="font-weight: bold;">RM 0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
 
             <!-- Monthly Bills Page -->
             <div id="monthly-bills" class="page">
                 <h2>Monthly Bills</h2>
-                <!-- Similar structure to Periodic Bills but for monthly bills -->
-                <p>This section allows you to create and manage monthly bills.</p>
+                <div class="form-section">
+                    <h5>Add New Monthly Bill</h5>
+                    <form id="monthly-bill-form">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="monthly-date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="monthly-date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="monthly-billno" class="form-label">Bill Number</label>
+                                    <input type="text" class="form-control" id="monthly-billno" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="monthly-description" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="monthly-description" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="monthly-quantity" class="form-label">Quantity</label>
+                                    <input type="number" class="form-control" id="monthly-quantity" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="monthly-price" class="form-label">Unit Price (RM)</label>
+                                    <input type="number" class="form-control" id="monthly-price" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="monthly-total" class="form-label">Total (RM)</label>
+                                    <input type="text" class="form-control" id="monthly-total" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3 d-flex align-items-end" style="height: 42px;">
+                                    <button type="submit" class="btn btn-primary w-100">Add Item</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Monthly Bill Items</h5>
+                        <button class="btn btn-success" id="generate-monthly-pdf">
+                            <i class="fas fa-file-pdf"></i> Generate PDF
+                        </button>
+                    </div>
+                    <table class="bill-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill No</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price (RM)</th>
+                                <th>Total (RM)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthly-bills-list">
+                            <!-- Bills will be added here dynamically -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" style="text-align: right; font-weight: bold;">Grand Total:</td>
+                                <td id="monthly-grand-total" style="font-weight: bold;">RM 0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
 
             <!-- Yearly Bills Page -->
             <div id="yearly-bills" class="page">
                 <h2>Yearly Bills</h2>
-                <!-- Similar structure to Periodic Bills but for yearly bills -->
-                <p>This section allows you to create and manage yearly bills.</p>
+                <div class="form-section">
+                    <h5>Add New Yearly Bill</h5>
+                    <form id="yearly-bill-form">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="yearly-date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="yearly-date" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="yearly-billno" class="form-label">Bill Number</label>
+                                    <input type="text" class="form-control" id="yearly-billno" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="yearly-description" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="yearly-description" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="yearly-quantity" class="form-label">Quantity</label>
+                                    <input type="number" class="form-control" id="yearly-quantity" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="yearly-price" class="form-label">Unit Price (RM)</label>
+                                    <input type="number" class="form-control" id="yearly-price" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="yearly-total" class="form-label">Total (RM)</label>
+                                    <input type="text" class="form-control" id="yearly-total" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3 d-flex align-items-end" style="height: 42px;">
+                                    <button type="submit" class="btn btn-primary w-100">Add Item</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Yearly Bill Items</h5>
+                        <button class="btn btn-success" id="generate-yearly-pdf">
+                            <i class="fas fa-file-pdf"></i> Generate PDF
+                        </button>
+                    </div>
+                    <table class="bill-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Bill No</th>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price (RM)</th>
+                                <th>Total (RM)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="yearly-bills-list">
+                            <!-- Bills will be added here dynamically -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5" style="text-align: right; font-weight: bold;">Grand Total:</td>
+                                <td id="yearly-grand-total" style="font-weight: bold;">RM 0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
 
             <!-- Profit & Loss Page -->
@@ -454,54 +714,85 @@
                     <canvas id="profitLossChart" height="100"></canvas>
                 </div>
                 
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Detailed Breakdown</h5>
-                    </div>
-                    <div class="card-body">
-                        <table class="bill-table">
-                            <thead>
-                                <tr>
-                                    <th>Category</th>
-                                    <th>Amount (RM)</th>
-                                    <th>Percentage</th>
-                                    <th>Trend</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Product Sales</td>
-                                    <td>18,500.00</td>
-                                    <td>75.2%</td>
-                                    <td><i class="fas fa-arrow-up text-success"></i> 12%</td>
-                                </tr>
-                                <tr>
-                                    <td>Service Revenue</td>
-                                    <td>6,080.00</td>
-                                    <td>24.8%</td>
-                                    <td><i class="fas fa-arrow-up text-success"></i> 8%</td>
-                                </tr>
-                                <tr>
-                                    <td>Material Costs</td>
-                                    <td>9,200.00</td>
-                                    <td>50.2%</td>
-                                    <td><i class="fas fa-arrow-up text-danger"></i> 5%</td>
-                                </tr>
-                                <tr>
-                                    <td>Labor Costs</td>
-                                    <td>5,800.00</td>
-                                    <td>31.6%</td>
-                                    <td><i class="fas fa-arrow-down text-success"></i> 3%</td>
-                                </tr>
-                                <tr>
-                                    <td>Overhead</td>
-                                    <td>3,340.00</td>
-                                    <td>18.2%</td>
-                                    <td><i class="fas fa-minus text-secondary"></i> 0%</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="form-section">
+                    <h5>Detailed Breakdown</h5>
+                    <table class="bill-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Amount (RM)</th>
+                                <th>Percentage</th>
+                                <th>Trend</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Product Sales</td>
+                                <td>18,500.00</td>
+                                <td>75.2%</td>
+                                <td><i class="fas fa-arrow-up text-success"></i> 12%</td>
+                            </tr>
+                            <tr>
+                                <td>Service Revenue</td>
+                                <td>6,080.00</td>
+                                <td>24.8%</td>
+                                <td><i class="fas fa-arrow-up text-success"></i> 8%</td>
+                            </tr>
+                            <tr>
+                                <td>Material Costs</td>
+                                <td>9,200.00</td>
+                                <td>50.2%</td>
+                                <td><i class="fas fa-arrow-up text-danger"></i> 5%</td>
+                            </tr>
+                            <tr>
+                                <td>Labor Costs</td>
+                                <td>5,800.00</td>
+                                <td>31.6%</td>
+                                <td><i class="fas fa-arrow-down text-success"></i> 3%</td>
+                            </tr>
+                            <tr>
+                                <td>Overhead</td>
+                                <td>3,340.00</td>
+                                <td>18.2%</td>
+                                <td><i class="fas fa-minus text-secondary"></i> 0%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="form-section">
+                    <h5>Calculate Profit/Loss</h5>
+                    <form id="profit-loss-form">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="revenue" class="form-label">Total Revenue (RM)</label>
+                                    <input type="number" class="form-control" id="revenue" step="0.01" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="expenses" class="form-label">Total Expenses (RM)</label>
+                                    <input type="number" class="form-control" id="expenses" step="0.01" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <button type="submit" class="btn btn-primary w-100">Calculate</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="alert" id="profit-loss-result" style="display: none;">
+                                    <h5>Result:</h5>
+                                    <p id="result-text"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
 
@@ -515,6 +806,7 @@
                                 <i class="fas fa-users fa-3x mb-3 text-primary"></i>
                                 <h5>Customer Management</h5>
                                 <p>Manage your customer database and track interactions</p>
+                                <button class="btn btn-outline-primary">Explore</button>
                             </div>
                         </div>
                     </div>
@@ -524,6 +816,7 @@
                                 <i class="fas fa-box fa-3x mb-3 text-primary"></i>
                                 <h5>Inventory Tracking</h5>
                                 <p>Monitor stock levels and receive low inventory alerts</p>
+                                <button class="btn btn-outline-primary">Explore</button>
                             </div>
                         </div>
                     </div>
@@ -533,6 +826,7 @@
                                 <i class="fas fa-chart-pie fa-3x mb-3 text-primary"></i>
                                 <h5>Advanced Reports</h5>
                                 <p>Generate detailed reports and analytics</p>
+                                <button class="btn btn-outline-primary">Explore</button>
                             </div>
                         </div>
                     </div>
@@ -542,6 +836,7 @@
                                 <i class="fas fa-cog fa-3x mb-3 text-primary"></i>
                                 <h5>Settings</h5>
                                 <p>Customize system preferences and user permissions</p>
+                                <button class="btn btn-outline-primary">Explore</button>
                             </div>
                         </div>
                     </div>
@@ -551,6 +846,7 @@
                                 <i class="fas fa-bell fa-3x mb-3 text-primary"></i>
                                 <h5>Notifications</h5>
                                 <p>Set up alerts for important events and deadlines</p>
+                                <button class="btn btn-outline-primary">Explore</button>
                             </div>
                         </div>
                     </div>
@@ -560,9 +856,71 @@
                                 <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
                                 <h5>Data Backup</h5>
                                 <p>Automatically backup your data to the cloud</p>
+                                <button class="btn btn-outline-primary">Explore</button>
                             </div>
                         </div>
                     </div>
+                </div>
+                
+                <div class="form-section">
+                    <h5>System Settings</h5>
+                    <form>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="currency" class="form-label">Currency</label>
+                                    <select class="form-select" id="currency">
+                                        <option selected>RM (Malaysian Ringgit)</option>
+                                        <option>USD (US Dollar)</option>
+                                        <option>EUR (Euro)</option>
+                                        <option>GBP (British Pound)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="language" class="form-label">Language</label>
+                                    <select class="form-select" id="language">
+                                        <option selected>English</option>
+                                        <option>Malay</option>
+                                        <option>Chinese</option>
+                                        <option>Tamil</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="date-format" class="form-label">Date Format</label>
+                                    <select class="form-select" id="date-format">
+                                        <option selected>DD/MM/YYYY</option>
+                                        <option>MM/DD/YYYY</option>
+                                        <option>YYYY-MM-DD</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="tax-rate" class="form-label">Tax Rate (%)</label>
+                                    <input type="number" class="form-control" id="tax-rate" value="6.0" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="email-notifications" checked>
+                                    <label class="form-check-label" for="email-notifications">Enable Email Notifications</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <button type="submit" class="btn btn-primary">Save Settings</button>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -596,19 +954,42 @@
         const showRegister = document.getElementById('show-register');
         const showLogin = document.getElementById('show-login');
         const registerSection = document.getElementById('register-section');
+        const loginSection = document.getElementById('login-section');
+        const loginError = document.getElementById('login-error');
+        const registerError = document.getElementById('register-error');
         
         // Navigation
         const navLinks = document.querySelectorAll('.sidebar a[data-page]');
         const pages = document.querySelectorAll('.page');
         
-        // Periodic Bills Form
+        // Bill Forms
         const periodicForm = document.getElementById('periodic-bill-form');
-        const periodicQuantity = document.getElementById('periodic-quantity');
-        const periodicPrice = document.getElementById('periodic-price');
-        const periodicTotal = document.getElementById('periodic-total');
+        const individualForm = document.getElementById('individual-bill-form');
+        const monthlyForm = document.getElementById('monthly-bill-form');
+        const yearlyForm = document.getElementById('yearly-bill-form');
+        const profitLossForm = document.getElementById('profit-loss-form');
+        
+        // Bill Lists
         const periodicBillsList = document.getElementById('periodic-bills-list');
+        const individualBillsList = document.getElementById('individual-bills-list');
+        const monthlyBillsList = document.getElementById('monthly-bills-list');
+        const yearlyBillsList = document.getElementById('yearly-bills-list');
+        
+        // Grand Totals
         const periodicGrandTotal = document.getElementById('periodic-grand-total');
+        const individualGrandTotal = document.getElementById('individual-grand-total');
+        const monthlyGrandTotal = document.getElementById('monthly-grand-total');
+        const yearlyGrandTotal = document.getElementById('yearly-grand-total');
+        
+        // PDF Generation Buttons
         const generatePeriodicPdf = document.getElementById('generate-periodic-pdf');
+        const generateIndividualPdf = document.getElementById('generate-individual-pdf');
+        const generateMonthlyPdf = document.getElementById('generate-monthly-pdf');
+        const generateYearlyPdf = document.getElementById('generate-yearly-pdf');
+        
+        // Profit/Loss Calculation
+        const profitLossResult = document.getElementById('profit-loss-result');
+        const resultText = document.getElementById('result-text');
         
         // Sample data for charts
         const monthlyData = {
@@ -621,11 +1002,13 @@
         showRegister.addEventListener('click', function(e) {
             e.preventDefault();
             registerSection.style.display = 'block';
+            loginSection.style.display = 'none';
         });
         
         showLogin.addEventListener('click', function(e) {
             e.preventDefault();
             registerSection.style.display = 'none';
+            loginSection.style.display = 'block';
         });
         
         // Navigation
@@ -644,97 +1027,159 @@
             });
         });
         
-        // Calculate total when quantity or price changes
-        periodicQuantity.addEventListener('input', calculateTotal);
-        periodicPrice.addEventListener('input', calculateTotal);
-        
-        function calculateTotal() {
-            const quantity = parseFloat(periodicQuantity.value) || 0;
-            const price = parseFloat(periodicPrice.value) || 0;
-            const total = quantity * price;
-            periodicTotal.value = total.toFixed(2);
-        }
-        
-        // Handle form submission
-        periodicForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Setup bill form handlers
+        function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId) {
+            const quantityInput = document.getElementById(quantityId);
+            const priceInput = document.getElementById(priceId);
+            const totalInput = document.getElementById(totalId);
+            const billList = document.getElementById(listId);
+            const grandTotal = document.getElementById(grandTotalId);
             
-            const date = document.getElementById('periodic-date').value;
-            const billNo = document.getElementById('periodic-billno').value;
-            const description = document.getElementById('periodic-description').value;
-            const quantity = parseFloat(periodicQuantity.value);
-            const price = parseFloat(periodicPrice.value);
-            const total = quantity * price;
+            // Calculate total when quantity or price changes
+            quantityInput.addEventListener('input', calculateTotal);
+            priceInput.addEventListener('input', calculateTotal);
             
-            // Add to table
-            const newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td>${date}</td>
-                <td>${billNo}</td>
-                <td>${description}</td>
-                <td>${quantity}</td>
-                <td>${price.toFixed(2)}</td>
-                <td>${total.toFixed(2)}</td>
-                <td>
-                    <i class="fas fa-edit action-btn text-primary"></i>
-                    <i class="fas fa-trash action-btn text-danger"></i>
-                </td>
-            `;
+            function calculateTotal() {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = quantity * price;
+                totalInput.value = total.toFixed(2);
+            }
             
-            periodicBillsList.appendChild(newRow);
-            
-            // Update grand total
-            updateGrandTotal();
-            
-            // Reset form
-            periodicForm.reset();
-            periodicTotal.value = '0.00';
-        });
-        
-        // Update grand total
-        function updateGrandTotal() {
-            let grandTotal = 0;
-            const rows = periodicBillsList.querySelectorAll('tr');
-            
-            rows.forEach(row => {
-                const totalCell = row.cells[5];
-                grandTotal += parseFloat(totalCell.textContent);
+            // Handle form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const dateInput = form.querySelector('input[type="date"]');
+                const billNoInput = form.querySelector('input[placeholder="Bill Number"]');
+                const descriptionInput = form.querySelector('input[placeholder="Description"]');
+                
+                const date = dateInput.value;
+                const billNo = billNoInput.value;
+                const description = descriptionInput.value;
+                const quantity = parseFloat(quantityInput.value);
+                const price = parseFloat(priceInput.value);
+                const total = quantity * price;
+                
+                // Add to table
+                const newRow = document.createElement('tr');
+                newRow.innerHTML = `
+                    <td>${date}</td>
+                    <td>${billNo}</td>
+                    <td>${description}</td>
+                    <td>${quantity}</td>
+                    <td>${price.toFixed(2)}</td>
+                    <td>${total.toFixed(2)}</td>
+                    <td>
+                        <i class="fas fa-edit action-btn text-primary" onclick="editBill(this)"></i>
+                        <i class="fas fa-trash action-btn text-danger" onclick="deleteBill(this)"></i>
+                    </td>
+                `;
+                
+                billList.appendChild(newRow);
+                
+                // Update grand total
+                updateGrandTotal();
+                
+                // Reset form
+                form.reset();
+                totalInput.value = '0.00';
             });
             
-            periodicGrandTotal.textContent = `RM ${grandTotal.toFixed(2)}`;
+            function updateGrandTotal() {
+                let total = 0;
+                const rows = billList.querySelectorAll('tr');
+                
+                rows.forEach(row => {
+                    const totalCell = row.cells[5];
+                    total += parseFloat(totalCell.textContent);
+                });
+                
+                grandTotal.textContent = `RM ${total.toFixed(2)}`;
+            }
+            
+            // Return the update function for external use
+            return updateGrandTotal;
         }
         
-        // Generate PDF
-        generatePeriodicPdf.addEventListener('click', function() {
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(18);
-            doc.text('Periodic Bills Report', 14, 22);
-            
-            // Add date
-            doc.setFontSize(12);
-            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-            
-            // Add table
-            doc.autoTable({
-                startY: 40,
-                head: [['Date', 'Bill No', 'Description', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
-                body: getTableData()
-            });
-            
-            // Add grand total
-            const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(12);
-            doc.text(`Grand Total: RM ${periodicGrandTotal.textContent.split('RM ')[1]}`, 14, finalY);
-            
-            // Save the PDF
-            doc.save('periodic-bills-report.pdf');
-        });
+        // Setup all bill forms
+        const updatePeriodicTotal = setupBillForm(
+            periodicForm, 
+            'periodic-quantity', 
+            'periodic-price', 
+            'periodic-total', 
+            'periodic-bills-list', 
+            'periodic-grand-total'
+        );
         
-        function getTableData() {
+        const updateIndividualTotal = setupBillForm(
+            individualForm, 
+            'individual-quantity', 
+            'individual-price', 
+            'individual-total', 
+            'individual-bills-list', 
+            'individual-grand-total'
+        );
+        
+        const updateMonthlyTotal = setupBillForm(
+            monthlyForm, 
+            'monthly-quantity', 
+            'monthly-price', 
+            'monthly-total', 
+            'monthly-bills-list', 
+            'monthly-grand-total'
+        );
+        
+        const updateYearlyTotal = setupBillForm(
+            yearlyForm, 
+            'yearly-quantity', 
+            'yearly-price', 
+            'yearly-total', 
+            'yearly-bills-list', 
+            'yearly-grand-total'
+        );
+        
+        // PDF Generation
+        function setupPdfGeneration(button, listId, title) {
+            button.addEventListener('click', function() {
+                const doc = new jsPDF();
+                
+                // Add title
+                doc.setFontSize(18);
+                doc.text(`${title} Report`, 14, 22);
+                
+                // Add date
+                doc.setFontSize(12);
+                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+                
+                // Add table
+                doc.autoTable({
+                    startY: 40,
+                    head: [['Date', 'Bill No', 'Description', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
+                    body: getTableData(listId)
+                });
+                
+                // Add grand total
+                const rows = document.querySelectorAll(`#${listId} tr`);
+                let grandTotal = 0;
+                
+                rows.forEach(row => {
+                    const totalCell = row.cells[5];
+                    grandTotal += parseFloat(totalCell.textContent);
+                });
+                
+                const finalY = doc.lastAutoTable.finalY + 10;
+                doc.setFontSize(12);
+                doc.text(`Grand Total: RM ${grandTotal.toFixed(2)}`, 14, finalY);
+                
+                // Save the PDF
+                doc.save(`${title.toLowerCase()}-report.pdf`);
+            });
+        }
+        
+        function getTableData(listId) {
             const data = [];
-            const rows = periodicBillsList.querySelectorAll('tr');
+            const rows = document.querySelectorAll(`#${listId} tr`);
             
             rows.forEach(row => {
                 const rowData = [];
@@ -747,13 +1192,107 @@
             return data;
         }
         
+        // Setup PDF generation for all bill types
+        setupPdfGeneration(generatePeriodicPdf, 'periodic-bills-list', 'Periodic Bills');
+        setupPdfGeneration(generateIndividualPdf, 'individual-bills-list', 'Individual Bills');
+        setupPdfGeneration(generateMonthlyPdf, 'monthly-bills-list', 'Monthly Bills');
+        setupPdfGeneration(generateYearlyPdf, 'yearly-bills-list', 'Yearly Bills');
+        
+        // Profit/Loss Calculation
+        profitLossForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const revenue = parseFloat(document.getElementById('revenue').value);
+            const expenses = parseFloat(document.getElementById('expenses').value);
+            
+            if (isNaN(revenue) || isNaN(expenses)) {
+                resultText.textContent = 'Please enter valid numbers for revenue and expenses.';
+                profitLossResult.className = 'alert alert-danger';
+                profitLossResult.style.display = 'block';
+                return;
+            }
+            
+            const profitLoss = revenue - expenses;
+            
+            if (profitLoss > 0) {
+                resultText.textContent = `Net Profit: RM ${profitLoss.toFixed(2)}`;
+                profitLossResult.className = 'alert alert-success';
+            } else if (profitLoss < 0) {
+                resultText.textContent = `Net Loss: RM ${Math.abs(profitLoss).toFixed(2)}`;
+                profitLossResult.className = 'alert alert-danger';
+            } else {
+                resultText.textContent = 'Break Even: No profit or loss';
+                profitLossResult.className = 'alert alert-info';
+            }
+            
+            profitLossResult.style.display = 'block';
+        });
+        
+        // Bill editing and deletion
+        window.editBill = function(button) {
+            const row = button.parentElement.parentElement;
+            const cells = row.cells;
+            
+            // Populate form with bill data
+            document.getElementById('periodic-date').value = cells[0].textContent;
+            document.getElementById('periodic-billno').value = cells[1].textContent;
+            document.getElementById('periodic-description').value = cells[2].textContent;
+            document.getElementById('periodic-quantity').value = cells[3].textContent;
+            document.getElementById('periodic-price').value = cells[4].textContent;
+            
+            // Remove the row
+            row.remove();
+            
+            // Update grand total
+            updatePeriodicTotal();
+        };
+        
+        window.deleteBill = function(button) {
+            const row = button.parentElement.parentElement;
+            row.remove();
+            
+            // Update grand total based on which list the bill belongs to
+            if (row.parentElement.id === 'periodic-bills-list') updatePeriodicTotal();
+            if (row.parentElement.id === 'individual-bills-list') updateIndividualTotal();
+            if (row.parentElement.id === 'monthly-bills-list') updateMonthlyTotal();
+            if (row.parentElement.id === 'yearly-bills-list') updateYearlyTotal();
+        };
+        
         // Simulate login for demo purposes
         loginBtn.addEventListener('click', function() {
-            authContainer.style.display = 'none';
-            mainContainer.style.display = 'block';
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
             
-            // Initialize charts
-            initCharts();
+            if (email && password) {
+                authContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
+                
+                // Initialize charts
+                initCharts();
+            } else {
+                loginError.style.display = 'block';
+            }
+        });
+        
+        // Register functionality
+        registerBtn.addEventListener('click', function() {
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (password !== confirmPassword) {
+                registerError.style.display = 'block';
+                return;
+            }
+            
+            if (email && password) {
+                // Simulate successful registration
+                registerError.style.display = 'none';
+                alert('Registration successful! You can now login.');
+                showLogin.click();
+            } else {
+                registerError.style.display = 'block';
+            }
         });
         
         // Logout
@@ -806,6 +1345,20 @@
                 });
             }
         }
+        
+        // Set today's date as default for all date inputs
+        document.querySelectorAll('input[type="date"]').forEach(input => {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            let mm = today.getMonth() + 1;
+            let dd = today.getDate();
+            
+            if (dd < 10) dd = '0' + dd;
+            if (mm < 10) mm = '0' + mm;
+            
+            const formattedToday = `${yyyy}-${mm}-${dd}`;
+            input.value = formattedToday;
+        });
     </script>
 </body>
 </html>
