@@ -2132,19 +2132,27 @@
             content += '</div>';
             
             // Show modal with updates
-const modalEl = document.getElementById('progressUpdateModal');
-
-// 填充 modal body
-modalEl.querySelector('.modal-body').innerHTML = `
-    <div class="progress-updates">
-        ${content}
-    </div>
-`;
-
-// 使用 Bootstrap API 显示 modal
-const modal = new bootstrap.Modal(modalEl);
-modal.show();
-
+            const modal = new bootstrap.Modal(document.createElement('div'));
+            modal._element.className = 'modal fade';
+            modal._element.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Progress Updates</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            ${content}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal._element);
+            modal.show();
             
             // Remove modal from DOM after hide
             modal._element.addEventListener('hidden.bs.modal', function() {
