@@ -8,9 +8,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <!-- jsPDF for PDF generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -282,6 +279,87 @@
             background-color: #fff;
         }
         
+        /* Progress tracking styles */
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-recorded {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .status-paid {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .status-overdue {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .progress-filter {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .progress-summary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .progress-card {
+            flex: 1;
+            min-width: 200px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+        
+        .progress-card h5 {
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .progress-card .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .progress-update {
+            background-color: #f8f9fa;
+            border-left: 4px solid var(--secondary-color);
+            padding: 10px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        .progress-update p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .progress-update .date {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
         /* Responsive adjustments */
         @media (max-width: 992px) {
             .sidebar {
@@ -306,6 +384,10 @@
             }
             
             .dashboard-stats {
+                flex-direction: column;
+            }
+            
+            .progress-summary {
                 flex-direction: column;
             }
         }
@@ -408,6 +490,8 @@
             <a href="#" data-page="profit-loss"><i class="fas fa-chart-line"></i> Profit & Loss</a>
             <a href="#" data-page="customer-management"><i class="fas fa-users"></i> Customer Management</a>
             <a href="#" data-page="inventory-tracking"><i class="fas fa-box"></i> Inventory Tracking</a>
+            <!-- 添加进度跟进页面 -->
+            <a href="#" data-page="progress-tracking"><i class="fas fa-clipboard-check"></i> Progress Tracking</a>
             <a href="#" data-page="more"><i class="fas fa-ellipsis-h"></i> More</a>
             <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
@@ -1124,6 +1208,134 @@
                 </div>
             </div>
 
+            <!-- Progress Tracking Page -->
+            <div id="progress-tracking" class="page">
+                <h2>Progress Tracking</h2>
+                
+                <div class="progress-summary">
+                    <div class="progress-card">
+                        <h5>Total Bills</h5>
+                        <p class="value" id="total-bills-count">0</p>
+                    </div>
+                    <div class="progress-card">
+                        <h5>Recorded</h5>
+                        <p class="value" id="recorded-bills-count">0</p>
+                    </div>
+                    <div class="progress-card">
+                        <h5>Paid</h5>
+                        <p class="value" id="paid-bills-count">0</p>
+                    </div>
+                    <div class="progress-card">
+                        <h5>Overdue</h5>
+                        <p class="value" id="overdue-bills-count">0</p>
+                    </div>
+                </div>
+                
+                <div class="progress-filter">
+                    <h5>Filter Bills</h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="progress-status-filter" class="form-label">Status</label>
+                                <select class="form-select" id="progress-status-filter">
+                                    <option value="all">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="recorded">Recorded</option>
+                                    <option value="paid">Paid</option>
+                                    <option value="overdue">Overdue</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="progress-date-from" class="form-label">From Date</label>
+                                <input type="date" class="form-control" id="progress-date-from">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label for="progress-date-to" class="form-label">To Date</label>
+                                <input type="date" class="form-control" id="progress-date-to">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary w-100" id="apply-progress-filter">Apply Filter</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5>Bill Progress</h5>
+                        <div>
+                            <button class="btn btn-success" id="generate-progress-report">
+                                <i class="fas fa-file-pdf"></i> Generate Report
+                            </button>
+                            <button class="btn btn-info" id="add-progress-update">
+                                <i class="fas fa-plus"></i> Add Daily Update
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="bill-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Bill No</th>
+                                    <th>Description</th>
+                                    <th>Amount (RM)</th>
+                                    <th>Status</th>
+                                    <th>Last Updated</th>
+                                    <th>Progress Updates</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="progress-bills-list">
+                                <!-- Progress bills will be added here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Progress Update Modal -->
+                <div class="modal fade" id="progressUpdateModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Add Progress Update</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="progress-update-form">
+                                    <input type="hidden" id="progress-bill-id">
+                                    <div class="mb-3">
+                                        <label for="progress-status" class="form-label">Status</label>
+                                        <select class="form-select" id="progress-status" required>
+                                            <option value="pending">Pending</option>
+                                            <option value="recorded">Recorded</option>
+                                            <option value="paid">Paid</option>
+                                            <option value="overdue">Overdue</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="progress-notes" class="form-label">Notes</label>
+                                        <textarea class="form-control" id="progress-notes" rows="3"></textarea>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="save-progress-update">Save Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- More Page -->
             <div id="more" class="page">
                 <h2>Additional Features</h2>
@@ -1254,6 +1466,9 @@
         </div>
     </div>
 
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
     <!-- Firebase and App Initialization -->
     <script>
         // Firebase configuration
@@ -1308,6 +1523,7 @@
         const yearlyBillsList = document.getElementById('yearly-bills-list');
         const customersList = document.getElementById('customers-list');
         const inventoryList = document.getElementById('inventory-list');
+        const progressBillsList = document.getElementById('progress-bills-list');
         
         // Grand Totals
         const periodicGrandTotal = document.getElementById('periodic-grand-total');
@@ -1323,6 +1539,19 @@
         const generateYearlyPdf = document.getElementById('generate-yearly-pdf');
         const generateInventoryPdf = document.getElementById('generate-inventory-pdf');
         const exportInventoryCsv = document.getElementById('export-inventory-csv');
+        const generateProgressReport = document.getElementById('generate-progress-report');
+        
+        // Progress Tracking Elements
+        const totalBillsCount = document.getElementById('total-bills-count');
+        const recordedBillsCount = document.getElementById('recorded-bills-count');
+        const paidBillsCount = document.getElementById('paid-bills-count');
+        const overdueBillsCount = document.getElementById('overdue-bills-count');
+        const applyProgressFilter = document.getElementById('apply-progress-filter');
+        const addProgressUpdate = document.getElementById('add-progress-update');
+        const saveProgressUpdate = document.getElementById('save-progress-update');
+        const progressStatusFilter = document.getElementById('progress-status-filter');
+        const progressDateFrom = document.getElementById('progress-date-from');
+        const progressDateTo = document.getElementById('progress-date-to');
         
         // Profit/Loss Calculation
         const profitLossResult = document.getElementById('profit-loss-result');
@@ -1376,6 +1605,9 @@
         // Store breakdown data
         let breakdownData = [];
         
+        // Store progress data
+        let progressUpdates = {};
+        
         // Toast notification function
         function showToast(message, type = 'info') {
             const toastContainer = document.querySelector('.toast-container');
@@ -1394,6 +1626,396 @@
             setTimeout(() => {
                 toast.remove();
             }, 5000);
+        }
+        
+        // Initialize progress tracking
+        function initProgressTracking() {
+            setDefaultProgressDates();
+            
+            // Add event listeners
+            applyProgressFilter.addEventListener('click', filterProgressBills);
+            generateProgressReport.addEventListener('click', generateProgressPdf);
+            addProgressUpdate.addEventListener('click', showProgressUpdateModal);
+            saveProgressUpdate.addEventListener('click', saveProgressUpdateHandler);
+            
+            // Load progress data
+            loadProgressData();
+        }
+        
+        // Set default dates for progress filter
+        function setDefaultProgressDates() {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            
+            const yyyy = today.getFullYear();
+            let mm = today.getMonth() + 1;
+            let dd = today.getDate();
+            
+            if (dd < 10) dd = '0' + dd;
+            if (mm < 10) mm = '0' + mm;
+            
+            const formattedToday = `${yyyy}-${mm}-${dd}`;
+            
+            const yyyy2 = firstDay.getFullYear();
+            let mm2 = firstDay.getMonth() + 1;
+            let dd2 = firstDay.getDate();
+            
+            if (dd2 < 10) dd2 = '0' + dd2;
+            if (mm2 < 10) mm2 = '0' + mm2;
+            
+            const formattedFirstDay = `${yyyy2}-${mm2}-${dd2}`;
+            
+            progressDateFrom.value = formattedFirstDay;
+            progressDateTo.value = formattedToday;
+        }
+        
+        // Load progress data from Firebase
+        function loadProgressData() {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('progress').get()
+                .then(querySnapshot => {
+                    progressUpdates = {};
+                    
+                    querySnapshot.forEach(doc => {
+                        const progress = doc.data();
+                        if (!progressUpdates[progress.billId]) {
+                            progressUpdates[progress.billId] = [];
+                        }
+                        progressUpdates[progress.billId].push(progress);
+                    });
+                    
+                    // Update progress view
+                    updateProgressView();
+                })
+                .catch(error => {
+                    console.error("Error loading progress: ", error);
+                });
+        }
+        
+        // Update progress view
+        function updateProgressView() {
+            // Get all bills
+            const allBills = [];
+            for (const type in bills) {
+                allBills.push(...bills[type]);
+            }
+            
+            // Clear list
+            progressBillsList.innerHTML = '';
+            
+            // Reset counters
+            let total = 0;
+            let recorded = 0;
+            let paid = 0;
+            let overdue = 0;
+            
+            // Add bills to list
+            allBills.forEach(bill => {
+                const billProgress = progressUpdates[bill.id] || [];
+                const latestUpdate = billProgress.length > 0 ? 
+                    billProgress[billProgress.length - 1] : { status: 'pending' };
+                
+                // Update counters
+                total++;
+                if (latestUpdate.status === 'recorded') recorded++;
+                if (latestUpdate.status === 'paid') paid++;
+                if (latestUpdate.status === 'overdue') overdue++;
+                
+                // Create row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${bill.date}</td>
+                    <td>${bill.billNo}</td>
+                    <td>${bill.description}</td>
+                    <td>${bill.total.toFixed(2)}</td>
+                    <td><span class="status-badge status-${latestUpdate.status}">${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}</span></td>
+                    <td>${billProgress.length > 0 ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString() : 'Never'}</td>
+                    <td>
+                        ${billProgress.length > 0 ? 
+                            `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
+                                <i class="fas fa-eye"></i> View (${billProgress.length})
+                            </button>` : 
+                            'No updates'}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
+                            <i class="fas fa-edit"></i> Update
+                        </button>
+                    </td>
+                `;
+                
+                progressBillsList.appendChild(row);
+            });
+            
+            // Update counters
+            totalBillsCount.textContent = total;
+            recordedBillsCount.textContent = recorded;
+            paidBillsCount.textContent = paid;
+            overdueBillsCount.textContent = overdue;
+        }
+        
+        // Filter progress bills
+        function filterProgressBills() {
+            const statusFilter = progressStatusFilter.value;
+            const dateFrom = new Date(progressDateFrom.value);
+            const dateTo = new Date(progressDateTo.value);
+            dateTo.setDate(dateTo.getDate() + 1); // Include the end date
+            
+            // Get all bills
+            const allBills = [];
+            for (const type in bills) {
+                allBills.push(...bills[type]);
+            }
+            
+            // Clear list
+            progressBillsList.innerHTML = '';
+            
+            // Reset counters
+            let total = 0;
+            let recorded = 0;
+            let paid = 0;
+            let overdue = 0;
+            
+            // Add filtered bills to list
+            allBills.forEach(bill => {
+                const billDate = new Date(bill.date);
+                if (billDate < dateFrom || billDate >= dateTo) return;
+                
+                const billProgress = progressUpdates[bill.id] || [];
+                const latestUpdate = billProgress.length > 0 ? 
+                    billProgress[billProgress.length - 1] : { status: 'pending' };
+                
+                if (statusFilter !== 'all' && latestUpdate.status !== statusFilter) return;
+                
+                // Update counters
+                total++;
+                if (latestUpdate.status === 'recorded') recorded++;
+                if (latestUpdate.status === 'paid') paid++;
+                if (latestUpdate.status === 'overdue') overdue++;
+                
+                // Create row
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${bill.date}</td>
+                    <td>${bill.billNo}</td>
+                    <td>${bill.description}</td>
+                    <td>${bill.total.toFixed(2)}</td>
+                    <td><span class="status-badge status-${latestUpdate.status}">${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}</span></td>
+                    <td>${billProgress.length > 0 ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString() : 'Never'}</td>
+                    <td>
+                        ${billProgress.length > 0 ? 
+                            `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
+                                <i class="fas fa-eye"></i> View (${billProgress.length})
+                            </button>` : 
+                            'No updates'}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
+                            <i class="fas fa-edit"></i> Update
+                        </button>
+                    </td>
+                `;
+                
+                progressBillsList.appendChild(row);
+            });
+            
+            // Update counters
+            totalBillsCount.textContent = total;
+            recordedBillsCount.textContent = recorded;
+            paidBillsCount.textContent = paid;
+            overdueBillsCount.textContent = overdue;
+        }
+        
+        // Show progress update modal
+        function showProgressUpdateModal() {
+            // This function would show a modal to add a general progress update
+            // For simplicity, we'll just show a toast notification
+            showToast('Use the Update button next to each bill to add progress updates', 'info');
+        }
+        
+        // Update bill progress
+        window.updateBillProgress = function(billId) {
+            // Find the bill
+            let bill = null;
+            for (const type in bills) {
+                bill = bills[type].find(b => b.id === billId);
+                if (bill) break;
+            }
+            
+            if (!bill) return;
+            
+            // Set bill ID in modal
+            document.getElementById('progress-bill-id').value = billId;
+            
+            // Set current status if exists
+            const billProgress = progressUpdates[billId] || [];
+            if (billProgress.length > 0) {
+                document.getElementById('progress-status').value = billProgress[billProgress.length - 1].status;
+            } else {
+                document.getElementById('progress-status').value = 'pending';
+            }
+            
+            // Clear notes
+            document.getElementById('progress-notes').value = '';
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('progressUpdateModal'));
+            modal.show();
+        };
+        
+        // Save progress update
+        function saveProgressUpdateHandler() {
+            const billId = document.getElementById('progress-bill-id').value;
+            const status = document.getElementById('progress-status').value;
+            const notes = document.getElementById('progress-notes').value;
+            
+            if (!billId) return;
+            
+            // Create progress update
+            const progressUpdate = {
+                id: Date.now().toString(),
+                billId: billId,
+                status: status,
+                notes: notes,
+                date: new Date().toISOString(),
+                createdAt: new Date().toISOString()
+            };
+            
+            // Add to progress updates
+            if (!progressUpdates[billId]) {
+                progressUpdates[billId] = [];
+            }
+            progressUpdates[billId].push(progressUpdate);
+            
+            // Save to Firebase
+            saveProgressUpdateToFirebase(progressUpdate);
+            
+            // Update view
+            updateProgressView();
+            
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('progressUpdateModal'));
+            modal.hide();
+            
+            // Show success message
+            showToast('Progress update saved successfully', 'success');
+        }
+        
+        // View progress updates
+        window.viewProgressUpdates = function(billId) {
+            const billProgress = progressUpdates[billId] || [];
+            
+            if (billProgress.length === 0) {
+                showToast('No progress updates for this bill', 'info');
+                return;
+            }
+            
+            // Create modal content
+            let content = '<div class="progress-updates">';
+            billProgress.forEach(update => {
+                content += `
+                    <div class="progress-update">
+                        <p><strong>${update.status.charAt(0).toUpperCase() + update.status.slice(1)}</strong> - ${new Date(update.date).toLocaleDateString()}</p>
+                        <p>${update.notes || 'No notes'}</p>
+                        <div class="date">Updated: ${new Date(update.createdAt).toLocaleString()}</div>
+                    </div>
+                `;
+            });
+            content += '</div>';
+            
+            // Show modal with updates
+            const modal = new bootstrap.Modal(document.createElement('div'));
+            modal._element.className = 'modal fade';
+            modal._element.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Progress Updates</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            ${content}
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal._element);
+            modal.show();
+            
+            // Remove modal from DOM after hide
+            modal._element.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal._element);
+            });
+        };
+        
+        // Generate progress PDF report
+        function generateProgressPdf() {
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Progress Tracking Report', 14, 22);
+            
+            // Add date
+            doc.setFontSize(12);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+            
+            // Add filter info
+            doc.text(`Status: ${progressStatusFilter.value === 'all' ? 'All' : progressStatusFilter.options[progressStatusFilter.selectedIndex].text}`, 14, 40);
+            doc.text(`Date Range: ${progressDateFrom.value} to ${progressDateTo.value}`, 14, 48);
+            
+            // Add summary
+            doc.setFontSize(14);
+            doc.text('Summary', 14, 60);
+            doc.setFontSize(12);
+            doc.text(`Total Bills: ${totalBillsCount.textContent}`, 14, 70);
+            doc.text(`Recorded: ${recordedBillsCount.textContent}`, 14, 78);
+            doc.text(`Paid: ${paidBillsCount.textContent}`, 14, 86);
+            doc.text(`Overdue: ${overdueBillsCount.textContent}`, 14, 94);
+            
+            // Add table
+            const tableColumn = ["Date", "Bill No", "Description", "Amount", "Status"];
+            const tableRows = [];
+            
+            const rows = progressBillsList.querySelectorAll('tr');
+            rows.forEach(row => {
+                const rowData = [
+                    row.cells[0].textContent,
+                    row.cells[1].textContent,
+                    row.cells[2].textContent,
+                    row.cells[3].textContent,
+                    row.cells[4].textContent
+                ];
+                tableRows.push(rowData);
+            });
+            
+            doc.autoTable({
+                startY: 110,
+                head: [tableColumn],
+                body: tableRows,
+                theme: 'grid'
+            });
+            
+            // Save the PDF
+            doc.save('progress-report.pdf');
+            
+            showToast('Progress report generated successfully', 'success');
+        }
+        
+        // Save progress update to Firebase
+        function saveProgressUpdateToFirebase(progressUpdate) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('progress').doc(progressUpdate.id).set(progressUpdate)
+                .catch(error => {
+                    console.error("Error saving progress update: ", error);
+                    showToast('Error saving progress update. Please try again.', 'error');
+                });
         }
         
         // Initialize breakdown functionality
@@ -1629,6 +2251,11 @@
                 // If navigating to inventory-tracking, update it
                 if (targetPage === 'inventory-tracking') {
                     updateInventoryList();
+                }
+                
+                // If navigating to progress-tracking, update it
+                if (targetPage === 'progress-tracking') {
+                    updateProgressView();
                 }
             });
         });
@@ -2466,6 +3093,9 @@
                     
                     // Update dashboard
                     updateDashboard();
+                    
+                    // Update progress view
+                    updateProgressView();
                 })
                 .catch(error => {
                     console.error("Error loading bills: ", error);
@@ -2518,6 +3148,9 @@
                 
             // Load breakdown data
             loadBreakdownData();
+            
+            // Load progress data
+            loadProgressData();
         }
         
         // Dashboard functions
@@ -2749,6 +3382,7 @@
                 document.getElementById('customers-list').innerHTML = '';
                 document.getElementById('inventory-list').innerHTML = '';
                 document.getElementById('pl-breakdown').innerHTML = '';
+                document.getElementById('progress-bills-list').innerHTML = '';
                 
                 // Reset data
                 bills = {
@@ -2766,6 +3400,9 @@
                 
                 // Reset breakdown data
                 breakdownData = [];
+                
+                // Reset progress data
+                progressUpdates = {};
                 
                 showToast('Logged out successfully', 'info');
             });
@@ -2846,6 +3483,7 @@
             setDefaultDates();
             initCharts();
             initBreakdown();
+            initProgressTracking();
         });
     </script>
 </body>
