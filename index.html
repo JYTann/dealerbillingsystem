@@ -420,6 +420,16 @@
         .toast-info {
             border-left-color: #17a2b8;
         }
+
+        /* Map link styles */
+        .map-link {
+            color: #3498db;
+            text-decoration: none;
+        }
+        
+        .map-link:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -670,6 +680,21 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- 添加客户信息填写栏 -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="individual-customer-name" class="form-label">Customer Name (Optional)</label>
+                                    <input type="text" class="form-control" id="individual-customer-name" placeholder="Enter customer name">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="individual-customer-address" class="form-label">Customer Address (Optional)</label>
+                                    <input type="text" class="form-control" id="individual-customer-address" placeholder="Enter customer address">
+                                </div>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="mb-3">
@@ -711,6 +736,7 @@
                                 <th>Date</th>
                                 <th>Bill No</th>
                                 <th>Description</th>
+                                <th>Customer</th>
                                 <th>Quantity</th>
                                 <th>Unit Price (RM)</th>
                                 <th>Total (RM)</th>
@@ -722,7 +748,7 @@
                         </tbody>
                         <tfoot>
                             <tr>
-                                <td colspan="5" style="text-align: right; font-weight: bold;">Grand Total:</td>
+                                <td colspan="6" style="text-align: right; font-weight: bold;">Grand Total:</td>
                                 <td id="individual-grand-total" style="font-weight: bold;">RM 0.00</td>
                                 <td></td>
                             </tr>
@@ -1149,6 +1175,9 @@
                             <button class="btn btn-info" id="export-inventory-csv">
                                 <i class="fas fa-file-csv"></i> Export CSV
                             </button>
+                            <button class="btn btn-warning" id="add-bill-address">
+                                <i class="fas fa-map-marker-alt"></i> Add Bill Address
+                            </button>
                         </div>
                     </div>
                     
@@ -1290,8 +1319,10 @@
                                     <th>Date</th>
                                     <th>Bill No</th>
                                     <th>Description</th>
+                                    <th>Customer</th>
                                     <th>Amount (RM)</th>
                                     <th>Status</th>
+                                    <th>Address Map</th>
                                     <th>Last Updated</th>
                                     <th>Progress Updates</th>
                                     <th>Actions</th>
@@ -1333,6 +1364,37 @@
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                 <button type="button" class="btn btn-primary" id="save-progress-update">Save Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bill Address Modal -->
+                <div class="modal fade" id="billAddressModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Add Bill Address</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="bill-address-form">
+                                    <input type="hidden" id="address-bill-id">
+                                    <div class="mb-3">
+                                        <label for="bill-address" class="form-label">Bill Address</label>
+                                        <input type="text" class="form-control" id="bill-address" placeholder="Enter full address">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Google Maps Preview</label>
+                                        <div id="map-preview" style="height: 200px; background-color: #f8f9fa; border-radius: 5px; display: flex; align-items: center; justify-content: center;">
+                                            <p class="text-muted">Enter an address to see a preview</p>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="save-bill-address">Save Address</button>
                             </div>
                         </div>
                     </div>
@@ -1611,6 +1673,9 @@
         // Store progress data
         let progressUpdates = {};
         
+        // Store bill addresses
+        let billAddresses = {};
+        
         // Toast notification function
         function showToast(message, type = 'info') {
             const toastContainer = document.querySelector('.toast-container');
@@ -1688,8 +1753,21 @@
                         progressUpdates[progress.billId].push(progress);
                     });
                     
-                    // Update progress view
-                    updateProgressView();
+                    // Load bill addresses
+                    db.collection('users').doc(auth.currentUser.uid).collection('billAddresses').get()
+                        .then(querySnapshot => {
+                            billAddresses = {};
+                            querySnapshot.forEach(doc => {
+                                const addressData = doc.data();
+                                billAddresses[addressData.billId] = addressData.address;
+                            });
+                            
+                            // Update progress view
+                            updateProgressView();
+                        })
+                        .catch(error => {
+                            console.error("Error loading bill addresses: ", error);
+                        });
                 })
                 .catch(error => {
                     console.error("Error loading progress: ", error);
@@ -1725,14 +1803,36 @@
                 if (latestUpdate.status === 'paid') paid++;
                 if (latestUpdate.status === 'overdue') overdue++;
                 
+                // Get customer info
+                const customerName = bill.customerName || 'N/A';
+                const customerAddress = bill.customerAddress || '';
+                
+                // Get Google Maps link
+                let mapLink = '';
+                if (billAddresses[bill.id]) {
+                    const encodedAddress = encodeURIComponent(billAddresses[bill.id]);
+                    mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" class="map-link">
+                        <i class="fas fa-map-marker-alt"></i> View on Map
+                    </a>`;
+                } else if (customerAddress) {
+                    const encodedAddress = encodeURIComponent(customerAddress);
+                    mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" class="map-link">
+                        <i class="fas fa-map-marker-alt"></i> View on Map
+                    </a>`;
+                } else {
+                    mapLink = 'No address';
+                }
+                
                 // Create row
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${bill.date}</td>
                     <td>${bill.billNo}</td>
                     <td>${bill.description}</td>
+                    <td>${customerName}</td>
                     <td>${bill.total.toFixed(2)}</td>
                     <td><span class="status-badge status-${latestUpdate.status}">${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}</span></td>
+                    <td>${mapLink}</td>
                     <td>${billProgress.length > 0 ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString() : 'Never'}</td>
                     <td>
                         ${billProgress.length > 0 ? 
@@ -1744,6 +1844,9 @@
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
                             <i class="fas fa-edit"></i> Update
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
+                            <i class="fas fa-map-marker-alt"></i> Address
                         </button>
                     </td>
                 `;
@@ -1797,14 +1900,36 @@
                 if (latestUpdate.status === 'paid') paid++;
                 if (latestUpdate.status === 'overdue') overdue++;
                 
+                // Get customer info
+                const customerName = bill.customerName || 'N/A';
+                const customerAddress = bill.customerAddress || '';
+                
+                // Get Google Maps link
+                let mapLink = '';
+                if (billAddresses[bill.id]) {
+                    const encodedAddress = encodeURIComponent(billAddresses[bill.id]);
+                    mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" class="map-link">
+                        <i class="fas fa-map-marker-alt"></i> View on Map
+                    </a>`;
+                } else if (customerAddress) {
+                    const encodedAddress = encodeURIComponent(customerAddress);
+                    mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" class="map-link">
+                        <i class="fas fa-map-marker-alt"></i> View on Map
+                    </a>`;
+                } else {
+                    mapLink = 'No address';
+                }
+                
                 // Create row
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${bill.date}</td>
                     <td>${bill.billNo}</td>
                     <td>${bill.description}</td>
+                    <td>${customerName}</td>
                     <td>${bill.total.toFixed(2)}</td>
                     <td><span class="status-badge status-${latestUpdate.status}">${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}</span></td>
+                    <td>${mapLink}</td>
                     <td>${billProgress.length > 0 ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString() : 'Never'}</td>
                     <td>
                         ${billProgress.length > 0 ? 
@@ -1816,6 +1941,9 @@
                     <td>
                         <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
                             <i class="fas fa-edit"></i> Update
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
+                            <i class="fas fa-map-marker-alt"></i> Address
                         </button>
                     </td>
                 `;
@@ -1867,6 +1995,53 @@
             modal.show();
         };
         
+        // Add bill address
+        window.addBillAddress = function(billId) {
+            // Find the bill
+            let bill = null;
+            for (const type in bills) {
+                bill = bills[type].find(b => b.id === billId);
+                if (bill) break;
+            }
+            
+            if (!bill) return;
+            
+            // Set bill ID in modal
+            document.getElementById('address-bill-id').value = billId;
+            
+            // Set current address if exists
+            const address = billAddresses[billId] || bill.customerAddress || '';
+            document.getElementById('bill-address').value = address;
+            
+            // Update map preview
+            updateMapPreview(address);
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('billAddressModal'));
+            modal.show();
+        };
+        
+        // Update map preview
+        function updateMapPreview(address) {
+            const mapPreview = document.getElementById('map-preview');
+            
+            if (address) {
+                const encodedAddress = encodeURIComponent(address);
+                mapPreview.innerHTML = `
+                    <iframe 
+                        width="100%" 
+                        height="100%" 
+                        frameborder="0" 
+                        style="border:0; border-radius: 5px;" 
+                        src="https://www.google.com/maps/embed/v1/place?key=AIzaSyB-q5IfxsoF-Ud7YTw2jwHwrzXQuDmxey8&q=${encodedAddress}" 
+                        allowfullscreen>
+                    </iframe>
+                `;
+            } else {
+                mapPreview.innerHTML = '<p class="text-muted">Enter an address to see a preview</p>';
+            }
+        }
+        
         // Save progress update
         function saveProgressUpdateHandler() {
             const billId = document.getElementById('progress-bill-id').value;
@@ -1904,6 +2079,35 @@
             // Show success message
             showToast('Progress update saved successfully', 'success');
         }
+        
+        // Save bill address
+        document.getElementById('save-bill-address').addEventListener('click', function() {
+            const billId = document.getElementById('address-bill-id').value;
+            const address = document.getElementById('bill-address').value;
+            
+            if (!billId) return;
+            
+            // Save address
+            billAddresses[billId] = address;
+            
+            // Save to Firebase
+            saveBillAddressToFirebase(billId, address);
+            
+            // Update view
+            updateProgressView();
+            
+            // Hide modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('billAddressModal'));
+            modal.hide();
+            
+            // Show success message
+            showToast('Bill address saved successfully', 'success');
+        });
+        
+        // Update map preview when address changes
+        document.getElementById('bill-address').addEventListener('input', function() {
+            updateMapPreview(this.value);
+        });
         
         // View progress updates
         window.viewProgressUpdates = function(billId) {
@@ -1982,7 +2186,7 @@
             doc.text(`Overdue: ${overdueBillsCount.textContent}`, 14, 94);
             
             // Add table
-            const tableColumn = ["Date", "Bill No", "Description", "Amount", "Status"];
+            const tableColumn = ["Date", "Bill No", "Description", "Customer", "Amount", "Status"];
             const tableRows = [];
             
             const rows = progressBillsList.querySelectorAll('tr');
@@ -1992,7 +2196,8 @@
                     row.cells[1].textContent,
                     row.cells[2].textContent,
                     row.cells[3].textContent,
-                    row.cells[4].textContent
+                    row.cells[4].textContent,
+                    row.cells[5].textContent
                 ];
                 tableRows.push(rowData);
             });
@@ -2019,6 +2224,21 @@
                     console.error("Error saving progress update: ", error);
                     showToast('Error saving progress update. Please try again.', 'error');
                 });
+        }
+        
+        // Save bill address to Firebase
+        function saveBillAddressToFirebase(billId, address) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('billAddresses').doc(billId).set({
+                billId: billId,
+                address: address,
+                updatedAt: new Date().toISOString()
+            })
+            .catch(error => {
+                console.error("Error saving bill address: ", error);
+                showToast('Error saving bill address. Please try again.', 'error');
+            });
         }
         
         // Initialize breakdown functionality
@@ -2297,6 +2517,15 @@
                 const price = parseFloat(priceInput.value);
                 const total = quantity * price;
                 
+                // For individual bills, get customer info
+                let customerName = '';
+                let customerAddress = '';
+                
+                if (billType === 'individual') {
+                    customerName = document.getElementById('individual-customer-name').value;
+                    customerAddress = document.getElementById('individual-customer-address').value;
+                }
+                
                 const bill = {
                     id: Date.now().toString(),
                     date,
@@ -2305,26 +2534,47 @@
                     quantity,
                     price,
                     total,
-                    type: billType
+                    type: billType,
+                    customerName,
+                    customerAddress
                 };
                 
                 // Add to bills array
                 bills[billType].push(bill);
                 
                 // Add to UI
-                const newRow = document.createElement('tr');
-                newRow.innerHTML = `
-                    <td>${date}</td>
-                    <td>${billNo}</td>
-                    <td>${description}</td>
-                    <td>${quantity}</td>
-                    <td>${price.toFixed(2)}</td>
-                    <td>${total.toFixed(2)}</td>
-                    <td>
-                        <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
-                        <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
-                    </td>
-                `;
+                let newRow;
+                if (billType === 'individual') {
+                    newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${date}</td>
+                        <td>${billNo}</td>
+                        <td>${description}</td>
+                        <td>${customerName || 'N/A'}</td>
+                        <td>${quantity}</td>
+                        <td>${price.toFixed(2)}</td>
+                        <td>${total.toFixed(2)}</td>
+                        <td>
+                            <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
+                            <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
+                        </td>
+                    `;
+                } else {
+                    newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${date}</td>
+                        <td>${billNo}</td>
+                        <td>${description}</td>
+                        <td>${quantity}</td>
+                        <td>${price.toFixed(2)}</td>
+                        <td>${total.toFixed(2)}</td>
+                        <td>
+                            <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
+                            <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
+                        </td>
+                    `;
+                }
+                
                 billList.appendChild(newRow);
                 
                 // Update grand total
@@ -2358,7 +2608,7 @@
                 const rows = billList.querySelectorAll('tr');
                 
                 rows.forEach(row => {
-                    const totalCell = row.cells[5];
+                    const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
                     total += parseFloat(totalCell.textContent);
                 });
                 
@@ -2665,6 +2915,59 @@
             });
         }
         
+        // Individual PDF Generation (with customer info)
+        generateIndividualPdf.addEventListener('click', function() {
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Individual Bills Report', 14, 22);
+            
+            // Add date
+            doc.setFontSize(12);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+            
+            // Add table
+            doc.autoTable({
+                startY: 40,
+                head: [['Date', 'Bill No', 'Description', 'Customer', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
+                body: getIndividualTableData()
+            });
+            
+            // Add grand total
+            const rows = document.querySelectorAll('#individual-bills-list tr');
+            let grandTotal = 0;
+            
+            rows.forEach(row => {
+                const totalCell = row.cells[6];
+                grandTotal += parseFloat(totalCell.textContent);
+            });
+            
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.setFontSize(12);
+            doc.text(`Grand Total: RM ${grandTotal.toFixed(2)}`, 14, finalY);
+            
+            // Save the PDF
+            doc.save('individual-bills-report.pdf');
+            
+            showToast('PDF generated successfully', 'success');
+        });
+        
+        function getIndividualTableData() {
+            const data = [];
+            const rows = document.querySelectorAll('#individual-bills-list tr');
+            
+            rows.forEach(row => {
+                const rowData = [];
+                for (let i = 0; i < 7; i++) {
+                    rowData.push(row.cells[i].textContent);
+                }
+                data.push(rowData);
+            });
+            
+            return data;
+        }
+        
         // Inventory PDF Generation
         generateInventoryPdf.addEventListener('click', function() {
             const doc = new jsPDF();
@@ -2733,7 +3036,6 @@
         
         // Setup PDF generation for all bill types
         setupPdfGeneration(generatePeriodicPdf, 'periodic-bills-list', 'Periodic Bills');
-        setupPdfGeneration(generateIndividualPdf, 'individual-bills-list', 'Individual Bills');
         setupPdfGeneration(generateMonthlyPdf, 'monthly-bills-list', 'Monthly Bills');
         setupPdfGeneration(generateYearlyPdf, 'yearly-bills-list', 'Yearly Bills');
         
@@ -2871,6 +3173,12 @@
             document.getElementById(`${billType}-description`).value = bill.description;
             document.getElementById(`${billType}-quantity`).value = bill.quantity;
             document.getElementById(`${billType}-price`).value = bill.price;
+            
+            // For individual bills, populate customer info
+            if (billType === 'individual') {
+                document.getElementById('individual-customer-name').value = bill.customerName || '';
+                document.getElementById('individual-customer-address').value = bill.customerAddress || '';
+            }
             
             // Remove the bill from array
             bills[billType].splice(billIndex, 1);
@@ -3071,19 +3379,38 @@
                         
                         // Add to UI
                         const billList = document.getElementById(`${bill.type}-bills-list`);
-                        const newRow = document.createElement('tr');
-                        newRow.innerHTML = `
-                            <td>${bill.date}</td>
-                            <td>${bill.billNo}</td>
-                            <td>${bill.description}</td>
-                            <td>${bill.quantity}</td>
-                            <td>${bill.price.toFixed(2)}</td>
-                            <td>${bill.total.toFixed(2)}</td>
-                            <td>
-                                <i class="fas fa-edit action-btn text-primary" onclick="editBill('${bill.type}', '${bill.id}')"></i>
-                                <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${bill.type}', '${bill.id}')"></i>
-                            </td>
-                        `;
+                        let newRow;
+                        
+                        if (bill.type === 'individual') {
+                            newRow = document.createElement('tr');
+                            newRow.innerHTML = `
+                                <td>${bill.date}</td>
+                                <td>${bill.billNo}</td>
+                                <td>${bill.description}</td>
+                                <td>${bill.customerName || 'N/A'}</td>
+                                <td>${bill.quantity}</td>
+                                <td>${bill.price.toFixed(2)}</td>
+                                <td>${bill.total.toFixed(2)}</td>
+                                <td>
+                                    <i class="fas fa-edit action-btn text-primary" onclick="editBill('${bill.type}', '${bill.id}')"></i>
+                                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${bill.type}', '${bill.id}')"></i>
+                                </td>
+                            `;
+                        } else {
+                            newRow = document.createElement('tr');
+                            newRow.innerHTML = `
+                                <td>${bill.date}</td>
+                                <td>${bill.billNo}</td>
+                                <td>${bill.description}</td>
+                                <td>${bill.quantity}</td>
+                                <td>${bill.price.toFixed(2)}</td>
+                                <td>${bill.total.toFixed(2)}</td>
+                                <td>
+                                    <i class="fas fa-edit action-btn text-primary" onclick="editBill('${bill.type}', '${bill.id}')"></i>
+                                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${bill.type}', '${bill.id}')"></i>
+                                </td>
+                            `;
+                        }
                         
                         billList.appendChild(newRow);
                     });
@@ -3353,7 +3680,7 @@
             
             if (email && password) {
                 auth.createUserWithEmailAndPassword(email, password)
-                    .then((userCredential) => {
+                    .then((userCredential) {
                         // Signed up
                         registerError.style.display = 'none';
                         showToast('Registration successful! You can now login.', 'success');
@@ -3406,6 +3733,9 @@
                 
                 // Reset progress data
                 progressUpdates = {};
+                
+                // Reset bill addresses
+                billAddresses = {};
                 
                 showToast('Logged out successfully', 'info');
             });
