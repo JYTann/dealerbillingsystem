@@ -1779,7 +1779,7 @@
             // Get all bills
             const allBills = [];
             for (const type in bills) {
-                allBills.push(...bills[type]);
+                bills[type].forEach(bill => allBills.push(bill));
             }
             
             // Clear list
@@ -3820,4 +3820,8 @@
         });
     </script>
 </body>
+    <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
+    Developed by Tan Jun Yuan
+</footer>
+
 </html>
