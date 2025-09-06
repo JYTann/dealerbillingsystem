@@ -3680,7 +3680,7 @@
             
             if (email && password) {
                 auth.createUserWithEmailAndPassword(email, password)
-                    .then((userCredential) {
+                    .then((userCredential)=> {
                         // Signed up
                         registerError.style.display = 'none';
                         showToast('Registration successful! You can now login.', 'success');
