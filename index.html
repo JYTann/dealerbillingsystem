@@ -251,9 +251,96 @@
         .inventory-actions {
             margin-top: 10px;
         }
+        
+        /* Editable breakdown styles */
+        .breakdown-table td:last-child {
+            text-align: center;
+            width: 100px;
+        }
+        
+        .breakdown-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        .editable-field {
+            border: 1px dashed transparent;
+            padding: 3px 5px;
+            border-radius: 3px;
+            transition: all 0.2s;
+        }
+        
+        .editable-field:hover {
+            border-color: #3498db;
+            background-color: #f8f9fa;
+        }
+        
+        .editable-field:focus {
+            outline: none;
+            border: 1px solid #3498db;
+            background-color: #fff;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 180px;
+            }
+            
+            .content {
+                margin-left: 200px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                position: relative;
+                width: 100%;
+                height: auto;
+                margin-bottom: 20px;
+            }
+            
+            .content {
+                margin-left: 0;
+            }
+            
+            .dashboard-stats {
+                flex-direction: column;
+            }
+        }
+        
+        /* Toast notification */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        
+        .toast {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-left: 4px solid;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .toast-success {
+            border-left-color: #28a745;
+        }
+        
+        .toast-error {
+            border-left-color: #dc3545;
+        }
+        
+        .toast-info {
+            border-left-color: #17a2b8;
+        }
     </style>
 </head>
 <body>
+    <!-- Toast Notifications -->
+    <div class="toast-container"></div>
+
     <!-- Login Section -->
     <div id="auth-container" class="auth-container">
         <div class="logo">
@@ -757,20 +844,34 @@
                 </div>
                 
                 <div class="form-section">
-                    <h5>Detailed Breakdown</h5>
-                    <table class="bill-table">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Detailed Breakdown</h5>
+                        <button class="btn btn-primary" id="add-breakdown-item">
+                            <i class="fas fa-plus"></i> Add Item
+                        </button>
+                    </div>
+                    <table class="bill-table breakdown-table">
                         <thead>
                             <tr>
                                 <th>Category</th>
                                 <th>Amount (RM)</th>
                                 <th>Percentage</th>
                                 <th>Trend</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="pl-breakdown">
                             <!-- Profit/Loss breakdown will be populated here -->
                         </tbody>
                     </table>
+                    <div class="breakdown-actions">
+                        <button class="btn btn-success" id="save-breakdown">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                        <button class="btn btn-secondary" id="reset-breakdown">
+                            <i class="fas fa-undo"></i> Reset
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="form-section">
@@ -1246,6 +1347,11 @@
         const inventoryCategoryFilter = document.getElementById('inventory-category-filter');
         const inventoryStockFilter = document.getElementById('inventory-stock-filter');
         
+        // Breakdown elements
+        const addBreakdownItemBtn = document.getElementById('add-breakdown-item');
+        const saveBreakdownBtn = document.getElementById('save-breakdown');
+        const resetBreakdownBtn = document.getElementById('reset-breakdown');
+        
         // Sample data for charts
         const monthlyData = {
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -1266,6 +1372,222 @@
         
         // Store inventory data
         let inventory = [];
+        
+        // Store breakdown data
+        let breakdownData = [];
+        
+        // Toast notification function
+        function showToast(message, type = 'info') {
+            const toastContainer = document.querySelector('.toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type} show`;
+            toast.innerHTML = `
+                <div class="toast-body">
+                    <button type="button" class="btn-close float-end" data-bs-dismiss="toast"></button>
+                    ${message}
+                </div>
+            `;
+            
+            toastContainer.appendChild(toast);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.remove();
+            }, 5000);
+        }
+        
+        // Initialize breakdown functionality
+        function initBreakdown() {
+            // Load breakdown data from Firebase
+            loadBreakdownData();
+            
+            // Add event listeners
+            addBreakdownItemBtn.addEventListener('click', addBreakdownItem);
+            saveBreakdownBtn.addEventListener('click', saveBreakdownData);
+            resetBreakdownBtn.addEventListener('click', resetBreakdownData);
+        }
+        
+        // Add new breakdown item
+        function addBreakdownItem() {
+            const newItem = {
+                id: Date.now().toString(),
+                category: 'New Category',
+                amount: 0,
+                percentage: 0,
+                trend: 'up'
+            };
+            
+            breakdownData.push(newItem);
+            renderBreakdownItem(newItem);
+            showToast('New breakdown item added', 'success');
+        }
+        
+        // Render a breakdown item
+        function renderBreakdownItem(item) {
+            const row = document.createElement('tr');
+            row.setAttribute('data-id', item.id);
+            row.innerHTML = `
+                <td>
+                    <span class="editable-field" contenteditable="true" data-field="category">${item.category}</span>
+                </td>
+                <td>
+                    <span class="editable-field" contenteditable="true" data-field="amount">${item.amount}</span>
+                </td>
+                <td>
+                    <span class="editable-field" contenteditable="true" data-field="percentage">${item.percentage}</span>%
+                </td>
+                <td>
+                    <select class="form-select form-select-sm trend-select" data-field="trend">
+                        <option value="up" ${item.trend === 'up' ? 'selected' : ''}>↑ Increase</option>
+                        <option value="down" ${item.trend === 'down' ? 'selected' : ''}>↓ Decrease</option>
+                        <option value="stable" ${item.trend === 'stable' ? 'selected' : ''}>→ Stable</option>
+                    </select>
+                </td>
+                <td>
+                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBreakdownItem('${item.id}')"></i>
+                </td>
+            `;
+            
+            plBreakdown.appendChild(row);
+            
+            // Add event listeners for editable fields
+            const editableFields = row.querySelectorAll('.editable-field');
+            editableFields.forEach(field => {
+                field.addEventListener('blur', function() {
+                    const fieldName = this.getAttribute('data-field');
+                    const value = this.textContent;
+                    updateBreakdownItem(item.id, fieldName, value);
+                });
+            });
+            
+            // Add event listener for trend select
+            const trendSelect = row.querySelector('.trend-select');
+            trendSelect.addEventListener('change', function() {
+                updateBreakdownItem(item.id, 'trend', this.value);
+            });
+        }
+        
+        // Update breakdown item
+        function updateBreakdownItem(id, field, value) {
+            const itemIndex = breakdownData.findIndex(item => item.id === id);
+            if (itemIndex === -1) return;
+            
+            if (field === 'amount' || field === 'percentage') {
+                value = parseFloat(value) || 0;
+            }
+            
+            breakdownData[itemIndex][field] = value;
+        }
+        
+        // Delete breakdown item
+        window.deleteBreakdownItem = function(id) {
+            if (!confirm('Are you sure you want to delete this item?')) return;
+            
+            // Remove from data array
+            breakdownData = breakdownData.filter(item => item.id !== id);
+            
+            // Remove from UI
+            const row = document.querySelector(`#pl-breakdown tr[data-id="${id}"]`);
+            if (row) row.remove();
+            
+            // Delete from Firebase
+            deleteBreakdownFromFirebase(id);
+            
+            showToast('Breakdown item deleted', 'success');
+        };
+        
+        // Save breakdown data
+        function saveBreakdownData() {
+            if (!auth.currentUser) return;
+            
+            // Update all editable fields in case any are still focused
+            document.querySelectorAll('.editable-field').forEach(field => {
+                field.dispatchEvent(new Event('blur'));
+            });
+            
+            // Save to Firebase
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            
+            userRef.set({
+                breakdown: breakdownData
+            }, { merge: true })
+            .then(() => {
+                showToast('Breakdown data saved successfully!', 'success');
+            })
+            .catch(error => {
+                console.error("Error saving breakdown: ", error);
+                showToast('Error saving data. Please try again.', 'error');
+            });
+        }
+        
+        // Reset breakdown data
+        function resetBreakdownData() {
+            if (!confirm('Are you sure you want to reset all breakdown data? This cannot be undone.')) return;
+            
+            breakdownData = [];
+            plBreakdown.innerHTML = '';
+            
+            // Reset in Firebase
+            if (auth.currentUser) {
+                const userRef = db.collection('users').doc(auth.currentUser.uid);
+                
+                userRef.update({
+                    breakdown: []
+                })
+                .then(() => {
+                    showToast('Breakdown data reset successfully!', 'success');
+                })
+                .catch(error => {
+                    console.error("Error resetting breakdown: ", error);
+                    showToast('Error resetting data. Please try again.', 'error');
+                });
+            }
+        }
+        
+        // Load breakdown data from Firebase
+        function loadBreakdownData() {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).get()
+                .then(doc => {
+                    if (doc.exists && doc.data().breakdown) {
+                        breakdownData = doc.data().breakdown;
+                        
+                        // Render all items
+                        plBreakdown.innerHTML = '';
+                        breakdownData.forEach(item => {
+                            renderBreakdownItem(item);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Error loading breakdown: ", error);
+                });
+        }
+        
+        // Delete breakdown from Firebase
+        function deleteBreakdownFromFirebase(id) {
+            if (!auth.currentUser) return;
+            
+            const userRef = db.collection('users').doc(auth.currentUser.uid);
+            
+            userRef.get()
+                .then(doc => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        if (data.breakdown) {
+                            const updatedBreakdown = data.breakdown.filter(item => item.id !== id);
+                            
+                            return userRef.update({
+                                breakdown: updatedBreakdown
+                            });
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error("Error deleting breakdown item: ", error);
+                });
+        }
         
         // Event Listeners
         showRegister.addEventListener('click', function(e) {
@@ -1381,9 +1703,24 @@
                 // Save to Firebase
                 saveBillToFirebase(bill);
                 
+                // Show success message
+                showToast('Bill item added successfully', 'success');
+                
                 // Reset form
                 form.reset();
                 totalInput.value = '0.00';
+                
+                // Set today's date
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                let mm = today.getMonth() + 1;
+                let dd = today.getDate();
+                
+                if (dd < 10) dd = '0' + dd;
+                if (mm < 10) mm = '0' + mm;
+                
+                const formattedToday = `${yyyy}-${mm}-${dd}`;
+                dateInput.value = formattedToday;
             });
             
             function updateGrandTotal() {
@@ -1480,6 +1817,9 @@
             // Save to Firebase
             saveProductToFirebase(product);
             
+            // Show success message
+            showToast('Product added successfully', 'success');
+            
             // Reset form
             inventoryForm.reset();
             document.getElementById('product-low-stock').value = '10';
@@ -1562,7 +1902,7 @@
             inventory.forEach(product => {
                 const matchesSearch = product.name.toLowerCase().includes(searchTerm) || 
                                      product.sku.toLowerCase().includes(searchTerm) ||
-                                     product.description.toLowerCase().includes(searchTerm);
+                                     (product.description && product.description.toLowerCase().includes(searchTerm));
                 
                 const matchesCategory = !categoryFilter || product.category === categoryFilter;
                 
@@ -1622,11 +1962,15 @@
             
             // Delete from Firebase
             deleteProductFromFirebase(productId);
+            
+            showToast('Product loaded for editing', 'info');
         };
         
         window.deleteProduct = function(productId) {
             const productIndex = inventory.findIndex(p => p.id === productId);
             if (productIndex === -1) return;
+            
+            if (!confirm('Are you sure you want to delete this product?')) return;
             
             // Remove the product from array
             inventory.splice(productIndex, 1);
@@ -1647,6 +1991,8 @@
             
             // Delete from Firebase
             deleteProductFromFirebase(productId);
+            
+            showToast('Product deleted successfully', 'success');
         };
         
         // PDF Generation
@@ -1684,6 +2030,8 @@
                 
                 // Save the PDF
                 doc.save(`${title.toLowerCase()}-report.pdf`);
+                
+                showToast('PDF generated successfully', 'success');
             });
         }
         
@@ -1713,6 +2061,8 @@
             
             // Save the PDF
             doc.save('inventory-report.pdf');
+            
+            showToast('Inventory PDF generated successfully', 'success');
         });
         
         function getInventoryTableData() {
@@ -1793,6 +2143,8 @@
             // Trigger download
             link.click();
             document.body.removeChild(link);
+            
+            showToast('CSV exported successfully', 'success');
         });
         
         // Profit/Loss Calculation
@@ -1852,6 +2204,9 @@
             // Save to Firebase
             saveCustomerToFirebase(customer);
             
+            // Show success message
+            showToast('Customer added successfully', 'success');
+            
             // Reset form
             customerForm.reset();
         });
@@ -1910,11 +2265,15 @@
             
             // Delete from Firebase
             deleteBillFromFirebase(billId);
+            
+            showToast('Bill loaded for editing', 'info');
         };
         
         window.deleteBill = function(billType, billId) {
             const billIndex = bills[billType].findIndex(bill => bill.id === billId);
             if (billIndex === -1) return;
+            
+            if (!confirm('Are you sure you want to delete this bill?')) return;
             
             // Remove the bill from array
             bills[billType].splice(billIndex, 1);
@@ -1939,6 +2298,8 @@
             
             // Delete from Firebase
             deleteBillFromFirebase(billId);
+            
+            showToast('Bill deleted successfully', 'success');
         };
         
         // Customer management functions
@@ -1970,11 +2331,15 @@
             
             // Delete from Firebase
             deleteCustomerFromFirebase(customerId);
+            
+            showToast('Customer loaded for editing', 'info');
         };
         
         window.deleteCustomer = function(customerId) {
             const customerIndex = customers.findIndex(c => c.id === customerId);
             if (customerIndex === -1) return;
+            
+            if (!confirm('Are you sure you want to delete this customer?')) return;
             
             // Remove the customer from array
             customers.splice(customerIndex, 1);
@@ -1992,6 +2357,8 @@
             
             // Delete from Firebase
             deleteCustomerFromFirebase(customerId);
+            
+            showToast('Customer deleted successfully', 'success');
         };
         
         // Firebase functions
@@ -2001,6 +2368,7 @@
             db.collection('users').doc(auth.currentUser.uid).collection('bills').doc(bill.id).set(bill)
                 .catch(error => {
                     console.error("Error saving bill: ", error);
+                    showToast('Error saving bill. Please try again.', 'error');
                 });
         }
         
@@ -2010,6 +2378,7 @@
             db.collection('users').doc(auth.currentUser.uid).collection('bills').doc(billId).delete()
                 .catch(error => {
                     console.error("Error deleting bill: ", error);
+                    showToast('Error deleting bill. Please try again.', 'error');
                 });
         }
         
@@ -2019,6 +2388,7 @@
             db.collection('users').doc(auth.currentUser.uid).collection('customers').doc(customer.id).set(customer)
                 .catch(error => {
                     console.error("Error saving customer: ", error);
+                    showToast('Error saving customer. Please try again.', 'error');
                 });
         }
         
@@ -2028,6 +2398,7 @@
             db.collection('users').doc(auth.currentUser.uid).collection('customers').doc(customerId).delete()
                 .catch(error => {
                     console.error("Error deleting customer: ", error);
+                    showToast('Error deleting customer. Please try again.', 'error');
                 });
         }
         
@@ -2037,6 +2408,7 @@
             db.collection('users').doc(auth.currentUser.uid).collection('inventory').doc(product.id).set(product)
                 .catch(error => {
                     console.error("Error saving product: ", error);
+                    showToast('Error saving product. Please try again.', 'error');
                 });
         }
         
@@ -2046,6 +2418,7 @@
             db.collection('users').doc(auth.currentUser.uid).collection('inventory').doc(productId).delete()
                 .catch(error => {
                     console.error("Error deleting product: ", error);
+                    showToast('Error deleting product. Please try again.', 'error');
                 });
         }
         
@@ -2096,6 +2469,7 @@
                 })
                 .catch(error => {
                     console.error("Error loading bills: ", error);
+                    showToast('Error loading bills data.', 'error');
                 });
             
             // Load customers
@@ -2114,6 +2488,7 @@
                 })
                 .catch(error => {
                     console.error("Error loading customers: ", error);
+                    showToast('Error loading customers data.', 'error');
                 });
                 
             // Load inventory
@@ -2138,7 +2513,11 @@
                 })
                 .catch(error => {
                     console.error("Error loading inventory: ", error);
+                    showToast('Error loading inventory data.', 'error');
                 });
+                
+            // Load breakdown data
+            loadBreakdownData();
         }
         
         // Dashboard functions
@@ -2279,38 +2658,7 @@
         }
         
         function updatePLBreakdown(revenue, expenses) {
-            plBreakdown.innerHTML = `
-                <tr>
-                    <td>Product Sales</td>
-                    <td>${(revenue * 0.75).toFixed(2)}</td>
-                    <td>75.0%</td>
-                    <td><i class="fas fa-arrow-up text-success"></i> 12%</td>
-                </tr>
-                <tr>
-                    <td>Service Revenue</td>
-                    <td>${(revenue * 0.25).toFixed(2)}</td>
-                    <td>25.0%</td>
-                    <td><i class="fas fa-arrow-up text-success"></i> 8%</td>
-                </tr>
-                <tr>
-                    <td>Material Costs</td>
-                    <td>${(expenses * 0.5).toFixed(2)}</td>
-                    <td>50.0%</td>
-                    <td><i class="fas fa-arrow-up text-danger"></i> 5%</td>
-                </tr>
-                <tr>
-                    <td>Labor Costs</td>
-                    <td>${(expenses * 0.3).toFixed(2)}</td>
-                    <td>30.0%</td>
-                    <td><i class="fas fa-arrow-down text-success"></i> 3%</td>
-                </tr>
-                <tr>
-                    <td>Overhead</td>
-                    <td>${(expenses * 0.2).toFixed(2)}</td>
-                    <td>20.0%</td>
-                    <td><i class="fas fa-minus text-secondary"></i> 0%</td>
-                </tr>
-            `;
+            // This function is now handled by the editable breakdown system
         }
         
         // Authentication functions
@@ -2325,13 +2673,16 @@
                         authContainer.style.display = 'none';
                         mainContainer.style.display = 'block';
                         loadUserData();
+                        showToast('Login successful!', 'success');
                     })
                     .catch((error) => {
                         loginError.style.display = 'block';
                         console.error("Login error: ", error);
+                        showToast('Login failed. Please check your credentials.', 'error');
                     });
             } else {
                 loginError.style.display = 'block';
+                showToast('Please enter both email and password.', 'error');
             }
         });
         
@@ -2344,10 +2695,11 @@
                     authContainer.style.display = 'none';
                     mainContainer.style.display = 'block';
                     loadUserData();
+                    showToast('Google login successful!', 'success');
                 })
                 .catch((error) => {
                     console.error("Google sign-in error: ", error);
-                    alert("Google sign-in failed. Please check your authorized domains in Firebase console.");
+                    showToast('Google sign-in failed. Please try again.', 'error');
                 });
         });
         
@@ -2359,6 +2711,7 @@
             
             if (password !== confirmPassword) {
                 registerError.style.display = 'block';
+                showToast('Passwords do not match.', 'error');
                 return;
             }
             
@@ -2367,15 +2720,17 @@
                     .then((userCredential) => {
                         // Signed up
                         registerError.style.display = 'none';
-                        alert('Registration successful! You can now login.');
+                        showToast('Registration successful! You can now login.', 'success');
                         showLogin.click();
                     })
                     .catch((error) => {
                         registerError.style.display = 'block';
                         console.error("Registration error: ", error);
+                        showToast('Registration failed. Please try again.', 'error');
                     });
             } else {
                 registerError.style.display = 'block';
+                showToast('Please fill all required fields.', 'error');
             }
         });
         
@@ -2393,6 +2748,7 @@
                 document.getElementById('yearly-bills-list').innerHTML = '';
                 document.getElementById('customers-list').innerHTML = '';
                 document.getElementById('inventory-list').innerHTML = '';
+                document.getElementById('pl-breakdown').innerHTML = '';
                 
                 // Reset data
                 bills = {
@@ -2407,6 +2763,11 @@
                 
                 // Reset inventory data
                 inventory = [];
+                
+                // Reset breakdown data
+                breakdownData = [];
+                
+                showToast('Logged out successfully', 'info');
             });
         });
         
@@ -2455,18 +2816,20 @@
         }
         
         // Set today's date as default for all date inputs
-        document.querySelectorAll('input[type="date"]').forEach(input => {
-            const today = new Date();
-            const yyyy = today.getFullYear();
-            let mm = today.getMonth() + 1;
-            let dd = today.getDate();
-            
-            if (dd < 10) dd = '0' + dd;
-            if (mm < 10) mm = '0' + mm;
-            
-            const formattedToday = `${yyyy}-${mm}-${dd}`;
-            input.value = formattedToday;
-        });
+        function setDefaultDates() {
+            document.querySelectorAll('input[type="date"]').forEach(input => {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                let mm = today.getMonth() + 1;
+                let dd = today.getDate();
+                
+                if (dd < 10) dd = '0' + dd;
+                if (mm < 10) mm = '0' + mm;
+                
+                const formattedToday = `${yyyy}-${mm}-${dd}`;
+                input.value = formattedToday;
+            });
+        }
         
         // Check if user is already logged in
         auth.onAuthStateChanged((user) => {
@@ -2476,6 +2839,13 @@
                 mainContainer.style.display = 'block';
                 loadUserData();
             }
+        });
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            setDefaultDates();
+            initCharts();
+            initBreakdown();
         });
     </script>
 </body>
