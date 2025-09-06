@@ -2110,55 +2110,59 @@
         });
         
         // View progress updates
-        window.viewProgressUpdates = function(billId) {
-            const billProgress = progressUpdates[billId] || [];
-            
-            if (billProgress.length === 0) {
-                showToast('No progress updates for this bill', 'info');
-                return;
-            }
-            
-            // Create modal content
-            let content = '<div class="progress-updates">';
-            billProgress.forEach(update => {
-                content += `
-                    <div class="progress-update">
-                        <p><strong>${update.status.charAt(0).toUpperCase() + update.status.slice(1)}</strong> - ${new Date(update.date).toLocaleDateString()}</p>
-                        <p>${update.notes || 'No notes'}</p>
-                        <div class="date">Updated: ${new Date(update.createdAt).toLocaleString()}</div>
-                    </div>
-                `;
-            });
-            content += '</div>';
-            
-            // Show modal with updates
-            const modal = new bootstrap.Modal(document.createElement('div'));
-            modal._element.className = 'modal fade';
-            modal._element.innerHTML = `
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Progress Updates</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            ${content}
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                        </div>
-                    </div>
+window.viewProgressUpdates = function(billId) {
+    const billProgress = progressUpdates[billId] || [];
+    
+    if (billProgress.length === 0) {
+        showToast('No progress updates for this bill', 'info');
+        return;
+    }
+    
+    // Create modal content
+    let content = '<div class="progress-updates">';
+    billProgress.forEach(update => {
+        content += `
+            <div class="progress-update">
+                <p><strong>${update.status.charAt(0).toUpperCase() + update.status.slice(1)}</strong> - ${new Date(update.date).toLocaleDateString()}</p>
+                <p>${update.notes || 'No notes'}</p>
+                <div class="date">Updated: ${new Date(update.createdAt).toLocaleString()}</div>
+            </div>
+        `;
+    });
+    content += '</div>';
+    
+    // Create modal element properly
+    const modalElement = document.createElement('div');
+    modalElement.className = 'modal fade';
+    modalElement.innerHTML = `
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Progress Updates</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-            `;
-            
-            document.body.appendChild(modal._element);
-            modal.show();
-            
-            // Remove modal from DOM after hide
-            modal._element.addEventListener('hidden.bs.modal', function() {
-                document.body.removeChild(modal._element);
-            });
-        };
+                <div class="modal-body">
+                    ${content}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add to DOM
+    document.body.appendChild(modalElement);
+    
+    // Initialize and show modal
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
+    
+    // Remove modal from DOM after hide
+    modalElement.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modalElement);
+    });
+};
         
         // Generate progress PDF report
         function generateProgressPdf() {
