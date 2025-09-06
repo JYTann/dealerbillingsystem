@@ -2131,7 +2131,7 @@
             });
             content += '</div>';
             
-// Show modal with updates
+            // Show modal with updates
 const modalEl = document.getElementById('progressUpdateModal');
 
 // 填充 modal body
@@ -2145,6 +2145,12 @@ modalEl.querySelector('.modal-body').innerHTML = `
 const modal = new bootstrap.Modal(modalEl);
 modal.show();
 
+            
+            // Remove modal from DOM after hide
+            modal._element.addEventListener('hidden.bs.modal', function() {
+                document.body.removeChild(modal._element);
+            });
+        };
         
         // Generate progress PDF report
         function generateProgressPdf() {
