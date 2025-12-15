@@ -2757,22 +2757,44 @@ form.addEventListener('submit', function(e) {
     // Update progress view if on progress page
     updateProgressView();
 });
-            
-            function updateGrandTotal() {
-                let total = 0;
-                const rows = billList.querySelectorAll('tr');
-                
-                rows.forEach(row => {
-                    const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
-                    total += parseFloat(totalCell.textContent);
-                });
-                
-                grandTotal.textContent = `RM ${total.toFixed(2)}`;
-            }
-            
-            return updateGrandTotal;
+           function updateGrandTotal() {
+    let total = 0;
+    const rows = billList.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        // ⭐ 检查是否是"没有数据"的提示行
+        const hasColspan = row.cells.length === 1 && row.cells[0].hasAttribute('colspan');
+        
+        if (hasColspan) {
+            // 这是"No data"提示行，跳过不计
+            return;
         }
         
+        // ⭐ 确保行有足够的单元格
+        if (row.cells && row.cells.length > 0) {
+            // 确定要读取哪个单元格
+            let totalCell;
+            
+            if (billType === 'individual') {
+                // 对于individual账单，第7个单元格是总计（索引6）
+                totalCell = row.cells.length > 6 ? row.cells[6] : null;
+            } else {
+                // 对于其他账单，第6个单元格是总计（索引5）
+                totalCell = row.cells.length > 5 ? row.cells[5] : null;
+            }
+            
+            // ⭐ 安全地读取数值
+            if (totalCell && totalCell.textContent) {
+                const cellValue = parseFloat(totalCell.textContent);
+                if (!isNaN(cellValue)) {
+                    total += cellValue;
+                }
+            }
+        }
+    });
+    
+    grandTotal.textContent = `RM ${total.toFixed(2)}`;
+}
         // Setup all bill forms
         const updatePeriodicTotal = setupBillForm(
             periodicForm, 
@@ -3379,11 +3401,16 @@ window.deleteBill = function(billType, billId) {
     // ✅ 使用统一渲染函数重新渲染
     renderBillsByType(billType);
     
-    // Update grand total
-    if (billType === 'periodic') updatePeriodicTotal();
-    if (billType === 'individual') updateIndividualTotal();
-    if (billType === 'monthly') updateMonthlyTotal();
-    if (billType === 'yearly') updateYearlyTotal();
+    // ⭐ 安全地更新总计
+    try {
+        if (billType === 'periodic') updatePeriodicTotal();
+        if (billType === 'individual') updateIndividualTotal();
+        if (billType === 'monthly') updateMonthlyTotal();
+        if (billType === 'yearly') updateYearlyTotal();
+    } catch (error) {
+        console.warn('Error updating total:', error);
+        updateGrandTotalFromArray(billType);
+    }
     
     // Delete from Firebase
     deleteBillFromFirebase(billId);
