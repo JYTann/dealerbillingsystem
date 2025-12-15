@@ -452,6 +452,31 @@
         .map-link:hover {
             text-decoration: underline;
         }
+        /* 添加在现有CSS中 */
+.is-invalid {
+    border-color: #dc3545 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+}
+
+.invalid-feedback {
+    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
+    font-size: 0.875em;
+    color: #dc3545;
+}
+
+.was-validated .form-control:invalid ~ .invalid-feedback {
+    display: block;
+}
 
         /* 在现有样式末尾添加以下内容 */
 
@@ -864,29 +889,34 @@
     </div>
 </div>
         
-        <div id="register-section" style="display: none;">
-            <hr>
-            <div class="mb-3">
-                <label for="register-email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="register-email" placeholder="Enter your email">
-            </div>
-            <div class="mb-3">
-                <label for="register-password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="register-password" placeholder="Create a password">
-            </div>
-            <div class="mb-3">
-                <label for="confirm-password" class="form-label">Confirm Password</label>
-                <input type="password" class="form-control" id="confirm-password" placeholder="Confirm your password">
-            </div>
-            <div id="register-error" class="login-error">
-                Passwords do not match or email is invalid.
-            </div>
-            <button id="register-btn" class="btn btn-success w-100 mb-3">Register</button>
-            <div class="text-center">
-                <a href="#" id="show-login">Back to Login</a>
-            </div>
-        </div>
+        <!-- 修改注册部分的HTML -->
+<div id="register-section" style="display: none;">
+    <hr>
+    <div class="mb-3">
+        <label for="register-email" class="form-label">Email *</label>
+        <input type="email" class="form-control" id="register-email" placeholder="Enter your email" required>
+        <div class="invalid-feedback">Please enter a valid email address.</div>
     </div>
+    <div class="mb-3">
+        <label for="register-password" class="form-label">Password * (min. 6 characters)</label>
+        <input type="password" class="form-control" id="register-password" placeholder="Create a password" required minlength="6">
+        <div class="invalid-feedback">Password must be at least 6 characters long.</div>
+    </div>
+    <div class="mb-3">
+        <label for="confirm-password" class="form-label">Confirm Password *</label>
+        <input type="password" class="form-control" id="confirm-password" placeholder="Confirm your password" required>
+        <div class="invalid-feedback">Passwords do not match.</div>
+    </div>
+    <div id="register-error" class="alert alert-danger" role="alert" style="display: none;">
+        <!-- Error messages will be displayed here -->
+    </div>
+    <button id="register-btn" class="btn btn-success w-100 mb-3">
+        <i class="fas fa-user-plus me-2"></i>Create Account
+    </button>
+    <div class="text-center">
+        <a href="#" id="show-login" class="text-decoration-none">Back to Login</a>
+    </div>
+</div>
 
     <!-- Main Application -->
     <div id="main-container" class="main-container">
@@ -4975,35 +5005,151 @@ loginBtn.addEventListener('click', function() {
         });
         
         // Register functionality
-        registerBtn.addEventListener('click', function() {
-            const email = document.getElementById('register-email').value;
-            const password = document.getElementById('register-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
+       // 替换现有的注册按钮事件监听器
+registerBtn.addEventListener('click', function() {
+    const email = document.getElementById('register-email').value.trim();
+    const password = document.getElementById('register-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+    
+    // 重置错误状态
+    registerError.style.display = 'none';
+    document.getElementById('register-email').classList.remove('is-invalid');
+    document.getElementById('register-password').classList.remove('is-invalid');
+    document.getElementById('confirm-password').classList.remove('is-invalid');
+    
+    // 验证输入
+    let isValid = true;
+    
+    if (!email) {
+        document.getElementById('register-email').classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    if (!password) {
+        document.getElementById('register-password').classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    if (!confirmPassword) {
+        document.getElementById('confirm-password').classList.add('is-invalid');
+        isValid = false;
+    }
+    
+    if (!isValid) {
+        registerError.textContent = 'Please fill in all required fields.';
+        registerError.style.display = 'block';
+        showToast('Please fill all required fields.', 'error');
+        return;
+    }
+    
+    // 验证密码
+    if (password.length < 6) {
+        registerError.textContent = 'Password must be at least 6 characters long.';
+        registerError.style.display = 'block';
+        document.getElementById('register-password').classList.add('is-invalid');
+        showToast('Password must be at least 6 characters.', 'error');
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        registerError.textContent = 'Passwords do not match.';
+        registerError.style.display = 'block';
+        document.getElementById('confirm-password').classList.add('is-invalid');
+        showToast('Passwords do not match.', 'error');
+        return;
+    }
+    
+    // 验证电子邮件格式
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        registerError.textContent = 'Please enter a valid email address.';
+        registerError.style.display = 'block';
+        document.getElementById('register-email').classList.add('is-invalid');
+        showToast('Please enter a valid email address.', 'error');
+        return;
+    }
+    
+    // 显示加载状态
+    const originalText = this.innerHTML;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Registering...';
+    this.disabled = true;
+    
+    // 注册用户
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            // 注册成功
+            this.innerHTML = '<i class="fas fa-check me-2"></i>Success!';
             
-            if (password !== confirmPassword) {
-                registerError.style.display = 'block';
-                showToast('Passwords do not match.', 'error');
-                return;
+            // 发送电子邮件验证（可选）
+            userCredential.user.sendEmailVerification()
+                .then(() => {
+                    console.log('Verification email sent');
+                })
+                .catch(error => {
+                    console.error('Error sending verification email:', error);
+                });
+            
+            // 在Firestore中创建用户文档
+            return db.collection('users').doc(userCredential.user.uid).set({
+                email: email,
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString()
+            });
+        })
+        .then(() => {
+            // 成功消息
+            showToast('Registration successful! Welcome to DealerBILL.', 'success');
+            
+            // 延迟后切换到登录界面
+            setTimeout(() => {
+                // 重置表单
+                document.getElementById('register-email').value = '';
+                document.getElementById('register-password').value = '';
+                document.getElementById('confirm-password').value = '';
+                
+                // 切换到登录界面
+                showLogin.click();
+                
+                // 恢复按钮状态
+                this.innerHTML = originalText;
+                this.disabled = false;
+            }, 1500);
+        })
+        .catch((error) => {
+            // 恢复按钮状态
+            this.innerHTML = originalText;
+            this.disabled = false;
+            
+            // 处理特定错误
+            let errorMessage = 'Registration failed. Please try again.';
+            
+            switch (error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'This email is already registered.';
+                    document.getElementById('register-email').classList.add('is-invalid');
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email address.';
+                    document.getElementById('register-email').classList.add('is-invalid');
+                    break;
+                case 'auth/operation-not-allowed':
+                    errorMessage = 'Email/password accounts are not enabled.';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Password is too weak. Please use a stronger password.';
+                    document.getElementById('register-password').classList.add('is-invalid');
+                    break;
+                default:
+                    errorMessage = error.message || 'Registration failed.';
             }
             
-            if (email && password) {
-                auth.createUserWithEmailAndPassword(email, password)
-                    .then((userCredential)=> {
-                        // Signed up
-                        registerError.style.display = 'none';
-                        showToast('Registration successful! You can now login.', 'success');
-                        showLogin.click();
-                    })
-                    .catch((error) => {
-                        registerError.style.display = 'block';
-                        console.error("Registration error: ", error);
-                        showToast('Registration failed. Please try again.', 'error');
-                    });
-            } else {
-                registerError.style.display = 'block';
-                showToast('Please fill all required fields.', 'error');
-            }
+            registerError.textContent = errorMessage;
+            registerError.style.display = 'block';
+            showToast(errorMessage, 'error');
+            
+            console.error("Registration error: ", error.code, error.message);
         });
+});
         
         // Logout
         logoutBtn.addEventListener('click', function(e) {
