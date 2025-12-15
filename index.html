@@ -1851,189 +1851,252 @@
                 });
         }
         
-        // Update progress view
         function updateProgressView() {
-            // Get all bills
-            const allBills = [];
-            for (const type in bills) {
-                bills[type].forEach(bill => allBills.push(bill));
-            }
-            
-            // Clear list
-            progressBillsList.innerHTML = '';
-            
-            // Reset counters
-            let total = 0;
-            let recorded = 0;
-            let paid = 0;
-            let overdue = 0;
-            
-            // Add bills to list
-            allBills.forEach(bill => {
-                const billProgress = progressUpdates[bill.id] || [];
-                const latestUpdate = billProgress.length > 0 ? 
-                    billProgress[billProgress.length - 1] : { status: 'pending' };
-                
-                // Update counters
-                total++;
-                if (latestUpdate.status === 'recorded') recorded++;
-                if (latestUpdate.status === 'paid') paid++;
-                if (latestUpdate.status === 'overdue') overdue++;
-                
-                // Get customer info
-                const customerName = bill.customerName || 'N/A';
-                const customerAddress = bill.customerAddress || '';
-                
-                // Get Google Maps link
-                let mapLink = '';
-                if (billAddresses[bill.id]) {
-                    const encodedAddress = encodeURIComponent(billAddresses[bill.id]);
-                    mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" class="map-link">
-                        <i class="fas fa-map-marker-alt"></i> View on Map
-                    </a>`;
-                } else if (customerAddress) {
-                    const encodedAddress = encodeURIComponent(customerAddress);
-                    mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" class="map-link">
-                        <i class="fas fa-map-marker-alt"></i> View on Map
-                    </a>`;
-                } else {
-                    mapLink = 'No address';
+    // 安全检查
+    if (!progressBillsList) return;
+
+    // 清空表格
+    progressBillsList.innerHTML = '';
+
+    // 合并所有 bills
+    const allBills = [];
+    for (const type in bills) {
+        if (Array.isArray(bills[type])) {
+            bills[type].forEach(bill => {
+                if (bill && bill.id) {
+                    allBills.push(bill);
                 }
-                
-                // Create row
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${bill.date}</td>
-                    <td>${bill.billNo}</td>
-                    <td>${bill.description}</td>
-                    <td>${customerName}</td>
-                    <td>${bill.total.toFixed(2)}</td>
-                    <td><span class="status-badge status-${latestUpdate.status}">${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}</span></td>
-                    <td>${mapLink}</td>
-                    <td>${billProgress.length > 0 ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString() : 'Never'}</td>
-                    <td>
-                        ${billProgress.length > 0 ? 
-                            `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
-                                <i class="fas fa-eye"></i> View (${billProgress.length})
-                            </button>` : 
-                            'No updates'}
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
-                            <i class="fas fa-edit"></i> Update
-                        </button>
-                        <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
-                            <i class="fas fa-map-marker-alt"></i> Address
-                        </button>
-                    </td>
-                `;
-                
-                progressBillsList.appendChild(row);
             });
-            
-            // Update counters
-            totalBillsCount.textContent = total;
-            recordedBillsCount.textContent = recorded;
-            paidBillsCount.textContent = paid;
-            overdueBillsCount.textContent = overdue;
         }
+    }
+
+    // === ⭐ 没有任何数据时，直接显示提示并 return ===
+    if (allBills.length === 0) {
+        progressBillsList.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted">
+                    No bills yet
+                </td>
+            </tr>
+        `;
+
+        totalBillsCount.textContent = 0;
+        recordedBillsCount.textContent = 0;
+        paidBillsCount.textContent = 0;
+        overdueBillsCount.textContent = 0;
+        return;
+    }
+
+    // 计数器
+    let total = 0;
+    let recorded = 0;
+    let paid = 0;
+    let overdue = 0;
+
+    // 渲染表格
+    allBills.forEach(bill => {
+        const billProgress = progressUpdates[bill.id] || [];
+        const latestUpdate = billProgress.length
+            ? billProgress[billProgress.length - 1]
+            : { status: 'pending' };
+
+        total++;
+        if (latestUpdate.status === 'recorded') recorded++;
+        if (latestUpdate.status === 'paid') paid++;
+        if (latestUpdate.status === 'overdue') overdue++;
+
+        const customerName = bill.customerName || 'N/A';
+
+        // 地图链接
+        let mapLink = 'No address';
+        const address = billAddresses[bill.id] || bill.customerAddress;
+        if (address) {
+            const encoded = encodeURIComponent(address);
+            mapLink = `
+                <a href="https://www.google.com/maps/search/?api=1&query=${encoded}" 
+                   target="_blank" class="map-link">
+                    <i class="fas fa-map-marker-alt"></i> View
+                </a>
+            `;
+        }
+
+        const totalAmount = Number(bill.total) || 0;
+        const lastUpdateDate = billProgress.length
+            ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString()
+            : 'Never';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${bill.date || '-'}</td>
+            <td>${bill.billNo || '-'}</td>
+            <td>${bill.description || '-'}</td>
+            <td>${customerName}</td>
+            <td>${totalAmount.toFixed(2)}</td>
+            <td>
+                <span class="status-badge status-${latestUpdate.status}">
+                    ${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}
+                </span>
+            </td>
+            <td>${mapLink}</td>
+            <td>${lastUpdateDate}</td>
+            <td>
+                ${
+                    billProgress.length
+                        ? `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
+                            <i class="fas fa-eye"></i> View (${billProgress.length})
+                           </button>`
+                        : 'No updates'
+                }
+            </td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
+                    <i class="fas fa-map-marker-alt"></i>
+                </button>
+            </td>
+        `;
+
+        progressBillsList.appendChild(row);
+    });
+
+    // 更新统计
+    totalBillsCount.textContent = total;
+    recordedBillsCount.textContent = recorded;
+    paidBillsCount.textContent = paid;
+    overdueBillsCount.textContent = overdue;
+}
+
         
-        // Filter progress bills
-        function filterProgressBills() {
-            const statusFilter = progressStatusFilter.value;
-            const dateFrom = new Date(progressDateFrom.value);
-            const dateTo = new Date(progressDateTo.value);
-            dateTo.setDate(dateTo.getDate() + 1); // Include the end date
-            
-            // Get all bills
-            const allBills = [];
-            for (const type in bills) {
-                allBills.push(...bills[type]);
-            }
-            
-            // Clear list
-            progressBillsList.innerHTML = '';
-            
-            // Reset counters
-            let total = 0;
-            let recorded = 0;
-            let paid = 0;
-            let overdue = 0;
-            
-            // Add filtered bills to list
-            allBills.forEach(bill => {
-                const billDate = new Date(bill.date);
-                if (billDate < dateFrom || billDate >= dateTo) return;
-                
-                const billProgress = progressUpdates[bill.id] || [];
-                const latestUpdate = billProgress.length > 0 ? 
-                    billProgress[billProgress.length - 1] : { status: 'pending' };
-                
-                if (statusFilter !== 'all' && latestUpdate.status !== statusFilter) return;
-                
-                // Update counters
-                total++;
-                if (latestUpdate.status === 'recorded') recorded++;
-                if (latestUpdate.status === 'paid') paid++;
-                if (latestUpdate.status === 'overdue') overdue++;
-                
-                // Get customer info
-                const customerName = bill.customerName || 'N/A';
-                const customerAddress = bill.customerAddress || '';
-                
-                // Get Google Maps link
-                let mapLink = '';
-                if (billAddresses[bill.id]) {
-                    const encodedAddress = encodeURIComponent(billAddresses[bill.id]);
-                    mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" class="map-link">
-                        <i class="fas fa-map-marker-alt"></i> View on Map
-                    </a>`;
-                } else if (customerAddress) {
-                    const encodedAddress = encodeURIComponent(customerAddress);
-                    mapLink = `<a href="https://www.google.com/maps/search/?api=1&query=${encodedAddress}" target="_blank" class="map-link">
-                        <i class="fas fa-map-marker-alt"></i> View on Map
-                    </a>`;
-                } else {
-                    mapLink = 'No address';
-                }
-                
-                // Create row
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${bill.date}</td>
-                    <td>${bill.billNo}</td>
-                    <td>${bill.description}</td>
-                    <td>${customerName}</td>
-                    <td>${bill.total.toFixed(2)}</td>
-                    <td><span class="status-badge status-${latestUpdate.status}">${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}</span></td>
-                    <td>${mapLink}</td>
-                    <td>${billProgress.length > 0 ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString() : 'Never'}</td>
-                    <td>
-                        ${billProgress.length > 0 ? 
-                            `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
-                                <i class="fas fa-eye"></i> View (${billProgress.length})
-                            </button>` : 
-                            'No updates'}
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
-                            <i class="fas fa-edit"></i> Update
-                        </button>
-                        <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
-                            <i class="fas fa-map-marker-alt"></i> Address
-                        </button>
-                    </td>
-                `;
-                
-                progressBillsList.appendChild(row);
+       function filterProgressBills() {
+    if (!progressBillsList) return;
+
+    const statusFilter = progressStatusFilter.value;
+    const dateFrom = progressDateFrom.value ? new Date(progressDateFrom.value) : null;
+    const dateTo = progressDateTo.value ? new Date(progressDateTo.value) : null;
+
+    if (dateTo) dateTo.setDate(dateTo.getDate() + 1);
+
+    // 清空表格
+    progressBillsList.innerHTML = '';
+
+    // 合并 bills（安全）
+    const allBills = [];
+    for (const type in bills) {
+        if (Array.isArray(bills[type])) {
+            bills[type].forEach(bill => {
+                if (bill && bill.id) allBills.push(bill);
             });
-            
-            // Update counters
-            totalBillsCount.textContent = total;
-            recordedBillsCount.textContent = recorded;
-            paidBillsCount.textContent = paid;
-            overdueBillsCount.textContent = overdue;
         }
+    }
+
+    // 计数器
+    let total = 0;
+    let recorded = 0;
+    let paid = 0;
+    let overdue = 0;
+
+    let hasResult = false;
+
+    allBills.forEach(bill => {
+        // 日期过滤（安全）
+        if (dateFrom || dateTo) {
+            if (!bill.date) return;
+            const billDate = new Date(bill.date);
+            if (isNaN(billDate)) return;
+            if (dateFrom && billDate < dateFrom) return;
+            if (dateTo && billDate >= dateTo) return;
+        }
+
+        const billProgress = progressUpdates[bill.id] || [];
+        const latestUpdate = billProgress.length
+            ? billProgress[billProgress.length - 1]
+            : { status: 'pending' };
+
+        if (statusFilter !== 'all' && latestUpdate.status !== statusFilter) return;
+
+        hasResult = true;
+        total++;
+
+        if (latestUpdate.status === 'recorded') recorded++;
+        if (latestUpdate.status === 'paid') paid++;
+        if (latestUpdate.status === 'overdue') overdue++;
+
+        const customerName = bill.customerName || 'N/A';
+
+        // 地址
+        let mapLink = 'No address';
+        const address = billAddresses[bill.id] || bill.customerAddress;
+        if (address) {
+            const encoded = encodeURIComponent(address);
+            mapLink = `
+                <a href="https://www.google.com/maps/search/?api=1&query=${encoded}" 
+                   target="_blank" class="map-link">
+                    <i class="fas fa-map-marker-alt"></i> View
+                </a>
+            `;
+        }
+
+        const totalAmount = Number(bill.total) || 0;
+        const lastUpdateDate = billProgress.length
+            ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString()
+            : 'Never';
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${bill.date || '-'}</td>
+            <td>${bill.billNo || '-'}</td>
+            <td>${bill.description || '-'}</td>
+            <td>${customerName}</td>
+            <td>${totalAmount.toFixed(2)}</td>
+            <td>
+                <span class="status-badge status-${latestUpdate.status}">
+                    ${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}
+                </span>
+            </td>
+            <td>${mapLink}</td>
+            <td>${lastUpdateDate}</td>
+            <td>
+                ${
+                    billProgress.length
+                        ? `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
+                            <i class="fas fa-eye"></i> View (${billProgress.length})
+                           </button>`
+                        : 'No updates'
+                }
+            </td>
+            <td>
+                <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
+                    <i class="fas fa-map-marker-alt"></i>
+                </button>
+            </td>
+        `;
+
+        progressBillsList.appendChild(row);
+    });
+
+    // ⭐ 无结果提示（非常关键）
+    if (!hasResult) {
+        progressBillsList.innerHTML = `
+            <tr>
+                <td colspan="10" class="text-center text-muted">
+                    No bills match the selected filter
+                </td>
+            </tr>
+        `;
+    }
+
+    // 更新统计
+    totalBillsCount.textContent = total;
+    recordedBillsCount.textContent = recorded;
+    paidBillsCount.textContent = paid;
+    overdueBillsCount.textContent = overdue;
+}
+
         
         // Show progress update modal
         function showProgressUpdateModal() {
@@ -2364,50 +2427,69 @@ function getStatusColor(status) {
             showToast('New breakdown item added', 'success');
         }
         
-        // Render a breakdown item
         function renderBreakdownItem(item) {
-            const row = document.createElement('tr');
-            row.setAttribute('data-id', item.id);
-            row.innerHTML = `
-                <td>
-                    <span class="editable-field" contenteditable="true" data-field="category">${item.category}</span>
-                </td>
-                <td>
-                    <span class="editable-field" contenteditable="true" data-field="amount">${item.amount}</span>
-                </td>
-                <td>
-                    <span class="editable-field" contenteditable="true" data-field="percentage">${item.percentage}</span>%
-                </td>
-                <td>
-                    <select class="form-select form-select-sm trend-select" data-field="trend">
-                        <option value="up" ${item.trend === 'up' ? 'selected' : ''}>↑ Increase</option>
-                        <option value="down" ${item.trend === 'down' ? 'selected' : ''}>↓ Decrease</option>
-                        <option value="stable" ${item.trend === 'stable' ? 'selected' : ''}>→ Stable</option>
-                    </select>
-                </td>
-                <td>
-                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBreakdownItem('${item.id}')"></i>
-                </td>
-            `;
-            
-            plBreakdown.appendChild(row);
-            
-            // Add event listeners for editable fields
-            const editableFields = row.querySelectorAll('.editable-field');
-            editableFields.forEach(field => {
-                field.addEventListener('blur', function() {
-                    const fieldName = this.getAttribute('data-field');
-                    const value = this.textContent;
-                    updateBreakdownItem(item.id, fieldName, value);
-                });
-            });
-            
-            // Add event listener for trend select
-            const trendSelect = row.querySelector('.trend-select');
-            trendSelect.addEventListener('change', function() {
-                updateBreakdownItem(item.id, 'trend', this.value);
-            });
-        }
+    if (!item || !item.id) return;
+
+    // ⭐ 如果已存在同 ID 行，直接更新而不是新增
+    let row = plBreakdown.querySelector(`tr[data-id="${item.id}"]`);
+
+    if (!row) {
+        row = document.createElement('tr');
+        row.setAttribute('data-id', item.id);
+        plBreakdown.appendChild(row);
+    }
+
+    const amount = Number(item.amount) || 0;
+    const percentage = Number(item.percentage) || 0;
+
+    row.innerHTML = `
+        <td>
+            <span class="editable-field" contenteditable="true" data-field="category">
+                ${item.category || ''}
+            </span>
+        </td>
+        <td>
+            <span class="editable-field" contenteditable="true" data-field="amount">
+                ${amount}
+            </span>
+        </td>
+        <td>
+            <span class="editable-field" contenteditable="true" data-field="percentage">
+                ${percentage}
+            </span>%
+        </td>
+        <td>
+            <select class="form-select form-select-sm trend-select" data-field="trend">
+                <option value="up" ${item.trend === 'up' ? 'selected' : ''}>↑ Increase</option>
+                <option value="down" ${item.trend === 'down' ? 'selected' : ''}>↓ Decrease</option>
+                <option value="stable" ${item.trend === 'stable' ? 'selected' : ''}>→ Stable</option>
+            </select>
+        </td>
+        <td>
+            <i class="fas fa-trash action-btn text-danger"
+               onclick="deleteBreakdownItem('${item.id}')"></i>
+        </td>
+    `;
+
+    // ⭐ 重新绑定事件（避免重复）
+    row.querySelectorAll('.editable-field').forEach(field => {
+        field.onblur = function () {
+            const fieldName = this.dataset.field;
+            let value = this.textContent.trim();
+
+            if (fieldName !== 'category') {
+                value = Number(value) || 0;
+            }
+
+            updateBreakdownItem(item.id, fieldName, value);
+        };
+    });
+
+    row.querySelector('.trend-select').onchange = function () {
+        updateBreakdownItem(item.id, 'trend', this.value);
+    };
+}
+
         
         // Update breakdown item
         function updateBreakdownItem(id, field, value) {
@@ -2639,66 +2721,56 @@ function getStatusColor(status) {
                 // Add to bills array
                 bills[billType].push(bill);
                 
-                // Add to UI
-                let newRow;
-                if (billType === 'individual') {
-                    newRow = document.createElement('tr');
-                    newRow.innerHTML = `
-                        <td>${date}</td>
-                        <td>${billNo}</td>
-                        <td>${description}</td>
-                        <td>${customerName || 'N/A'}</td>
-                        <td>${quantity}</td>
-                        <td>${price.toFixed(2)}</td>
-                        <td>${total.toFixed(2)}</td>
-                        <td>
-                            <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
-                            <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
-                        </td>
-                    `;
-                } else {
-                    newRow = document.createElement('tr');
-                    newRow.innerHTML = `
-                        <td>${date}</td>
-                        <td>${billNo}</td>
-                        <td>${description}</td>
-                        <td>${quantity}</td>
-                        <td>${price.toFixed(2)}</td>
-                        <td>${total.toFixed(2)}</td>
-                        <td>
-                            <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
-                            <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
-                        </td>
-                    `;
-                }
-                
-                billList.appendChild(newRow);
-                
-                // Update grand total
-                updateGrandTotal();
-                
-                // Save to Firebase
-                saveBillToFirebase(bill);
-                
-                // Show success message
-                showToast('Bill item added successfully', 'success');
-                
-                // Reset form
-                form.reset();
-                totalInput.value = '0.00';
-                
-                // Set today's date
-                const today = new Date();
-                const yyyy = today.getFullYear();
-                let mm = today.getMonth() + 1;
-                let dd = today.getDate();
-                
-                if (dd < 10) dd = '0' + dd;
-                if (mm < 10) mm = '0' + mm;
-                
-                const formattedToday = `${yyyy}-${mm}-${dd}`;
-                dateInput.value = formattedToday;
-            });
+                form.addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+
+    const dateInput = document.getElementById(`${billType}-date`);
+    const billNoInput = document.getElementById(`${billType}-billno`);
+    const descriptionInput = document.getElementById(`${billType}-description`);
+
+    let customerName = '';
+    let customerAddress = '';
+
+    if (billType === 'individual') {
+        customerName = document.getElementById('individual-customer-name').value;
+        customerAddress = document.getElementById('individual-customer-address').value;
+    }
+
+    const bill = {
+        id: crypto.randomUUID(), // ⭐ 改这里
+        date: dateInput.value,
+        billNo: billNoInput.value,
+        description: descriptionInput.value,
+        quantity,
+        price,
+        total: quantity * price,
+        type: billType,
+        customerName,
+        customerAddress
+    };
+
+    // ✅ 1. 只改数据
+    bills[billType].push(bill);
+
+    // ✅ 2. 存 Firebase
+    saveBillToFirebase(bill);
+
+    // ✅ 3. 统一由 render 函数更新 UI
+    renderBillsByType(billType);   // ← 你已有或应该有
+    updateGrandTotal();
+    updateProgressView();
+
+    showToast('Bill item added successfully', 'success');
+
+    // Reset
+    form.reset();
+    totalInput.value = '0.00';
+    dateInput.value = getToday();
+});
+
             
             function updateGrandTotal() {
                 let total = 0;
