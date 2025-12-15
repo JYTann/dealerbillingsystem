@@ -2758,21 +2758,26 @@ form.addEventListener('submit', function(e) {
     updateProgressView();
 });
            
-            function updateGrandTotal() {
-    let total = 0;
-    const rows = billList.querySelectorAll('tr');
-    
-    rows.forEach(row => {
-        // 安全检查：确保行有足够的单元格
-        if (row.cells && row.cells.length > (billType === 'individual' ? 6 : 5)) {
-            const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
-            if (totalCell && totalCell.textContent) {
-                total += parseFloat(totalCell.textContent) || 0;
-            }
+           function updateGrandTotal() {
+            let total = 0;
+            const rows = billList.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                // 安全检查：确保行有足够的单元格
+                if (row.cells && row.cells.length > (billType === 'individual' ? 6 : 5)) {
+                    const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
+                    if (totalCell && totalCell.textContent) {
+                        total += parseFloat(totalCell.textContent) || 0;
+                    }
+                }
+            });
+            
+            grandTotal.textContent = `RM ${total.toFixed(2)}`;
         }
-    });
-    
-    grandTotal.textContent = `RM ${total.toFixed(2)}`;
+        
+        // ⭐⭐ 这里需要添加闭合大括号和返回语句 ⭐⭐
+        return updateGrandTotal;
+    }  // <-- 添加这个闭合大括号
 }
         
         // Setup all bill forms
