@@ -762,6 +762,34 @@
                             </div>
                         </div>
                         <!-- 添加客户信息填写栏 -->
+                        // 在individual-bills页面修改客户输入部分
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="individual-customer-name" class="form-label">客户选择</label>
+            <div class="input-group">
+                <input type="text" class="form-control" id="individual-customer-name" 
+                       placeholder="输入客户名称或选择已有客户" list="customer-suggestions">
+                <button class="btn btn-outline-secondary" type="button" id="clear-customer">
+                    <i class="fas fa-times"></i>
+                </button>
+                <datalist id="customer-suggestions">
+                    <!-- 客户选项将动态填充 -->
+                </datalist>
+            </div>
+            <div id="customer-search-results" class="mt-2" style="display: none;">
+                <!-- 搜索结果将显示在这里 -->
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label for="individual-customer-address" class="form-label">客户地址</label>
+            <input type="text" class="form-control" id="individual-customer-address" 
+                   placeholder="地址将自动填充或手动输入">
+        </div>
+    </div>
+</div>
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -1036,6 +1064,54 @@
                     <h5>Revenue vs Expenses (Last 6 Months)</h5>
                     <canvas id="profitLossChart"></canvas>
                 </div>
+
+                // 在profit-loss页面添加手动输入部分
+<div class="form-section">
+    <h5>手动添加收入/支出</h5>
+    <form id="manual-revenue-expense-form">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="manual-type" class="form-label">类型</label>
+                    <select class="form-select" id="manual-type" required>
+                        <option value="revenue">收入 (Revenue)</option>
+                        <option value="expense">支出 (Expense)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="manual-category" class="form-label">类别</label>
+                    <input type="text" class="form-control" id="manual-category" 
+                           placeholder="例如：产品销售、租金、工资等" required>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="manual-amount" class="form-label">金额 (RM)</label>
+                    <input type="number" class="form-control" id="manual-amount" 
+                           step="0.01" min="0" required>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label for="manual-description" class="form-label">描述</label>
+                    <input type="text" class="form-control" id="manual-description" 
+                           placeholder="详细描述">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label for="manual-date" class="form-label">日期</label>
+                    <input type="date" class="form-control" id="manual-date" required>
+                </div>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">添加记录</button>
+    </form>
+</div>
                 
                 <div class="form-section">
                     <div class="d-flex justify-content-between align-items-center">
@@ -2381,7 +2457,208 @@ function getStatusColor(status) {
             
             showToast('Progress report generated successfully', 'success');
         }
+
+        // 添加手动收入/支出记录
+function addManualRevenueExpense() {
+    const manualForm = document.getElementById('manual-revenue-expense-form');
+    
+    manualForm.addEventListener('submit', function(e) {
+        e.preventDefault();
         
+        const type = document.getElementById('manual-type').value;
+        const category = document.getElementById('manual-category').value;
+        const amount = parseFloat(document.getElementById('manual-amount').value);
+        const description = document.getElementById('manual-description').value;
+        const date = document.getElementById('manual-date').value;
+        
+        const record = {
+            id: Date.now().toString(),
+            type: type, // 'revenue' 或 'expense'
+            category: category,
+            amount: amount,
+            description: description,
+            date: date,
+            createdAt: new Date().toISOString(),
+            userId: auth.currentUser.uid
+        };
+        
+        // 保存到Firebase
+        saveManualRecord(record);
+        
+        // 更新图表
+        updateProfitLossChartWithManualData();
+        
+        // 显示成功消息
+        showToast(`${type === 'revenue' ? '收入' : '支出'}记录已添加`, 'success');
+        
+        // 重置表单
+        manualForm.reset();
+        document.getElementById('manual-date').value = new Date().toISOString().split('T')[0];
+    });
+}
+
+// 智能客户选择功能
+function initSmartCustomerSelection() {
+    const customerNameInput = document.getElementById('individual-customer-name');
+    const customerAddressInput = document.getElementById('individual-customer-address');
+    const customerSuggestions = document.getElementById('customer-suggestions');
+    const searchResults = document.getElementById('customer-search-results');
+    
+    // 监听客户名称输入
+    customerNameInput.addEventListener('input', function() {
+        const searchTerm = this.value.trim();
+        
+        if (searchTerm.length < 2) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        
+        // 搜索客户
+        searchCustomers(searchTerm);
+    });
+    
+    // 从下拉列表选择客户
+    customerNameInput.addEventListener('change', function() {
+        const selectedName = this.value;
+        const customer = customers.find(c => c.name === selectedName);
+        
+        if (customer) {
+            // 自动填充地址
+            customerAddressInput.value = customer.address || '';
+        }
+    });
+    
+    // 清空客户按钮
+    document.getElementById('clear-customer').addEventListener('click', function() {
+        customerNameInput.value = '';
+        customerAddressInput.value = '';
+        searchResults.style.display = 'none';
+    });
+}
+
+// 搜索客户函数
+function searchCustomers(searchTerm) {
+    const results = customers.filter(customer => 
+        customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        customer.phone?.includes(searchTerm)
+    );
+    
+    displayCustomerSearchResults(results);
+}
+
+// 显示搜索结果
+function displayCustomerSearchResults(results) {
+    const searchResults = document.getElementById('customer-search-results');
+    const suggestions = document.getElementById('customer-suggestions');
+    
+    // 清空现有内容
+    searchResults.innerHTML = '';
+    suggestions.innerHTML = '';
+    
+    if (results.length === 0) {
+        searchResults.innerHTML = `
+            <div class="alert alert-info">
+                未找到客户。您可以手动输入新客户信息。
+            </div>
+        `;
+        searchResults.style.display = 'block';
+        return;
+    }
+    
+    // 更新datalist选项
+    results.forEach(customer => {
+        const option = document.createElement('option');
+        option.value = customer.name;
+        option.textContent = customer.name;
+        suggestions.appendChild(option);
+    });
+    
+    // 显示详细搜索结果
+    results.forEach(customer => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'card mb-2';
+        resultItem.innerHTML = `
+            <div class="card-body">
+                <h6 class="card-title">${customer.name}</h6>
+                <p class="card-text mb-1">
+                    <small>电话: ${customer.phone || '未提供'}</small>
+                </p>
+                <p class="card-text mb-1">
+                    <small>邮箱: ${customer.email || '未提供'}</small>
+                </p>
+                <p class="card-text">
+                    <small>地址: ${customer.address || '未提供'}</small>
+                </p>
+                <button class="btn btn-sm btn-primary select-customer-btn" 
+                        data-name="${customer.name}" 
+                        data-address="${customer.address || ''}">
+                    选择此客户
+                </button>
+            </div>
+        `;
+        searchResults.appendChild(resultItem);
+    });
+    
+    searchResults.style.display = 'block';
+    
+    // 添加选择按钮事件
+    document.querySelectorAll('.select-customer-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const name = this.getAttribute('data-name');
+            const address = this.getAttribute('data-address');
+            
+            document.getElementById('individual-customer-name').value = name;
+            document.getElementById('individual-customer-address').value = address;
+            searchResults.style.display = 'none';
+        });
+    });
+}
+
+        // 更新图表数据源，包含手动添加的记录
+function getChartData() {
+    const chartData = {
+        labels: [],
+        revenue: [],
+        expenses: []
+    };
+    
+    // 从账单获取数据
+    for (const type in bills) {
+        bills[type].forEach(bill => {
+            const month = new Date(bill.date).toLocaleString('default', { month: 'short' });
+            
+            if (!chartData.labels.includes(month)) {
+                chartData.labels.push(month);
+            }
+            
+            // 假设所有账单都是收入（可根据需要调整）
+            const index = chartData.labels.indexOf(month);
+            chartData.revenue[index] = (chartData.revenue[index] || 0) + bill.total;
+        });
+    }
+    
+    // 添加手动记录的数据
+    if (window.manualRecords) {
+        window.manualRecords.forEach(record => {
+            const month = new Date(record.date).toLocaleString('default', { month: 'short' });
+            
+            if (!chartData.labels.includes(month)) {
+                chartData.labels.push(month);
+            }
+            
+            const index = chartData.labels.indexOf(month);
+            
+            if (record.type === 'revenue') {
+                chartData.revenue[index] = (chartData.revenue[index] || 0) + record.amount;
+            } else if (record.type === 'expense') {
+                chartData.expenses[index] = (chartData.expenses[index] || 0) + record.amount;
+            }
+        });
+    }
+    
+    return chartData;
+}
         // Save progress update to Firebase
         function saveProgressUpdateToFirebase(progressUpdate) {
             if (!auth.currentUser) return;
@@ -2595,6 +2872,7 @@ function getStatusColor(status) {
                     console.error("Error loading breakdown: ", error);
                 });
         }
+
         
         // Delete breakdown from Firebase
         function deleteBreakdownFromFirebase(id) {
@@ -3708,34 +3986,61 @@ function renderBillsByType(type) {
 }
         // Dashboard functions
         function updateDashboard() {
-            // Calculate totals from all bills
-            let revenue = 0;
-            let expenses = 0;
-            
-            for (const type in bills) {
-                bills[type].forEach(bill => {
-                    revenue += bill.total;
-                });
+    // 从账单计算总收入
+    let billRevenue = 0;
+    for (const type in bills) {
+        bills[type].forEach(bill => {
+            billRevenue += bill.total;
+        });
+    }
+    
+    // 从手动记录计算收入和支出
+    let manualRevenue = 0;
+    let manualExpenses = 0;
+    
+    if (window.manualRecords) {
+        window.manualRecords.forEach(record => {
+            if (record.type === 'revenue') {
+                manualRevenue += record.amount;
+            } else if (record.type === 'expense') {
+                manualExpenses += record.amount;
             }
-            
-            // For demo purposes, let's assume expenses are 70% of revenue
-            expenses = revenue * 0.7;
-            const profit = revenue - expenses;
-            
-            // Update UI
-            totalRevenue.textContent = `RM ${revenue.toFixed(2)}`;
-            totalExpenses.textContent = `RM ${expenses.toFixed(2)}`;
-            netProfit.textContent = `RM ${profit.toFixed(2)}`;
-            
-            // Update inventory value
-            updateInventoryTotalValue();
-            
-            // Update recent bills
-            updateRecentBills();
-            
-            // Update low stock alerts
-            updateLowStockAlerts();
-        }
+        });
+    }
+    
+    // 计算总计
+    const totalRevenue = billRevenue + manualRevenue;
+    const totalExpenses = manualExpenses; // 可以根据需要添加其他支出
+    
+    // 计算利润
+    const profit = totalRevenue - totalExpenses;
+    
+    // 更新UI
+    totalRevenue.textContent = `RM ${totalRevenue.toFixed(2)}`;
+    totalExpenses.textContent = `RM ${totalExpenses.toFixed(2)}`;
+    netProfit.textContent = `RM ${profit.toFixed(2)}`;
+    
+    // 更新利润/损失显示样式
+    if (profit > 0) {
+        netProfit.className = 'stat-value profit';
+    } else if (profit < 0) {
+        netProfit.className = 'stat-value loss';
+    } else {
+        netProfit.className = 'stat-value';
+    }
+    
+    // 更新库存价值
+    updateInventoryTotalValue();
+    
+    // 更新最近账单
+    updateRecentBills();
+    
+    // 更新低库存警报
+    updateLowStockAlerts();
+    
+    // 更新图表
+    updateChartsWithManualData();
+}
         
         function updateRecentBills() {
             recentBills.innerHTML = '';
@@ -4153,14 +4458,42 @@ document.getElementById('theme-toggle').addEventListener('click', function() {
         });
         
         // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            setDefaultDates();
-            initCharts();
-            initBreakdown();
-            initProgressTracking();
-            initThemeToggle();
-            initResponsiveDesign();
-        });
+        // 在DOMContentLoaded事件中添加新功能初始化
+document.addEventListener('DOMContentLoaded', function() {
+    setDefaultDates();
+    initCharts();
+    initBreakdown();
+    initProgressTracking();
+    initThemeToggle();
+    initResponsiveDesign();
+    
+    // 新增功能初始化
+    addManualRevenueExpense();
+    initSmartCustomerSelection();
+    
+    // 加载手动记录
+    loadManualRecords();
+});
+
+// 加载手动记录
+function loadManualRecords() {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid)
+      .collection('manualRecords').get()
+      .then(querySnapshot => {
+          window.manualRecords = [];
+          querySnapshot.forEach(doc => {
+              window.manualRecords.push(doc.data());
+          });
+          
+          // 更新图表
+          updateChartsWithManualData();
+      })
+      .catch(error => {
+          console.error("Error loading manual records: ", error);
+      });
+}
 
         // 响应式设计功能
 function initResponsiveDesign() {
