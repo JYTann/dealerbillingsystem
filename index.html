@@ -2759,19 +2759,21 @@ form.addEventListener('submit', function(e) {
 });
            
             function updateGrandTotal() {
-                let total = 0;
-                const rows = billList.querySelectorAll('tr');
-                
-                rows.forEach(row => {
-                    const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
-                    total += parseFloat(totalCell.textContent);
-                });
-                
-                grandTotal.textContent = `RM ${total.toFixed(2)}`;
+    let total = 0;
+    const rows = billList.querySelectorAll('tr');
+    
+    rows.forEach(row => {
+        // 安全检查：确保行有足够的单元格
+        if (row.cells && row.cells.length > (billType === 'individual' ? 6 : 5)) {
+            const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
+            if (totalCell && totalCell.textContent) {
+                total += parseFloat(totalCell.textContent) || 0;
             }
-            
-            return updateGrandTotal;
         }
+    });
+    
+    grandTotal.textContent = `RM ${total.toFixed(2)}`;
+}
         
         // Setup all bill forms
         const updatePeriodicTotal = setupBillForm(
@@ -3122,11 +3124,11 @@ form.addEventListener('submit', function(e) {
     const rows = document.querySelectorAll('#individual-bills-list tr');
     
     rows.forEach(row => {
-        const rowData = [];
-        // 检查行是否有足够的单元格
+        // 安全检查：确保行有足够的单元格
         if (row.cells && row.cells.length >= 7) {
+            const rowData = [];
             for (let i = 0; i < 7; i++) {
-                rowData.push(row.cells[i].textContent);
+                rowData.push(row.cells[i].textContent || '');
             }
             data.push(rowData);
         }
@@ -3185,16 +3187,17 @@ form.addEventListener('submit', function(e) {
             
             return data;
         }
+            
         function getTableData(listId) {
     const data = [];
     const rows = document.querySelectorAll(`#${listId} tr`);
     
     rows.forEach(row => {
-        const rowData = [];
-        // 检查行是否有足够的单元格
+        // 安全检查：确保行有足够的单元格
         if (row.cells && row.cells.length >= 6) {
+            const rowData = [];
             for (let i = 0; i < 6; i++) {
-                rowData.push(row.cells[i].textContent);
+                rowData.push(row.cells[i].textContent || '');
             }
             data.push(rowData);
         }
@@ -3516,7 +3519,6 @@ window.deleteBill = function(billType, billId) {
                 });
         }
         // 统一渲染函数
-// 统一渲染函数 - 添加空数据检查
 function renderBillsByType(type) {
     const billList = document.getElementById(`${type}-bills-list`);
     if (!billList) return;
@@ -3524,7 +3526,7 @@ function renderBillsByType(type) {
     // 清空表格
     billList.innerHTML = '';
     
-    // ⭐ 检查是否有数据
+    // 检查是否有数据
     if (!bills[type] || bills[type].length === 0) {
         const colSpan = type === 'individual' ? 8 : 7;
         billList.innerHTML = `
@@ -3543,13 +3545,13 @@ function renderBillsByType(type) {
         if (type === 'individual') {
             newRow = document.createElement('tr');
             newRow.innerHTML = `
-                <td>${bill.date}</td>
-                <td>${bill.billNo}</td>
-                <td>${bill.description}</td>
+                <td>${bill.date || ''}</td>
+                <td>${bill.billNo || ''}</td>
+                <td>${bill.description || ''}</td>
                 <td>${bill.customerName || 'N/A'}</td>
-                <td>${bill.quantity}</td>
-                <td>${bill.price.toFixed(2)}</td>
-                <td>${bill.total.toFixed(2)}</td>
+                <td>${bill.quantity || 0}</td>
+                <td>${(bill.price || 0).toFixed(2)}</td>
+                <td>${(bill.total || 0).toFixed(2)}</td>
                 <td>
                     <i class="fas fa-edit action-btn text-primary" onclick="editBill('${type}', '${bill.id}')"></i>
                     <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${type}', '${bill.id}')"></i>
@@ -3558,12 +3560,12 @@ function renderBillsByType(type) {
         } else {
             newRow = document.createElement('tr');
             newRow.innerHTML = `
-                <td>${bill.date}</td>
-                <td>${bill.billNo}</td>
-                <td>${bill.description}</td>
-                <td>${bill.quantity}</td>
-                <td>${bill.price.toFixed(2)}</td>
-                <td>${bill.total.toFixed(2)}</td>
+                <td>${bill.date || ''}</td>
+                <td>${bill.billNo || ''}</td>
+                <td>${bill.description || ''}</td>
+                <td>${bill.quantity || 0}</td>
+                <td>${(bill.price || 0).toFixed(2)}</td>
+                <td>${(bill.total || 0).toFixed(2)}</td>
                 <td>
                     <i class="fas fa-edit action-btn text-primary" onclick="editBill('${type}', '${bill.id}')"></i>
                     <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${type}', '${bill.id}')"></i>
@@ -3574,6 +3576,7 @@ function renderBillsByType(type) {
         billList.appendChild(newRow);
     });
 }
+            
         function loadUserData() {
     if (!auth.currentUser) return;
     
@@ -3588,25 +3591,35 @@ function renderBillsByType(type) {
             };
             
             querySnapshot.forEach(doc => {
-                const bill = doc.data();
-                bills[bill.type].push(bill);
+                try {
+                    const bill = doc.data();
+                    if (bill && bill.type && bill.id) {
+                        bills[bill.type].push(bill);
+                    }
+                } catch (error) {
+                    console.warn('Error processing bill:', error);
+                }
             });
             
-            // ✅ 使用统一渲染函数
+            // 使用统一渲染函数
             ['periodic', 'individual', 'monthly', 'yearly'].forEach(type => {
                 renderBillsByType(type);
             });
             
-            // Update grand totals
-            updatePeriodicTotal();
-            updateIndividualTotal();
-            updateMonthlyTotal();
-            updateYearlyTotal();
+            // 安全地更新总计
+            setTimeout(() => {
+                try {
+                    if (typeof updatePeriodicTotal === 'function') updatePeriodicTotal();
+                    if (typeof updateIndividualTotal === 'function') updateIndividualTotal();
+                    if (typeof updateMonthlyTotal === 'function') updateMonthlyTotal();
+                    if (typeof updateYearlyTotal === 'function') updateYearlyTotal();
+                } catch (error) {
+                    console.warn('Error updating totals:', error);
+                }
+            }, 100);
             
-            // Update dashboard
+            // 更新仪表板
             updateDashboard();
-            
-            // Update progress view
             updateProgressView();
         })
         .catch(error => {
@@ -3664,7 +3677,21 @@ function renderBillsByType(type) {
             // Load progress data
             loadProgressData();
         }
-        
+
+            function updateGrandTotalFromArray(type) {
+    let total = 0;
+    
+    if (bills[type] && bills[type].length > 0) {
+        bills[type].forEach(bill => {
+            total += bill.total || 0;
+        });
+    }
+    
+    const grandTotalElement = document.getElementById(`${type}-grand-total`);
+    if (grandTotalElement) {
+        grandTotalElement.textContent = `RM ${total.toFixed(2)}`;
+    }
+}
         // Dashboard functions
         function updateDashboard() {
             // Calculate totals from all bills
