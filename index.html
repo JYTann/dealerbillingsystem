@@ -9,7 +9,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <!-- jsPDF -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Bootstrap CSS -->
@@ -2718,43 +2719,12 @@ form.addEventListener('submit', function(e) {
         customerAddress
     };
     
-    // Add to bills array
+    // Add to bills array ✅ 只操作数组
     bills[billType].push(bill);
     
-    // Add to UI
-    let newRow;
-    if (billType === 'individual') {
-        newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td>${date}</td>
-            <td>${billNo}</td>
-            <td>${description}</td>
-            <td>${customerName || 'N/A'}</td>
-            <td>${quantity}</td>
-            <td>${price.toFixed(2)}</td>
-            <td>${total.toFixed(2)}</td>
-            <td>
-                <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
-                <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
-            </td>
-        `;
-    } else {
-        newRow = document.createElement('tr');
-        newRow.innerHTML = `
-            <td>${date}</td>
-            <td>${billNo}</td>
-            <td>${description}</td>
-            <td>${quantity}</td>
-            <td>${price.toFixed(2)}</td>
-            <td>${total.toFixed(2)}</td>
-            <td>
-                <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
-                <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
-            </td>
-        `;
-    }
-    
-    billList.appendChild(newRow);
+    // ✅ 不在这里 append DOM
+    // 重新渲染整个表格
+    renderBillsByType(billType);
     
     // Update grand total
     updateGrandTotal();
@@ -3060,22 +3030,31 @@ form.addEventListener('submit', function(e) {
         // PDF Generation
         function setupPdfGeneration(button, listId, title) {
             button.addEventListener('click', function() {
-                const doc = new jsPDF();
-                
-                // Add title
-                doc.setFontSize(18);
-                doc.text(`${title} Report`, 14, 22);
-                
-                // Add date
-                doc.setFontSize(12);
-                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-                
-                // Add table
-                doc.autoTable({
-                    startY: 40,
-                    head: [['Date', 'Bill No', 'Description', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
-                    body: getTableData(listId)
-                });
+        // ✅ 正确初始化 jsPDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // 检查 autoTable 是否可用
+        if (!doc.autoTable) {
+            showToast('PDF library not properly loaded. Please refresh the page.', 'error');
+            console.error('autoTable is not available:', doc);
+            return;
+        }
+        
+        // Add title
+        doc.setFontSize(18);
+        doc.text(`${title} Report`, 14, 22);
+        
+        // Add date
+        doc.setFontSize(12);
+        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+        
+        // Add table
+        doc.autoTable({
+            startY: 40,
+            head: [['Date', 'Bill No', 'Description', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
+            body: getTableData(listId)
+        });
                 
                 // Add grand total
                 const rows = document.querySelectorAll(`#${listId} tr`);
@@ -3349,83 +3328,65 @@ form.addEventListener('submit', function(e) {
         
         // Bill editing and deletion
         window.editBill = function(billType, billId) {
-            const billIndex = bills[billType].findIndex(bill => bill.id === billId);
-            if (billIndex === -1) return;
-            
-            const bill = bills[billType][billIndex];
-            
-            // Populate form with bill data
-            document.getElementById(`${billType}-date`).value = bill.date;
-            document.getElementById(`${billType}-billno`).value = bill.billNo;
-            document.getElementById(`${billType}-description`).value = bill.description;
-            document.getElementById(`${billType}-quantity`).value = bill.quantity;
-            document.getElementById(`${billType}-price`).value = bill.price;
-            
-            // For individual bills, populate customer info
-            if (billType === 'individual') {
-                document.getElementById('individual-customer-name').value = bill.customerName || '';
-                document.getElementById('individual-customer-address').value = bill.customerAddress || '';
-            }
-            
-            // Remove the bill from array
-            bills[billType].splice(billIndex, 1);
-            
-            // Remove from UI
-            const billList = document.getElementById(`${billType}-bills-list`);
-            const rows = billList.querySelectorAll('tr');
-            
-            for (let row of rows) {
-                const editBtn = row.querySelector('.fa-edit');
-                if (editBtn && editBtn.onclick.toString().includes(billId)) {
-                    row.remove();
-                    break;
-                }
-            }
-            
-            // Update grand total
-            if (billType === 'periodic') updatePeriodicTotal();
-            if (billType === 'individual') updateIndividualTotal();
-            if (billType === 'monthly') updateMonthlyTotal();
-            if (billType === 'yearly') updateYearlyTotal();
-            
-            // Delete from Firebase
-            deleteBillFromFirebase(billId);
-            
-            showToast('Bill loaded for editing', 'info');
-        };
-        
-        window.deleteBill = function(billType, billId) {
-            const billIndex = bills[billType].findIndex(bill => bill.id === billId);
-            if (billIndex === -1) return;
-            
-            if (!confirm('Are you sure you want to delete this bill?')) return;
-            
-            // Remove the bill from array
-            bills[billType].splice(billIndex, 1);
-            
-            // Remove from UI
-            const billList = document.getElementById(`${billType}-bills-list`);
-            const rows = billList.querySelectorAll('tr');
-            
-            for (let row of rows) {
-                const deleteBtn = row.querySelector('.fa-trash');
-                if (deleteBtn && deleteBtn.onclick.toString().includes(billId)) {
-                    row.remove();
-                    break;
-                }
-            }
-            
-            // Update grand total
-            if (billType === 'periodic') updatePeriodicTotal();
-            if (billType === 'individual') updateIndividualTotal();
-            if (billType === 'monthly') updateMonthlyTotal();
-            if (billType === 'yearly') updateYearlyTotal();
-            
-            // Delete from Firebase
-            deleteBillFromFirebase(billId);
-            
-            showToast('Bill deleted successfully', 'success');
-        };
+    const billIndex = bills[billType].findIndex(bill => bill.id === billId);
+    if (billIndex === -1) return;
+    
+    const bill = bills[billType][billIndex];
+    
+    // Populate form with bill data
+    document.getElementById(`${billType}-date`).value = bill.date;
+    document.getElementById(`${billType}-billno`).value = bill.billNo;
+    document.getElementById(`${billType}-description`).value = bill.description;
+    document.getElementById(`${billType}-quantity`).value = bill.quantity;
+    document.getElementById(`${billType}-price`).value = bill.price;
+    
+    // For individual bills, populate customer info
+    if (billType === 'individual') {
+        document.getElementById('individual-customer-name').value = bill.customerName || '';
+        document.getElementById('individual-customer-address').value = bill.customerAddress || '';
+    }
+    
+    // Remove the bill from array
+    bills[billType].splice(billIndex, 1);
+    
+    // ✅ 使用统一渲染函数重新渲染
+    renderBillsByType(billType);
+    
+    // Update grand total
+    if (billType === 'periodic') updatePeriodicTotal();
+    if (billType === 'individual') updateIndividualTotal();
+    if (billType === 'monthly') updateMonthlyTotal();
+    if (billType === 'yearly') updateYearlyTotal();
+    
+    // Delete from Firebase
+    deleteBillFromFirebase(billId);
+    
+    showToast('Bill loaded for editing', 'info');
+};
+
+window.deleteBill = function(billType, billId) {
+    const billIndex = bills[billType].findIndex(bill => bill.id === billId);
+    if (billIndex === -1) return;
+    
+    if (!confirm('Are you sure you want to delete this bill?')) return;
+    
+    // Remove the bill from array
+    bills[billType].splice(billIndex, 1);
+    
+    // ✅ 使用统一渲染函数重新渲染
+    renderBillsByType(billType);
+    
+    // Update grand total
+    if (billType === 'periodic') updatePeriodicTotal();
+    if (billType === 'individual') updateIndividualTotal();
+    if (billType === 'monthly') updateMonthlyTotal();
+    if (billType === 'yearly') updateYearlyTotal();
+    
+    // Delete from Firebase
+    deleteBillFromFirebase(billId);
+    
+    showToast('Bill deleted successfully', 'success');
+};
         
         // Customer management functions
         window.editCustomer = function(customerId) {
@@ -3546,78 +3507,90 @@ form.addEventListener('submit', function(e) {
                     showToast('Error deleting product. Please try again.', 'error');
                 });
         }
+        // 统一渲染函数
+function renderBillsByType(type) {
+    const billList = document.getElementById(`${type}-bills-list`);
+    if (!billList) return;
+    
+    // 清空表格
+    billList.innerHTML = '';
+    
+    // 重新渲染所有账单
+    bills[type].forEach(bill => {
+        let newRow;
+        if (type === 'individual') {
+            newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${bill.date}</td>
+                <td>${bill.billNo}</td>
+                <td>${bill.description}</td>
+                <td>${bill.customerName || 'N/A'}</td>
+                <td>${bill.quantity}</td>
+                <td>${bill.price.toFixed(2)}</td>
+                <td>${bill.total.toFixed(2)}</td>
+                <td>
+                    <i class="fas fa-edit action-btn text-primary" onclick="editBill('${type}', '${bill.id}')"></i>
+                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${type}', '${bill.id}')"></i>
+                </td>
+            `;
+        } else {
+            newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td>${bill.date}</td>
+                <td>${bill.billNo}</td>
+                <td>${bill.description}</td>
+                <td>${bill.quantity}</td>
+                <td>${bill.price.toFixed(2)}</td>
+                <td>${bill.total.toFixed(2)}</td>
+                <td>
+                    <i class="fas fa-edit action-btn text-primary" onclick="editBill('${type}', '${bill.id}')"></i>
+                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${type}', '${bill.id}')"></i>
+                </td>
+            `;
+        }
         
+        billList.appendChild(newRow);
+    });
+}
         function loadUserData() {
-            if (!auth.currentUser) return;
+    if (!auth.currentUser) return;
+    
+    // Load bills
+    db.collection('users').doc(auth.currentUser.uid).collection('bills').get()
+        .then(querySnapshot => {
+            bills = {
+                periodic: [],
+                individual: [],
+                monthly: [],
+                yearly: []
+            };
             
-            // Load bills
-            db.collection('users').doc(auth.currentUser.uid).collection('bills').get()
-                .then(querySnapshot => {
-                    bills = {
-                        periodic: [],
-                        individual: [],
-                        monthly: [],
-                        yearly: []
-                    };
-                    
-                    querySnapshot.forEach(doc => {
-                        const bill = doc.data();
-                        bills[bill.type].push(bill);
-                        
-                        // Add to UI
-                        const billList = document.getElementById(`${bill.type}-bills-list`);
-                        let newRow;
-                        
-                        if (bill.type === 'individual') {
-                            newRow = document.createElement('tr');
-                            newRow.innerHTML = `
-                                <td>${bill.date}</td>
-                                <td>${bill.billNo}</td>
-                                <td>${bill.description}</td>
-                                <td>${bill.customerName || 'N/A'}</td>
-                                <td>${bill.quantity}</td>
-                                <td>${bill.price.toFixed(2)}</td>
-                                <td>${bill.total.toFixed(2)}</td>
-                                <td>
-                                    <i class="fas fa-edit action-btn text-primary" onclick="editBill('${bill.type}', '${bill.id}')"></i>
-                                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${bill.type}', '${bill.id}')"></i>
-                                </td>
-                            `;
-                        } else {
-                            newRow = document.createElement('tr');
-                            newRow.innerHTML = `
-                                <td>${bill.date}</td>
-                                <td>${bill.billNo}</td>
-                                <td>${bill.description}</td>
-                                <td>${bill.quantity}</td>
-                                <td>${bill.price.toFixed(2)}</td>
-                                <td>${bill.total.toFixed(2)}</td>
-                                <td>
-                                    <i class="fas fa-edit action-btn text-primary" onclick="editBill('${bill.type}', '${bill.id}')"></i>
-                                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${bill.type}', '${bill.id}')"></i>
-                                </td>
-                            `;
-                        }
-                        
-                        billList.appendChild(newRow);
-                    });
-                    
-                    // Update grand totals
-                    updatePeriodicTotal();
-                    updateIndividualTotal();
-                    updateMonthlyTotal();
-                    updateYearlyTotal();
-                    
-                    // Update dashboard
-                    updateDashboard();
-                    
-                    // Update progress view
-                    updateProgressView();
-                })
-                .catch(error => {
-                    console.error("Error loading bills: ", error);
-                    showToast('Error loading bills data.', 'error');
-                });
+            querySnapshot.forEach(doc => {
+                const bill = doc.data();
+                bills[bill.type].push(bill);
+            });
+            
+            // ✅ 使用统一渲染函数
+            ['periodic', 'individual', 'monthly', 'yearly'].forEach(type => {
+                renderBillsByType(type);
+            });
+            
+            // Update grand totals
+            updatePeriodicTotal();
+            updateIndividualTotal();
+            updateMonthlyTotal();
+            updateYearlyTotal();
+            
+            // Update dashboard
+            updateDashboard();
+            
+            // Update progress view
+            updateProgressView();
+        })
+        .catch(error => {
+            console.error("Error loading bills: ", error);
+            showToast('Error loading bills data.', 'error');
+        });
             
             // Load customers
             db.collection('users').doc(auth.currentUser.uid).collection('customers').get()
