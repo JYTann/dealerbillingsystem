@@ -2681,96 +2681,109 @@ function getStatusColor(status) {
                 totalInput.value = total.toFixed(2);
             }
             
-            // Form submission
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                const dateInput = document.getElementById(`${billType}-date`);
-                const billNoInput = document.getElementById(`${billType}-billno`);
-                const descriptionInput = document.getElementById(`${billType}-description`);
-                
-                const date = dateInput.value;
-                const billNo = billNoInput.value;
-                const description = descriptionInput.value;
-                const quantity = parseFloat(quantityInput.value);
-                const price = parseFloat(priceInput.value);
-                const total = quantity * price;
-                
-                // For individual bills, get customer info
-                let customerName = '';
-                let customerAddress = '';
-                
-                if (billType === 'individual') {
-                    customerName = document.getElementById('individual-customer-name').value;
-                    customerAddress = document.getElementById('individual-customer-address').value;
-                }
-                
-                const bill = {
-                    id: Date.now().toString(),
-                    date,
-                    billNo,
-                    description,
-                    quantity,
-                    price,
-                    total,
-                    type: billType,
-                    customerName,
-                    customerAddress
-                };
-                
-                // Add to bills array
-                bills[billType].push(bill);
-                
-                form.addEventListener('submit', function(e) {
+            // 在 setupBillForm 函数中，修改 form submit 事件处理函数
+form.addEventListener('submit', function(e) {
     e.preventDefault();
-
-    const quantity = parseFloat(quantityInput.value) || 0;
-    const price = parseFloat(priceInput.value) || 0;
-
+    
     const dateInput = document.getElementById(`${billType}-date`);
     const billNoInput = document.getElementById(`${billType}-billno`);
     const descriptionInput = document.getElementById(`${billType}-description`);
-
+    
+    const date = dateInput.value;
+    const billNo = billNoInput.value;
+    const description = descriptionInput.value;
+    const quantity = parseFloat(quantityInput.value) || 0;
+    const price = parseFloat(priceInput.value) || 0;
+    const total = quantity * price;
+    
+    // For individual bills, get customer info
     let customerName = '';
     let customerAddress = '';
-
+    
     if (billType === 'individual') {
         customerName = document.getElementById('individual-customer-name').value;
         customerAddress = document.getElementById('individual-customer-address').value;
     }
-
+    
     const bill = {
-        id: crypto.randomUUID(), // ⭐ 改这里
-        date: dateInput.value,
-        billNo: billNoInput.value,
-        description: descriptionInput.value,
+        id: Date.now().toString(),
+        date,
+        billNo,
+        description,
         quantity,
         price,
-        total: quantity * price,
+        total,
         type: billType,
         customerName,
         customerAddress
     };
-
-    // ✅ 1. 只改数据
+    
+    // Add to bills array
     bills[billType].push(bill);
-
-    // ✅ 2. 存 Firebase
-    saveBillToFirebase(bill);
-
-    // ✅ 3. 统一由 render 函数更新 UI
-    renderBillsByType(billType);   // ← 你已有或应该有
+    
+    // Add to UI
+    let newRow;
+    if (billType === 'individual') {
+        newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${date}</td>
+            <td>${billNo}</td>
+            <td>${description}</td>
+            <td>${customerName || 'N/A'}</td>
+            <td>${quantity}</td>
+            <td>${price.toFixed(2)}</td>
+            <td>${total.toFixed(2)}</td>
+            <td>
+                <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
+                <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
+            </td>
+        `;
+    } else {
+        newRow = document.createElement('tr');
+        newRow.innerHTML = `
+            <td>${date}</td>
+            <td>${billNo}</td>
+            <td>${description}</td>
+            <td>${quantity}</td>
+            <td>${price.toFixed(2)}</td>
+            <td>${total.toFixed(2)}</td>
+            <td>
+                <i class="fas fa-edit action-btn text-primary" onclick="editBill('${billType}', '${bill.id}')"></i>
+                <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${billType}', '${bill.id}')"></i>
+            </td>
+        `;
+    }
+    
+    billList.appendChild(newRow);
+    
+    // Update grand total
     updateGrandTotal();
-    updateProgressView();
-
+    
+    // Save to Firebase
+    saveBillToFirebase(bill);
+    
+    // Show success message
     showToast('Bill item added successfully', 'success');
-
-    // Reset
+    
+    // Reset form
     form.reset();
     totalInput.value = '0.00';
-    dateInput.value = getToday();
+    
+    // Set today's date
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    let mm = today.getMonth() + 1;
+    let dd = today.getDate();
+    
+    if (dd < 10) dd = '0' + dd;
+    if (mm < 10) mm = '0' + mm;
+    
+    const formattedToday = `${yyyy}-${mm}-${dd}`;
+    dateInput.value = formattedToday;
+    
+    // Update progress view if on progress page
+    updateProgressView();
 });
-
             
             function updateGrandTotal() {
                 let total = 0;
