@@ -2667,113 +2667,118 @@ function getStatusColor(status) {
         });
         
         // Setup bill form handlers
-        function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId, billType) {
-            const quantityInput = document.getElementById(quantityId);
-            const priceInput = document.getElementById(priceId);
-            const totalInput = document.getElementById(totalId);
-            const billList = document.getElementById(listId);
-            const grandTotal = document.getElementById(grandTotalId);
-            
-            // Calculate total
-            quantityInput.addEventListener('input', calculateTotal);
-            priceInput.addEventListener('input', calculateTotal);
-            
-            function calculateTotal() {
-                const quantity = parseFloat(quantityInput.value) || 0;
-                const price = parseFloat(priceInput.value) || 0;
-                const total = quantity * price;
-                totalInput.value = total.toFixed(2);
-            }
-            
-            // 在 setupBillForm 函数中，修改 form submit 事件处理函数
-form.addEventListener('submit', function(e) {
-    e.preventDefault();
+       // Setup bill form handlers
+function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId, billType) {
+    const quantityInput = document.getElementById(quantityId);
+    const priceInput = document.getElementById(priceId);
+    const totalInput = document.getElementById(totalId);
+    const billList = document.getElementById(listId);
+    const grandTotal = document.getElementById(grandTotalId);
     
-    const dateInput = document.getElementById(`${billType}-date`);
-    const billNoInput = document.getElementById(`${billType}-billno`);
-    const descriptionInput = document.getElementById(`${billType}-description`);
+    // Calculate total
+    quantityInput.addEventListener('input', calculateTotal);
+    priceInput.addEventListener('input', calculateTotal);
     
-    const date = dateInput.value;
-    const billNo = billNoInput.value;
-    const description = descriptionInput.value;
-    const quantity = parseFloat(quantityInput.value) || 0;
-    const price = parseFloat(priceInput.value) || 0;
-    const total = quantity * price;
-    
-    // For individual bills, get customer info
-    let customerName = '';
-    let customerAddress = '';
-    
-    if (billType === 'individual') {
-        customerName = document.getElementById('individual-customer-name').value;
-        customerAddress = document.getElementById('individual-customer-address').value;
+    function calculateTotal() {
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        const total = quantity * price;
+        totalInput.value = total.toFixed(2);
     }
     
-    const bill = {
-        id: Date.now().toString(),
-        date,
-        billNo,
-        description,
-        quantity,
-        price,
-        total,
-        type: billType,
-        customerName,
-        customerAddress
-    };
-    
-    // Add to bills array ✅ 只操作数组
-    bills[billType].push(bill);
-    
-    // ✅ 不在这里 append DOM
-    // 重新渲染整个表格
-    renderBillsByType(billType);
-    
-    // Update grand total
-    updateGrandTotal();
-    
-    // Save to Firebase
-    saveBillToFirebase(bill);
-    
-    // Show success message
-    showToast('Bill item added successfully', 'success');
-    
-    // Reset form
-    form.reset();
-    totalInput.value = '0.00';
-    
-    // Set today's date
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    let mm = today.getMonth() + 1;
-    let dd = today.getDate();
-    
-    if (dd < 10) dd = '0' + dd;
-    if (mm < 10) mm = '0' + mm;
-    
-    const formattedToday = `${yyyy}-${mm}-${dd}`;
-    dateInput.value = formattedToday;
-    
-    // Update progress view if on progress page
-    updateProgressView();
-});
-           
-            function updateGrandTotal() {
-    let total = 0;
-    const rows = billList.querySelectorAll('tr');
-    
-    rows.forEach(row => {
-        // 安全检查：确保行有足够的单元格
-        if (row.cells && row.cells.length > (billType === 'individual' ? 6 : 5)) {
-            const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
-            if (totalCell && totalCell.textContent) {
-                total += parseFloat(totalCell.textContent) || 0;
-            }
+    // 在 setupBillForm 函数中，修改 form submit 事件处理函数
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const dateInput = document.getElementById(`${billType}-date`);
+        const billNoInput = document.getElementById(`${billType}-billno`);
+        const descriptionInput = document.getElementById(`${billType}-description`);
+        
+        const date = dateInput.value;
+        const billNo = billNoInput.value;
+        const description = descriptionInput.value;
+        const quantity = parseFloat(quantityInput.value) || 0;
+        const price = parseFloat(priceInput.value) || 0;
+        const total = quantity * price;
+        
+        // For individual bills, get customer info
+        let customerName = '';
+        let customerAddress = '';
+        
+        if (billType === 'individual') {
+            customerName = document.getElementById('individual-customer-name').value;
+            customerAddress = document.getElementById('individual-customer-address').value;
         }
+        
+        const bill = {
+            id: Date.now().toString(),
+            date,
+            billNo,
+            description,
+            quantity,
+            price,
+            total,
+            type: billType,
+            customerName,
+            customerAddress
+        };
+        
+        // Add to bills array ✅ 只操作数组
+        bills[billType].push(bill);
+        
+        // ✅ 不在这里 append DOM
+        // 重新渲染整个表格
+        renderBillsByType(billType);
+        
+        // Update grand total
+        updateGrandTotal();
+        
+        // Save to Firebase
+        saveBillToFirebase(bill);
+        
+        // Show success message
+        showToast('Bill item added successfully', 'success');
+        
+        // Reset form
+        form.reset();
+        totalInput.value = '0.00';
+        
+        // Set today's date
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        let mm = today.getMonth() + 1;
+        let dd = today.getDate();
+        
+        if (dd < 10) dd = '0' + dd;
+        if (mm < 10) mm = '0' + mm;
+        
+        const formattedToday = `${yyyy}-${mm}-${dd}`;
+        dateInput.value = formattedToday;
+        
+        // Update progress view if on progress page
+        updateProgressView();
     });
+           
+    function updateGrandTotal() {
+        let total = 0;
+        const rows = billList.querySelectorAll('tr');
+        
+        rows.forEach(row => {
+            // 安全检查：确保行有足够的单元格
+            if (row.cells && row.cells.length > (billType === 'individual' ? 6 : 5)) {
+                const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
+                if (totalCell && totalCell.textContent) {
+                    total += parseFloat(totalCell.textContent) || 0;
+                }
+            }
+        });
+        
+        grandTotal.textContent = `RM ${total.toFixed(2)}`;
+    }
     
-    grandTotal.textContent = `RM ${total.toFixed(2)}`;
-}
+    // ⭐⭐ 这是关键：返回updateGrandTotal函数供外部调用 ⭐⭐
+    return updateGrandTotal;
+}  // <-- 这是setupBillForm函数的闭合大括号
         
         // Setup all bill forms
         const updatePeriodicTotal = setupBillForm(
