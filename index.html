@@ -498,6 +498,42 @@
     color: var(--text-color);
 }
 
+/* Customer search results */
+.customer-search-results {
+    position: absolute;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+    width: 100%;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.customer-result-item {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.customer-result-item:hover {
+    background-color: #f5f5f5;
+}
+
+.customer-result-item:last-child {
+    border-bottom: none;
+}
+
+/* Manual records table */
+.manual-record-row.revenue {
+    background-color: rgba(39, 174, 96, 0.1);
+}
+
+.manual-record-row.expense {
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
 /* 在响应式调整之前添加 */
 @media (max-width: 768px) {
     .theme-toggle {
@@ -506,11 +542,16 @@
         width: 40px;
         height: 40px;
     }
+    
+    .customer-search-results {
+        position: relative;
+        margin-top: 5px;
+    }
 }
     </style>
 </head>
 <body>
-    <!-- 主题切换按钮 -->
+    <!-- Theme Toggle Button -->
 <div class="theme-toggle" id="theme-toggle">
     <i class="fas fa-moon"></i>
 </div>
@@ -584,7 +625,7 @@
             <a href="#" data-page="profit-loss"><i class="fas fa-chart-line"></i> Profit & Loss</a>
             <a href="#" data-page="customer-management"><i class="fas fa-users"></i> Customer Management</a>
             <a href="#" data-page="inventory-tracking"><i class="fas fa-box"></i> Inventory Tracking</a>
-            <!-- 添加进度跟进页面 -->
+            <!-- Add progress tracking page -->
             <a href="#" data-page="progress-tracking"><i class="fas fa-clipboard-check"></i> Progress Tracking</a>
             <a href="#" data-page="more"><i class="fas fa-ellipsis-h"></i> More</a>
             <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -761,18 +802,32 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- 添加客户信息填写栏 -->
+                        <!-- Enhanced customer selection -->
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="individual-customer-name" class="form-label">Customer Name (Optional)</label>
-                                    <input type="text" class="form-control" id="individual-customer-name" placeholder="Enter customer name">
+                                    <label for="individual-customer-name" class="form-label">Customer Selection</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="individual-customer-name" 
+                                               placeholder="Enter customer name or select from existing customers" 
+                                               list="customer-suggestions">
+                                        <button class="btn btn-outline-secondary" type="button" id="clear-customer">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <datalist id="customer-suggestions">
+                                            <!-- Customer options will be populated dynamically -->
+                                        </datalist>
+                                    </div>
+                                    <div id="customer-search-results" class="customer-search-results" style="display: none;">
+                                        <!-- Search results will be displayed here -->
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label for="individual-customer-address" class="form-label">Customer Address (Optional)</label>
-                                    <input type="text" class="form-control" id="individual-customer-address" placeholder="Enter customer address">
+                                    <label for="individual-customer-address" class="form-label">Customer Address</label>
+                                    <input type="text" class="form-control" id="individual-customer-address" 
+                                           placeholder="Address will auto-fill or enter manually">
                                 </div>
                             </div>
                         </div>
@@ -1035,6 +1090,96 @@
                 <div class="chart-container">
                     <h5>Revenue vs Expenses (Last 6 Months)</h5>
                     <canvas id="profitLossChart"></canvas>
+                </div>
+                
+                <!-- Manual Revenue/Expense Entry Section -->
+                <div class="form-section">
+                    <h5>Manual Revenue/Expense Entry</h5>
+                    <form id="manual-revenue-expense-form">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="manual-type" class="form-label">Type</label>
+                                    <select class="form-select" id="manual-type" required>
+                                        <option value="revenue">Revenue</option>
+                                        <option value="expense">Expense</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="manual-category" class="form-label">Category</label>
+                                    <input type="text" class="form-control" id="manual-category" 
+                                           placeholder="e.g., Product Sales, Rent, Salary" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="manual-amount" class="form-label">Amount (RM)</label>
+                                    <input type="number" class="form-control" id="manual-amount" 
+                                           step="0.01" min="0" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="manual-description" class="form-label">Description</label>
+                                    <input type="text" class="form-control" id="manual-description" 
+                                           placeholder="Detailed description">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="manual-date" class="form-label">Date</label>
+                                    <input type="date" class="form-control" id="manual-date" required>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Add Record</button>
+                    </form>
+                </div>
+                
+                <!-- Manual Records List -->
+                <div class="form-section">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5>Manual Revenue & Expenses</h5>
+                        <button class="btn btn-success" id="generate-manual-records-pdf">
+                            <i class="fas fa-file-pdf"></i> Generate Report
+                        </button>
+                    </div>
+                    <table class="bill-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Amount (RM)</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manual-records-list">
+                            <!-- Manual records will be added here dynamically -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" style="text-align: right; font-weight: bold;">Total Revenue:</td>
+                                <td id="manual-revenue-total" style="font-weight: bold;">RM 0.00</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" style="text-align: right; font-weight: bold;">Total Expenses:</td>
+                                <td id="manual-expense-total" style="font-weight: bold;">RM 0.00</td>
+                                <td></td>
+                            </tr>
+                            <tr>
+                                <td colspan="4" style="text-align: right; font-weight: bold;">Net:</td>
+                                <td id="manual-net-total" style="font-weight: bold;">RM 0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
                 </div>
                 
                 <div class="form-section">
@@ -1664,6 +1809,7 @@
         const profitLossForm = document.getElementById('profit-loss-form');
         const customerForm = document.getElementById('customer-form');
         const inventoryForm = document.getElementById('inventory-form');
+        const manualRevenueExpenseForm = document.getElementById('manual-revenue-expense-form');
         
         // Bill Lists
         const periodicBillsList = document.getElementById('periodic-bills-list');
@@ -1673,6 +1819,7 @@
         const customersList = document.getElementById('customers-list');
         const inventoryList = document.getElementById('inventory-list');
         const progressBillsList = document.getElementById('progress-bills-list');
+        const manualRecordsList = document.getElementById('manual-records-list');
         
         // Grand Totals
         const periodicGrandTotal = document.getElementById('periodic-grand-total');
@@ -1680,6 +1827,9 @@
         const monthlyGrandTotal = document.getElementById('monthly-grand-total');
         const yearlyGrandTotal = document.getElementById('yearly-grand-total');
         const inventoryTotalValue = document.getElementById('inventory-total-value');
+        const manualRevenueTotal = document.getElementById('manual-revenue-total');
+        const manualExpenseTotal = document.getElementById('manual-expense-total');
+        const manualNetTotal = document.getElementById('manual-net-total');
         
         // PDF Generation Buttons
         const generatePeriodicPdf = document.getElementById('generate-periodic-pdf');
@@ -1689,6 +1839,7 @@
         const generateInventoryPdf = document.getElementById('generate-inventory-pdf');
         const exportInventoryCsv = document.getElementById('export-inventory-csv');
         const generateProgressReport = document.getElementById('generate-progress-report');
+        const generateManualRecordsPdf = document.getElementById('generate-manual-records-pdf');
         
         // Progress Tracking Elements
         const totalBillsCount = document.getElementById('total-bills-count');
@@ -1730,6 +1881,20 @@
         const saveBreakdownBtn = document.getElementById('save-breakdown');
         const resetBreakdownBtn = document.getElementById('reset-breakdown');
         
+        // Customer search elements
+        const customerNameInput = document.getElementById('individual-customer-name');
+        const customerAddressInput = document.getElementById('individual-customer-address');
+        const customerSuggestions = document.getElementById('customer-suggestions');
+        const customerSearchResults = document.getElementById('customer-search-results');
+        const clearCustomerBtn = document.getElementById('clear-customer');
+        
+        // Manual records elements
+        const manualTypeSelect = document.getElementById('manual-type');
+        const manualCategoryInput = document.getElementById('manual-category');
+        const manualAmountInput = document.getElementById('manual-amount');
+        const manualDescriptionInput = document.getElementById('manual-description');
+        const manualDateInput = document.getElementById('manual-date');
+        
         // Sample data for charts
         const monthlyData = {
             labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -1760,6 +1925,9 @@
         // Store bill addresses
         let billAddresses = {};
         
+        // Store manual records
+        let manualRecords = [];
+        
         // Toast notification function
         function showToast(message, type = 'info') {
             const toastContainer = document.querySelector('.toast-container');
@@ -1780,15 +1948,467 @@
             }, 5000);
         }
         
+        // ============== ENHANCED CUSTOMER SELECTION ==============
+        
+        // Initialize smart customer selection
+        function initSmartCustomerSelection() {
+            if (!customerNameInput) return;
+            
+            // Listen to customer name input
+            customerNameInput.addEventListener('input', function() {
+                const searchTerm = this.value.trim();
+                
+                if (searchTerm.length < 2) {
+                    customerSearchResults.style.display = 'none';
+                    return;
+                }
+                
+                // Search customers
+                searchCustomers(searchTerm);
+            });
+            
+            // Clear customer button
+            if (clearCustomerBtn) {
+                clearCustomerBtn.addEventListener('click', function() {
+                    customerNameInput.value = '';
+                    customerAddressInput.value = '';
+                    customerSearchResults.style.display = 'none';
+                });
+            }
+            
+            // Update datalist with customer names
+            updateCustomerDatalist();
+        }
+        
+        // Search customers function
+        function searchCustomers(searchTerm) {
+            if (!customerSearchResults) return;
+            
+            const results = customers.filter(customer => 
+                customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (customer.email && customer.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (customer.phone && customer.phone.includes(searchTerm))
+            );
+            
+            displayCustomerSearchResults(results);
+        }
+        
+        // Display customer search results
+        function displayCustomerSearchResults(results) {
+            if (!customerSearchResults) return;
+            
+            customerSearchResults.innerHTML = '';
+            
+            if (results.length === 0) {
+                customerSearchResults.innerHTML = `
+                    <div class="customer-result-item">
+                        <p class="mb-0 text-muted">No customers found. You can enter a new customer.</p>
+                    </div>
+                `;
+                customerSearchResults.style.display = 'block';
+                return;
+            }
+            
+            results.forEach(customer => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'customer-result-item';
+                resultItem.innerHTML = `
+                    <h6 class="mb-1">${customer.name}</h6>
+                    <p class="mb-1 text-muted small">
+                        ${customer.phone ? 'Phone: ' + customer.phone + ' • ' : ''}
+                        ${customer.email ? 'Email: ' + customer.email : ''}
+                    </p>
+                    <p class="mb-1 text-muted small">${customer.address || 'No address provided'}</p>
+                `;
+                
+                resultItem.addEventListener('click', function() {
+                    customerNameInput.value = customer.name;
+                    customerAddressInput.value = customer.address || '';
+                    customerSearchResults.style.display = 'none';
+                    
+                    // Show success message
+                    showToast(`Customer "${customer.name}" selected`, 'success');
+                });
+                
+                customerSearchResults.appendChild(resultItem);
+            });
+            
+            customerSearchResults.style.display = 'block';
+        }
+        
+        // Update customer datalist
+        function updateCustomerDatalist() {
+            if (!customerSuggestions) return;
+            
+            customerSuggestions.innerHTML = '';
+            customers.forEach(customer => {
+                const option = document.createElement('option');
+                option.value = customer.name;
+                customerSuggestions.appendChild(option);
+            });
+        }
+        
+        // ============== MANUAL REVENUE/EXPENSE SYSTEM ==============
+        
+        // Initialize manual revenue/expense system
+        function initManualRevenueExpenseSystem() {
+            if (!manualRevenueExpenseForm) return;
+            
+            // Set default date
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            let mm = today.getMonth() + 1;
+            let dd = today.getDate();
+            
+            if (dd < 10) dd = '0' + dd;
+            if (mm < 10) mm = '0' + mm;
+            
+            const formattedToday = `${yyyy}-${mm}-${dd}`;
+            manualDateInput.value = formattedToday;
+            
+            // Form submit handler
+            manualRevenueExpenseForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const type = manualTypeSelect.value;
+                const category = manualCategoryInput.value.trim();
+                const amount = parseFloat(manualAmountInput.value);
+                const description = manualDescriptionInput.value.trim();
+                const date = manualDateInput.value;
+                
+                if (!category || isNaN(amount) || amount <= 0) {
+                    showToast('Please enter valid category and amount', 'error');
+                    return;
+                }
+                
+                const record = {
+                    id: Date.now().toString(),
+                    type: type,
+                    category: category,
+                    amount: amount,
+                    description: description,
+                    date: date,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Add to manual records
+                manualRecords.push(record);
+                
+                // Add to UI
+                addManualRecordToUI(record);
+                
+                // Save to Firebase
+                saveManualRecordToFirebase(record);
+                
+                // Update totals
+                updateManualRecordsTotals();
+                
+                // Update charts
+                updateChartsWithManualData();
+                
+                // Show success message
+                showToast(`${type === 'revenue' ? 'Revenue' : 'Expense'} record added successfully`, 'success');
+                
+                // Reset form
+                manualCategoryInput.value = '';
+                manualAmountInput.value = '';
+                manualDescriptionInput.value = '';
+            });
+            
+            // Initialize PDF generation
+            if (generateManualRecordsPdf) {
+                generateManualRecordsPdf.addEventListener('click', generateManualRecordsPdfReport);
+            }
+            
+            // Load existing manual records
+            loadManualRecords();
+        }
+        
+        // Add manual record to UI
+        function addManualRecordToUI(record) {
+            if (!manualRecordsList) return;
+            
+            const row = document.createElement('tr');
+            row.className = `manual-record-row ${record.type}`;
+            row.innerHTML = `
+                <td>${record.date}</td>
+                <td>
+                    <span class="badge ${record.type === 'revenue' ? 'bg-success' : 'bg-danger'}">
+                        ${record.type === 'revenue' ? 'Revenue' : 'Expense'}
+                    </span>
+                </td>
+                <td>${record.category}</td>
+                <td>${record.description || '-'}</td>
+                <td>${record.amount.toFixed(2)}</td>
+                <td>
+                    <i class="fas fa-edit action-btn text-primary" onclick="editManualRecord('${record.id}')"></i>
+                    <i class="fas fa-trash action-btn text-danger" onclick="deleteManualRecord('${record.id}')"></i>
+                </td>
+            `;
+            
+            manualRecordsList.appendChild(row);
+        }
+        
+        // Update manual records totals
+        function updateManualRecordsTotals() {
+            if (!manualRevenueTotal || !manualExpenseTotal || !manualNetTotal) return;
+            
+            let totalRevenue = 0;
+            let totalExpenses = 0;
+            
+            manualRecords.forEach(record => {
+                if (record.type === 'revenue') {
+                    totalRevenue += record.amount;
+                } else if (record.type === 'expense') {
+                    totalExpenses += record.amount;
+                }
+            });
+            
+            const netTotal = totalRevenue - totalExpenses;
+            
+            manualRevenueTotal.textContent = `RM ${totalRevenue.toFixed(2)}`;
+            manualExpenseTotal.textContent = `RM ${totalExpenses.toFixed(2)}`;
+            manualNetTotal.textContent = `RM ${netTotal.toFixed(2)}`;
+            
+            // Update profit/loss page totals
+            if (plRevenue && plExpenses) {
+                // Combine with bill data for total calculation
+                let billRevenue = 0;
+                for (const type in bills) {
+                    bills[type].forEach(bill => {
+                        billRevenue += bill.total;
+                    });
+                }
+                
+                const totalCombinedRevenue = billRevenue + totalRevenue;
+                const totalCombinedExpenses = totalExpenses;
+                
+                plRevenue.textContent = `RM ${totalCombinedRevenue.toFixed(2)}`;
+                plExpenses.textContent = `RM ${totalCombinedExpenses.toFixed(2)}`;
+            }
+        }
+        
+        // Edit manual record
+        window.editManualRecord = function(recordId) {
+            const recordIndex = manualRecords.findIndex(r => r.id === recordId);
+            if (recordIndex === -1) return;
+            
+            const record = manualRecords[recordIndex];
+            
+            // Populate form
+            manualTypeSelect.value = record.type;
+            manualCategoryInput.value = record.category;
+            manualAmountInput.value = record.amount;
+            manualDescriptionInput.value = record.description || '';
+            manualDateInput.value = record.date;
+            
+            // Remove from array
+            manualRecords.splice(recordIndex, 1);
+            
+            // Remove from UI
+            const rows = manualRecordsList.querySelectorAll('tr');
+            for (let row of rows) {
+                const editBtn = row.querySelector('.fa-edit');
+                if (editBtn && editBtn.onclick.toString().includes(recordId)) {
+                    row.remove();
+                    break;
+                }
+            }
+            
+            // Update totals
+            updateManualRecordsTotals();
+            
+            // Delete from Firebase
+            deleteManualRecordFromFirebase(recordId);
+            
+            showToast('Record loaded for editing', 'info');
+        };
+        
+        // Delete manual record
+        window.deleteManualRecord = function(recordId) {
+            if (!confirm('Are you sure you want to delete this record?')) return;
+            
+            const recordIndex = manualRecords.findIndex(r => r.id === recordId);
+            if (recordIndex === -1) return;
+            
+            // Remove from array
+            manualRecords.splice(recordIndex, 1);
+            
+            // Remove from UI
+            const rows = manualRecordsList.querySelectorAll('tr');
+            for (let row of rows) {
+                const deleteBtn = row.querySelector('.fa-trash');
+                if (deleteBtn && deleteBtn.onclick.toString().includes(recordId)) {
+                    row.remove();
+                    break;
+                }
+            }
+            
+            // Update totals
+            updateManualRecordsTotals();
+            
+            // Delete from Firebase
+            deleteManualRecordFromFirebase(recordId);
+            
+            showToast('Record deleted successfully', 'success');
+        };
+        
+        // Generate manual records PDF report
+        function generateManualRecordsPdfReport() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Manual Revenue & Expenses Report', 14, 22);
+            
+            // Add date
+            doc.setFontSize(12);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+            
+            // Add summary
+            doc.setFontSize(14);
+            doc.text('Summary', 14, 40);
+            doc.setFontSize(12);
+            doc.text(`Total Revenue: ${manualRevenueTotal.textContent}`, 14, 48);
+            doc.text(`Total Expenses: ${manualExpenseTotal.textContent}`, 14, 56);
+            doc.text(`Net: ${manualNetTotal.textContent}`, 14, 64);
+            
+            // Add table
+            const tableColumn = ["Date", "Type", "Category", "Description", "Amount (RM)"];
+            const tableRows = [];
+            
+            manualRecords.forEach(record => {
+                tableRows.push([
+                    record.date,
+                    record.type === 'revenue' ? 'Revenue' : 'Expense',
+                    record.category,
+                    record.description || '-',
+                    record.amount.toFixed(2)
+                ]);
+            });
+            
+            doc.autoTable({
+                startY: 80,
+                head: [tableColumn],
+                body: tableRows,
+                theme: 'grid'
+            });
+            
+            // Save the PDF
+            doc.save('manual-records-report.pdf');
+            
+            showToast('Manual records report generated successfully', 'success');
+        }
+        
+        // Load manual records from Firebase
+        function loadManualRecords() {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('manualRecords').get()
+                .then(querySnapshot => {
+                    manualRecords = [];
+                    if (manualRecordsList) manualRecordsList.innerHTML = '';
+                    
+                    querySnapshot.forEach(doc => {
+                        const record = doc.data();
+                        manualRecords.push(record);
+                        
+                        if (manualRecordsList) {
+                            addManualRecordToUI(record);
+                        }
+                    });
+                    
+                    updateManualRecordsTotals();
+                    updateChartsWithManualData();
+                })
+                .catch(error => {
+                    console.error("Error loading manual records: ", error);
+                });
+        }
+        
+        // Save manual record to Firebase
+        function saveManualRecordToFirebase(record) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('manualRecords').doc(record.id).set(record)
+                .catch(error => {
+                    console.error("Error saving manual record: ", error);
+                    showToast('Error saving record. Please try again.', 'error');
+                });
+        }
+        
+        // Delete manual record from Firebase
+        function deleteManualRecordFromFirebase(recordId) {
+            if (!auth.currentUser) return;
+            
+            db.collection('users').doc(auth.currentUser.uid).collection('manualRecords').doc(recordId).delete()
+                .catch(error => {
+                    console.error("Error deleting manual record: ", error);
+                });
+        }
+        
+        // Update charts with manual data
+        function updateChartsWithManualData() {
+            // Destroy old chart instances
+            if (performanceChartInstance) {
+                performanceChartInstance.destroy();
+                performanceChartInstance = null;
+            }
+            
+            if (profitLossChartInstance) {
+                profitLossChartInstance.destroy();
+                profitLossChartInstance = null;
+            }
+            
+            // Reinitialize charts
+            initCharts();
+        }
+        
+        // Get enhanced chart data including manual records
+        function getEnhancedChartData() {
+            const enhancedData = {
+                labels: monthlyData.labels,
+                revenue: [...monthlyData.revenue],
+                expenses: [...monthlyData.expenses]
+            };
+            
+            // Add manual records to chart data (simplified - in real app you'd aggregate by month)
+            let manualRevenueTotal = 0;
+            let manualExpenseTotal = 0;
+            
+            manualRecords.forEach(record => {
+                if (record.type === 'revenue') {
+                    manualRevenueTotal += record.amount;
+                } else if (record.type === 'expense') {
+                    manualExpenseTotal += record.amount;
+                }
+            });
+            
+            // Distribute manual totals across months (simplified)
+            const months = enhancedData.labels.length;
+            const monthlyManualRevenue = manualRevenueTotal / months;
+            const monthlyManualExpense = manualExpenseTotal / months;
+            
+            for (let i = 0; i < months; i++) {
+                enhancedData.revenue[i] += monthlyManualRevenue;
+                enhancedData.expenses[i] += monthlyManualExpense;
+            }
+            
+            return enhancedData;
+        }
+        
+        // ============== EXISTING CODE CONTINUES ==============
+        
         // Initialize progress tracking
         function initProgressTracking() {
             setDefaultProgressDates();
             
             // Add event listeners
-            applyProgressFilter.addEventListener('click', filterProgressBills);
-            generateProgressReport.addEventListener('click', generateProgressPdf);
-            addProgressUpdate.addEventListener('click', showProgressUpdateModal);
-            saveProgressUpdate.addEventListener('click', saveProgressUpdateHandler);
+            if (applyProgressFilter) applyProgressFilter.addEventListener('click', filterProgressBills);
+            if (generateProgressReport) generateProgressReport.addEventListener('click', generateProgressPdf);
+            if (addProgressUpdate) addProgressUpdate.addEventListener('click', showProgressUpdateModal);
+            if (saveProgressUpdate) saveProgressUpdate.addEventListener('click', saveProgressUpdateHandler);
             
             // Load progress data
             loadProgressData();
@@ -1817,8 +2437,8 @@
             
             const formattedFirstDay = `${yyyy2}-${mm2}-${dd2}`;
             
-            progressDateFrom.value = formattedFirstDay;
-            progressDateTo.value = formattedToday;
+            if (progressDateFrom) progressDateFrom.value = formattedFirstDay;
+            if (progressDateTo) progressDateTo.value = formattedToday;
         }
         
         // Load progress data from Firebase
@@ -1859,262 +2479,256 @@
         }
         
         function updateProgressView() {
-    // 安全检查
-    if (!progressBillsList) return;
+            if (!progressBillsList) return;
 
-    // 清空表格
-    progressBillsList.innerHTML = '';
+            // Clear table
+            progressBillsList.innerHTML = '';
 
-    // 合并所有 bills
-    const allBills = [];
-    for (const type in bills) {
-        if (Array.isArray(bills[type])) {
-            bills[type].forEach(bill => {
-                if (bill && bill.id) {
-                    allBills.push(bill);
+            // Combine all bills
+            const allBills = [];
+            for (const type in bills) {
+                if (Array.isArray(bills[type])) {
+                    bills[type].forEach(bill => {
+                        if (bill && bill.id) {
+                            allBills.push(bill);
+                        }
+                    });
                 }
+            }
+
+            // Show message if no bills
+            if (allBills.length === 0) {
+                progressBillsList.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="text-center text-muted">
+                            No bills yet
+                        </td>
+                    </tr>
+                `;
+
+                if (totalBillsCount) totalBillsCount.textContent = 0;
+                if (recordedBillsCount) recordedBillsCount.textContent = 0;
+                if (paidBillsCount) paidBillsCount.textContent = 0;
+                if (overdueBillsCount) overdueBillsCount.textContent = 0;
+                return;
+            }
+
+            // Counters
+            let total = 0;
+            let recorded = 0;
+            let paid = 0;
+            let overdue = 0;
+
+            // Render table
+            allBills.forEach(bill => {
+                const billProgress = progressUpdates[bill.id] || [];
+                const latestUpdate = billProgress.length
+                    ? billProgress[billProgress.length - 1]
+                    : { status: 'pending' };
+
+                total++;
+                if (latestUpdate.status === 'recorded') recorded++;
+                if (latestUpdate.status === 'paid') paid++;
+                if (latestUpdate.status === 'overdue') overdue++;
+
+                const customerName = bill.customerName || 'N/A';
+
+                // Map link
+                let mapLink = 'No address';
+                const address = billAddresses[bill.id] || bill.customerAddress;
+                if (address) {
+                    const encoded = encodeURIComponent(address);
+                    mapLink = `
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encoded}" 
+                           target="_blank" class="map-link">
+                            <i class="fas fa-map-marker-alt"></i> View
+                        </a>
+                    `;
+                }
+
+                const totalAmount = Number(bill.total) || 0;
+                const lastUpdateDate = billProgress.length
+                    ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString()
+                    : 'Never';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${bill.date || '-'}</td>
+                    <td>${bill.billNo || '-'}</td>
+                    <td>${bill.description || '-'}</td>
+                    <td>${customerName}</td>
+                    <td>${totalAmount.toFixed(2)}</td>
+                    <td>
+                        <span class="status-badge status-${latestUpdate.status}">
+                            ${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}
+                        </span>
+                    </td>
+                    <td>${mapLink}</td>
+                    <td>${lastUpdateDate}</td>
+                    <td>
+                        ${
+                            billProgress.length
+                                ? `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
+                                    <i class="fas fa-eye"></i> View (${billProgress.length})
+                                   </button>`
+                                : 'No updates'
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </button>
+                    </td>
+                `;
+
+                progressBillsList.appendChild(row);
             });
+
+            // Update statistics
+            if (totalBillsCount) totalBillsCount.textContent = total;
+            if (recordedBillsCount) recordedBillsCount.textContent = recorded;
+            if (paidBillsCount) paidBillsCount.textContent = paid;
+            if (overdueBillsCount) overdueBillsCount.textContent = overdue;
         }
-    }
-
-    // === ⭐ 没有任何数据时，直接显示提示并 return ===
-    if (allBills.length === 0) {
-        progressBillsList.innerHTML = `
-            <tr>
-                <td colspan="10" class="text-center text-muted">
-                    No bills yet
-                </td>
-            </tr>
-        `;
-
-        totalBillsCount.textContent = 0;
-        recordedBillsCount.textContent = 0;
-        paidBillsCount.textContent = 0;
-        overdueBillsCount.textContent = 0;
-        return;
-    }
-
-    // 计数器
-    let total = 0;
-    let recorded = 0;
-    let paid = 0;
-    let overdue = 0;
-
-    // 渲染表格
-    allBills.forEach(bill => {
-        const billProgress = progressUpdates[bill.id] || [];
-        const latestUpdate = billProgress.length
-            ? billProgress[billProgress.length - 1]
-            : { status: 'pending' };
-
-        total++;
-        if (latestUpdate.status === 'recorded') recorded++;
-        if (latestUpdate.status === 'paid') paid++;
-        if (latestUpdate.status === 'overdue') overdue++;
-
-        const customerName = bill.customerName || 'N/A';
-
-        // 地图链接
-        let mapLink = 'No address';
-        const address = billAddresses[bill.id] || bill.customerAddress;
-        if (address) {
-            const encoded = encodeURIComponent(address);
-            mapLink = `
-                <a href="https://www.google.com/maps/search/?api=1&query=${encoded}" 
-                   target="_blank" class="map-link">
-                    <i class="fas fa-map-marker-alt"></i> View
-                </a>
-            `;
-        }
-
-        const totalAmount = Number(bill.total) || 0;
-        const lastUpdateDate = billProgress.length
-            ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString()
-            : 'Never';
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${bill.date || '-'}</td>
-            <td>${bill.billNo || '-'}</td>
-            <td>${bill.description || '-'}</td>
-            <td>${customerName}</td>
-            <td>${totalAmount.toFixed(2)}</td>
-            <td>
-                <span class="status-badge status-${latestUpdate.status}">
-                    ${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}
-                </span>
-            </td>
-            <td>${mapLink}</td>
-            <td>${lastUpdateDate}</td>
-            <td>
-                ${
-                    billProgress.length
-                        ? `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
-                            <i class="fas fa-eye"></i> View (${billProgress.length})
-                           </button>`
-                        : 'No updates'
-                }
-            </td>
-            <td>
-                <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
-                    <i class="fas fa-map-marker-alt"></i>
-                </button>
-            </td>
-        `;
-
-        progressBillsList.appendChild(row);
-    });
-
-    // 更新统计
-    totalBillsCount.textContent = total;
-    recordedBillsCount.textContent = recorded;
-    paidBillsCount.textContent = paid;
-    overdueBillsCount.textContent = overdue;
-}
-
         
        function filterProgressBills() {
-    if (!progressBillsList) return;
+            if (!progressBillsList) return;
 
-    const statusFilter = progressStatusFilter.value;
-    const dateFrom = progressDateFrom.value ? new Date(progressDateFrom.value) : null;
-    const dateTo = progressDateTo.value ? new Date(progressDateTo.value) : null;
+            const statusFilter = progressStatusFilter.value;
+            const dateFrom = progressDateFrom.value ? new Date(progressDateFrom.value) : null;
+            const dateTo = progressDateTo.value ? new Date(progressDateTo.value) : null;
 
-    if (dateTo) dateTo.setDate(dateTo.getDate() + 1);
+            if (dateTo) dateTo.setDate(dateTo.getDate() + 1);
 
-    // 清空表格
-    progressBillsList.innerHTML = '';
+            // Clear table
+            progressBillsList.innerHTML = '';
 
-    // 合并 bills（安全）
-    const allBills = [];
-    for (const type in bills) {
-        if (Array.isArray(bills[type])) {
-            bills[type].forEach(bill => {
-                if (bill && bill.id) allBills.push(bill);
-            });
-        }
-    }
-
-    // 计数器
-    let total = 0;
-    let recorded = 0;
-    let paid = 0;
-    let overdue = 0;
-
-    let hasResult = false;
-
-    allBills.forEach(bill => {
-        // 日期过滤（安全）
-        if (dateFrom || dateTo) {
-            if (!bill.date) return;
-            const billDate = new Date(bill.date);
-            if (isNaN(billDate)) return;
-            if (dateFrom && billDate < dateFrom) return;
-            if (dateTo && billDate >= dateTo) return;
-        }
-
-        const billProgress = progressUpdates[bill.id] || [];
-        const latestUpdate = billProgress.length
-            ? billProgress[billProgress.length - 1]
-            : { status: 'pending' };
-
-        if (statusFilter !== 'all' && latestUpdate.status !== statusFilter) return;
-
-        hasResult = true;
-        total++;
-
-        if (latestUpdate.status === 'recorded') recorded++;
-        if (latestUpdate.status === 'paid') paid++;
-        if (latestUpdate.status === 'overdue') overdue++;
-
-        const customerName = bill.customerName || 'N/A';
-
-        // 地址
-        let mapLink = 'No address';
-        const address = billAddresses[bill.id] || bill.customerAddress;
-        if (address) {
-            const encoded = encodeURIComponent(address);
-            mapLink = `
-                <a href="https://www.google.com/maps/search/?api=1&query=${encoded}" 
-                   target="_blank" class="map-link">
-                    <i class="fas fa-map-marker-alt"></i> View
-                </a>
-            `;
-        }
-
-        const totalAmount = Number(bill.total) || 0;
-        const lastUpdateDate = billProgress.length
-            ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString()
-            : 'Never';
-
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${bill.date || '-'}</td>
-            <td>${bill.billNo || '-'}</td>
-            <td>${bill.description || '-'}</td>
-            <td>${customerName}</td>
-            <td>${totalAmount.toFixed(2)}</td>
-            <td>
-                <span class="status-badge status-${latestUpdate.status}">
-                    ${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}
-                </span>
-            </td>
-            <td>${mapLink}</td>
-            <td>${lastUpdateDate}</td>
-            <td>
-                ${
-                    billProgress.length
-                        ? `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
-                            <i class="fas fa-eye"></i> View (${billProgress.length})
-                           </button>`
-                        : 'No updates'
+            // Combine bills (safely)
+            const allBills = [];
+            for (const type in bills) {
+                if (Array.isArray(bills[type])) {
+                    bills[type].forEach(bill => {
+                        if (bill && bill.id) allBills.push(bill);
+                    });
                 }
-            </td>
-            <td>
-                <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
-                    <i class="fas fa-map-marker-alt"></i>
-                </button>
-            </td>
-        `;
+            }
 
-        progressBillsList.appendChild(row);
-    });
+            // Counters
+            let total = 0;
+            let recorded = 0;
+            let paid = 0;
+            let overdue = 0;
 
-    // ⭐ 无结果提示（非常关键）
-    if (!hasResult) {
-        progressBillsList.innerHTML = `
-            <tr>
-                <td colspan="10" class="text-center text-muted">
-                    No bills match the selected filter
-                </td>
-            </tr>
-        `;
-    }
+            let hasResult = false;
 
-    // 更新统计
-    totalBillsCount.textContent = total;
-    recordedBillsCount.textContent = recorded;
-    paidBillsCount.textContent = paid;
-    overdueBillsCount.textContent = overdue;
-}
+            allBills.forEach(bill => {
+                // Date filtering (safely)
+                if (dateFrom || dateTo) {
+                    if (!bill.date) return;
+                    const billDate = new Date(bill.date);
+                    if (isNaN(billDate)) return;
+                    if (dateFrom && billDate < dateFrom) return;
+                    if (dateTo && billDate >= dateTo) return;
+                }
 
+                const billProgress = progressUpdates[bill.id] || [];
+                const latestUpdate = billProgress.length
+                    ? billProgress[billProgress.length - 1]
+                    : { status: 'pending' };
+
+                if (statusFilter !== 'all' && latestUpdate.status !== statusFilter) return;
+
+                hasResult = true;
+                total++;
+
+                if (latestUpdate.status === 'recorded') recorded++;
+                if (latestUpdate.status === 'paid') paid++;
+                if (latestUpdate.status === 'overdue') overdue++;
+
+                const customerName = bill.customerName || 'N/A';
+
+                // Address
+                let mapLink = 'No address';
+                const address = billAddresses[bill.id] || bill.customerAddress;
+                if (address) {
+                    const encoded = encodeURIComponent(address);
+                    mapLink = `
+                        <a href="https://www.google.com/maps/search/?api=1&query=${encoded}" 
+                           target="_blank" class="map-link">
+                            <i class="fas fa-map-marker-alt"></i> View
+                        </a>
+                    `;
+                }
+
+                const totalAmount = Number(bill.total) || 0;
+                const lastUpdateDate = billProgress.length
+                    ? new Date(billProgress[billProgress.length - 1].date).toLocaleDateString()
+                    : 'Never';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${bill.date || '-'}</td>
+                    <td>${bill.billNo || '-'}</td>
+                    <td>${bill.description || '-'}</td>
+                    <td>${customerName}</td>
+                    <td>${totalAmount.toFixed(2)}</td>
+                    <td>
+                        <span class="status-badge status-${latestUpdate.status}">
+                            ${latestUpdate.status.charAt(0).toUpperCase() + latestUpdate.status.slice(1)}
+                        </span>
+                    </td>
+                    <td>${mapLink}</td>
+                    <td>${lastUpdateDate}</td>
+                    <td>
+                        ${
+                            billProgress.length
+                                ? `<button class="btn btn-sm btn-info" onclick="viewProgressUpdates('${bill.id}')">
+                                    <i class="fas fa-eye"></i> View (${billProgress.length})
+                                   </button>`
+                                : 'No updates'
+                        }
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="updateBillProgress('${bill.id}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="addBillAddress('${bill.id}')">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </button>
+                    </td>
+                `;
+
+                progressBillsList.appendChild(row);
+            });
+
+            // Show message if no results
+            if (!hasResult) {
+                progressBillsList.innerHTML = `
+                    <tr>
+                        <td colspan="10" class="text-center text-muted">
+                            No bills match the selected filter
+                        </td>
+                    </tr>
+                `;
+            }
+
+            // Update statistics
+            if (totalBillsCount) totalBillsCount.textContent = total;
+            if (recordedBillsCount) recordedBillsCount.textContent = recorded;
+            if (paidBillsCount) paidBillsCount.textContent = paid;
+            if (overdueBillsCount) overdueBillsCount.textContent = overdue;
+        }
         
         // Show progress update modal
         function showProgressUpdateModal() {
-            // This function would show a modal to add a general progress update
-            // For simplicity, we'll just show a toast notification
             showToast('Use the Update button next to each bill to add progress updates', 'info');
         }
         
         // Update bill progress
         window.updateBillProgress = function(billId) {
-            // Find the bill
             let bill = null;
             for (const type in bills) {
                 bill = bills[type].find(b => b.id === billId);
@@ -2144,7 +2758,6 @@
         
         // Add bill address
         window.addBillAddress = function(billId) {
-            // Find the bill
             let bill = null;
             for (const type in bills) {
                 bill = bills[type].find(b => b.id === billId);
@@ -2171,6 +2784,7 @@
         // Update map preview
         function updateMapPreview(address) {
             const mapPreview = document.getElementById('map-preview');
+            if (!mapPreview) return;
             
             if (address) {
                 const encodedAddress = encodeURIComponent(address);
@@ -2221,111 +2835,117 @@
             
             // Hide modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('progressUpdateModal'));
-            modal.hide();
+            if (modal) modal.hide();
             
             // Show success message
             showToast('Progress update saved successfully', 'success');
         }
         
         // Save bill address
-        document.getElementById('save-bill-address').addEventListener('click', function() {
-            const billId = document.getElementById('address-bill-id').value;
-            const address = document.getElementById('bill-address').value;
-            
-            if (!billId) return;
-            
-            // Save address
-            billAddresses[billId] = address;
-            
-            // Save to Firebase
-            saveBillAddressToFirebase(billId, address);
-            
-            // Update view
-            updateProgressView();
-            
-            // Hide modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('billAddressModal'));
-            modal.hide();
-            
-            // Show success message
-            showToast('Bill address saved successfully', 'success');
-        });
+        const saveBillAddressBtn = document.getElementById('save-bill-address');
+        if (saveBillAddressBtn) {
+            saveBillAddressBtn.addEventListener('click', function() {
+                const billId = document.getElementById('address-bill-id').value;
+                const address = document.getElementById('bill-address').value;
+                
+                if (!billId) return;
+                
+                // Save address
+                billAddresses[billId] = address;
+                
+                // Save to Firebase
+                saveBillAddressToFirebase(billId, address);
+                
+                // Update view
+                updateProgressView();
+                
+                // Hide modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('billAddressModal'));
+                if (modal) modal.hide();
+                
+                // Show success message
+                showToast('Bill address saved successfully', 'success');
+            });
+        }
         
         // Update map preview when address changes
-        document.getElementById('bill-address').addEventListener('input', function() {
-            updateMapPreview(this.value);
-        });
+        const billAddressInput = document.getElementById('bill-address');
+        if (billAddressInput) {
+            billAddressInput.addEventListener('input', function() {
+                updateMapPreview(this.value);
+            });
+        }
         
         // View progress updates
-window.viewProgressUpdates = function(billId) {
-    const billProgress = progressUpdates[billId] || [];
-    
-    if (billProgress.length === 0) {
-        showToast('No progress updates for this bill', 'info');
-        return;
-    }
-    
-    // 移除已存在的模态框
-    const existingModal = document.querySelector('.progress-updates-modal');
-    if (existingModal) existingModal.remove();
-    
-    // 创建模态框内容
-    let content = '<div class="progress-updates" style="max-height: 400px; overflow-y: auto;">';
-    billProgress.forEach(update => {
-        content += `
-            <div class="progress-update mb-3 p-3 rounded" style="background-color: var(--card-bg); border-left: 4px solid ${getStatusColor(update.status)}">
-                <p class="mb-1"><strong>${update.status.charAt(0).toUpperCase() + update.status.slice(1)}</strong> - ${new Date(update.date).toLocaleDateString()}</p>
-                <p class="mb-1">${update.notes || 'No notes'}</p>
-                <small class="text-muted">Updated: ${new Date(update.createdAt).toLocaleString()}</small>
-            </div>
-        `;
-    });
-    content += '</div>';
-    
-    // 创建模态框
-    const modalHTML = `
-        <div class="modal fade progress-updates-modal" tabindex="-1">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Progress Updates</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        window.viewProgressUpdates = function(billId) {
+            const billProgress = progressUpdates[billId] || [];
+            
+            if (billProgress.length === 0) {
+                showToast('No progress updates for this bill', 'info');
+                return;
+            }
+            
+            // Remove existing modal
+            const existingModal = document.querySelector('.progress-updates-modal');
+            if (existingModal) existingModal.remove();
+            
+            // Create modal content
+            let content = '<div class="progress-updates" style="max-height: 400px; overflow-y: auto;">';
+            billProgress.forEach(update => {
+                content += `
+                    <div class="progress-update mb-3 p-3 rounded" style="background-color: var(--card-bg); border-left: 4px solid ${getStatusColor(update.status)}">
+                        <p class="mb-1"><strong>${update.status.charAt(0).toUpperCase() + update.status.slice(1)}</strong> - ${new Date(update.date).toLocaleDateString()}</p>
+                        <p class="mb-1">${update.notes || 'No notes'}</p>
+                        <small class="text-muted">Updated: ${new Date(update.createdAt).toLocaleString()}</small>
                     </div>
-                    <div class="modal-body">
-                        ${content}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                `;
+            });
+            content += '</div>';
+            
+            // Create modal
+            const modalHTML = `
+                <div class="modal fade progress-updates-modal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Progress Updates</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                ${content}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    `;
-    
-    // 添加到 DOM
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    
-    // 显示模态框
-    const modalElement = document.querySelector('.progress-updates-modal');
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
-    
-    // 清理
-    modalElement.addEventListener('hidden.bs.modal', function() {
-        this.remove();
-    });
-};
+            `;
+            
+            // Add to DOM
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+            
+            // Show modal
+            const modalElement = document.querySelector('.progress-updates-modal');
+            const modal = new bootstrap.Modal(modalElement);
+            modal.show();
+            
+            // Cleanup
+            modalElement.addEventListener('hidden.bs.modal', function() {
+                this.remove();
+            });
+        };
 
-// 添加状态颜色辅助函数
-function getStatusColor(status) {
-    const colors = {
-        'pending': '#ffc107',
-        'recorded': '#17a2b8',
-        'paid': '#28a745',
-        'overdue': '#dc3545'
-    };
-    return colors[status] || '#6c757d';
-}
+        // Add status color helper function
+        function getStatusColor(status) {
+            const colors = {
+                'pending': '#ffc107',
+                'recorded': '#17a2b8',
+                'paid': '#28a745',
+                'overdue': '#dc3545'
+            };
+            return colors[status] || '#6c757d';
+        }
         
         // Generate progress PDF report
         function generateProgressPdf() {
@@ -2414,9 +3034,9 @@ function getStatusColor(status) {
             loadBreakdownData();
             
             // Add event listeners
-            addBreakdownItemBtn.addEventListener('click', addBreakdownItem);
-            saveBreakdownBtn.addEventListener('click', saveBreakdownData);
-            resetBreakdownBtn.addEventListener('click', resetBreakdownData);
+            if (addBreakdownItemBtn) addBreakdownItemBtn.addEventListener('click', addBreakdownItem);
+            if (saveBreakdownBtn) saveBreakdownBtn.addEventListener('click', saveBreakdownData);
+            if (resetBreakdownBtn) resetBreakdownBtn.addEventListener('click', resetBreakdownData);
         }
         
         // Add new breakdown item
@@ -2435,68 +3055,66 @@ function getStatusColor(status) {
         }
         
         function renderBreakdownItem(item) {
-    if (!item || !item.id) return;
+            if (!item || !item.id) return;
 
-    // ⭐ 如果已存在同 ID 行，直接更新而不是新增
-    let row = plBreakdown.querySelector(`tr[data-id="${item.id}"]`);
+            let row = plBreakdown.querySelector(`tr[data-id="${item.id}"]`);
 
-    if (!row) {
-        row = document.createElement('tr');
-        row.setAttribute('data-id', item.id);
-        plBreakdown.appendChild(row);
-    }
-
-    const amount = Number(item.amount) || 0;
-    const percentage = Number(item.percentage) || 0;
-
-    row.innerHTML = `
-        <td>
-            <span class="editable-field" contenteditable="true" data-field="category">
-                ${item.category || ''}
-            </span>
-        </td>
-        <td>
-            <span class="editable-field" contenteditable="true" data-field="amount">
-                ${amount}
-            </span>
-        </td>
-        <td>
-            <span class="editable-field" contenteditable="true" data-field="percentage">
-                ${percentage}
-            </span>%
-        </td>
-        <td>
-            <select class="form-select form-select-sm trend-select" data-field="trend">
-                <option value="up" ${item.trend === 'up' ? 'selected' : ''}>↑ Increase</option>
-                <option value="down" ${item.trend === 'down' ? 'selected' : ''}>↓ Decrease</option>
-                <option value="stable" ${item.trend === 'stable' ? 'selected' : ''}>→ Stable</option>
-            </select>
-        </td>
-        <td>
-            <i class="fas fa-trash action-btn text-danger"
-               onclick="deleteBreakdownItem('${item.id}')"></i>
-        </td>
-    `;
-
-    // ⭐ 重新绑定事件（避免重复）
-    row.querySelectorAll('.editable-field').forEach(field => {
-        field.onblur = function () {
-            const fieldName = this.dataset.field;
-            let value = this.textContent.trim();
-
-            if (fieldName !== 'category') {
-                value = Number(value) || 0;
+            if (!row) {
+                row = document.createElement('tr');
+                row.setAttribute('data-id', item.id);
+                plBreakdown.appendChild(row);
             }
 
-            updateBreakdownItem(item.id, fieldName, value);
-        };
-    });
+            const amount = Number(item.amount) || 0;
+            const percentage = Number(item.percentage) || 0;
 
-    row.querySelector('.trend-select').onchange = function () {
-        updateBreakdownItem(item.id, 'trend', this.value);
-    };
-}
+            row.innerHTML = `
+                <td>
+                    <span class="editable-field" contenteditable="true" data-field="category">
+                        ${item.category || ''}
+                    </span>
+                </td>
+                <td>
+                    <span class="editable-field" contenteditable="true" data-field="amount">
+                        ${amount}
+                    </span>
+                </td>
+                <td>
+                    <span class="editable-field" contenteditable="true" data-field="percentage">
+                        ${percentage}
+                    </span>%
+                </td>
+                <td>
+                    <select class="form-select form-select-sm trend-select" data-field="trend">
+                        <option value="up" ${item.trend === 'up' ? 'selected' : ''}>↑ Increase</option>
+                        <option value="down" ${item.trend === 'down' ? 'selected' : ''}>↓ Decrease</option>
+                        <option value="stable" ${item.trend === 'stable' ? 'selected' : ''}>→ Stable</option>
+                    </select>
+                </td>
+                <td>
+                    <i class="fas fa-trash action-btn text-danger"
+                       onclick="deleteBreakdownItem('${item.id}')"></i>
+                </td>
+            `;
 
+            // Rebind events
+            row.querySelectorAll('.editable-field').forEach(field => {
+                field.onblur = function () {
+                    const fieldName = this.dataset.field;
+                    let value = this.textContent.trim();
+
+                    if (fieldName !== 'category') {
+                        value = Number(value) || 0;
+                    }
+
+                    updateBreakdownItem(item.id, fieldName, value);
+                };
+            });
+
+            row.querySelector('.trend-select').onchange = function () {
+                updateBreakdownItem(item.id, 'trend', this.value);
+            };
+        }
         
         // Update breakdown item
         function updateBreakdownItem(id, field, value) {
@@ -2634,160 +3252,161 @@ function getStatusColor(status) {
         });
         
         // Navigation
-        // 在导航事件监听器中添加图表重绘
-navLinks.forEach(link => {
-    link.addEventListener('click', function(e) {
-        e.preventDefault();
-        const targetPage = this.getAttribute('data-page');
-        
-        // Update active navigation link
-        navLinks.forEach(navLink => navLink.classList.remove('active'));
-        this.classList.add('active');
-        
-        // Show target page
-        pages.forEach(page => page.classList.remove('active'));
-        document.getElementById(targetPage).classList.add('active');
-        
-        // 重新初始化图表
-        setTimeout(() => {
-            initCharts();
-        }, 100);
-        
-        // If navigating to dashboard, update it
-        if (targetPage === 'dashboard') {
-            updateDashboard();
-        }
-        
-        // If navigating to profit-loss, update it
-        if (targetPage === 'profit-loss') {
-            updateProfitLoss();
-        }
-        
-        // If navigating to inventory-tracking, update it
-        if (targetPage === 'inventory-tracking') {
-            updateInventoryList();
-        }
-        
-        // If navigating to progress-tracking, update it
-        if (targetPage === 'progress-tracking') {
-            updateProgressView();
-        }
-    });
-});
-        
-        // Setup bill form handlers
-       // Setup bill form handlers
-function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId, billType) {
-    const quantityInput = document.getElementById(quantityId);
-    const priceInput = document.getElementById(priceId);
-    const totalInput = document.getElementById(totalId);
-    const billList = document.getElementById(listId);
-    const grandTotal = document.getElementById(grandTotalId);
-    
-    // Calculate total
-    quantityInput.addEventListener('input', calculateTotal);
-    priceInput.addEventListener('input', calculateTotal);
-    
-    function calculateTotal() {
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const price = parseFloat(priceInput.value) || 0;
-        const total = quantity * price;
-        totalInput.value = total.toFixed(2);
-    }
-    
-    // 在 setupBillForm 函数中，修改 form submit 事件处理函数
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const dateInput = document.getElementById(`${billType}-date`);
-        const billNoInput = document.getElementById(`${billType}-billno`);
-        const descriptionInput = document.getElementById(`${billType}-description`);
-        
-        const date = dateInput.value;
-        const billNo = billNoInput.value;
-        const description = descriptionInput.value;
-        const quantity = parseFloat(quantityInput.value) || 0;
-        const price = parseFloat(priceInput.value) || 0;
-        const total = quantity * price;
-        
-        // For individual bills, get customer info
-        let customerName = '';
-        let customerAddress = '';
-        
-        if (billType === 'individual') {
-            customerName = document.getElementById('individual-customer-name').value;
-            customerAddress = document.getElementById('individual-customer-address').value;
-        }
-        
-        const bill = {
-            id: Date.now().toString(),
-            date,
-            billNo,
-            description,
-            quantity,
-            price,
-            total,
-            type: billType,
-            customerName,
-            customerAddress
-        };
-        
-        // Add to bills array ✅ 只操作数组
-        bills[billType].push(bill);
-        
-        // ✅ 不在这里 append DOM
-        // 重新渲染整个表格
-        renderBillsByType(billType);
-        
-        // Update grand total
-        updateGrandTotal();
-        
-        // Save to Firebase
-        saveBillToFirebase(bill);
-        
-        // Show success message
-        showToast('Bill item added successfully', 'success');
-        
-        // Reset form
-        form.reset();
-        totalInput.value = '0.00';
-        
-        // Set today's date
-        const today = new Date();
-        const yyyy = today.getFullYear();
-        let mm = today.getMonth() + 1;
-        let dd = today.getDate();
-        
-        if (dd < 10) dd = '0' + dd;
-        if (mm < 10) mm = '0' + mm;
-        
-        const formattedToday = `${yyyy}-${mm}-${dd}`;
-        dateInput.value = formattedToday;
-        
-        // Update progress view if on progress page
-        updateProgressView();
-    });
-           
-    function updateGrandTotal() {
-        let total = 0;
-        const rows = billList.querySelectorAll('tr');
-        
-        rows.forEach(row => {
-            // 安全检查：确保行有足够的单元格
-            if (row.cells && row.cells.length > (billType === 'individual' ? 6 : 5)) {
-                const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
-                if (totalCell && totalCell.textContent) {
-                    total += parseFloat(totalCell.textContent) || 0;
+        navLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetPage = this.getAttribute('data-page');
+                
+                // Update active navigation link
+                navLinks.forEach(navLink => navLink.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Show target page
+                pages.forEach(page => page.classList.remove('active'));
+                document.getElementById(targetPage).classList.add('active');
+                
+                // Reinitialize charts
+                setTimeout(() => {
+                    initCharts();
+                }, 100);
+                
+                // If navigating to dashboard, update it
+                if (targetPage === 'dashboard') {
+                    updateDashboard();
                 }
-            }
+                
+                // If navigating to profit-loss, update it
+                if (targetPage === 'profit-loss') {
+                    updateProfitLoss();
+                }
+                
+                // If navigating to inventory-tracking, update it
+                if (targetPage === 'inventory-tracking') {
+                    updateInventoryList();
+                }
+                
+                // If navigating to progress-tracking, update it
+                if (targetPage === 'progress-tracking') {
+                    updateProgressView();
+                }
+            });
         });
         
-        grandTotal.textContent = `RM ${total.toFixed(2)}`;
-    }
-    
-    // ⭐⭐ 这是关键：返回updateGrandTotal函数供外部调用 ⭐⭐
-    return updateGrandTotal;
-}  // <-- 这是setupBillForm函数的闭合大括号
+        // Setup bill form handlers
+        function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId, billType) {
+            const quantityInput = document.getElementById(quantityId);
+            const priceInput = document.getElementById(priceId);
+            const totalInput = document.getElementById(totalId);
+            const billList = document.getElementById(listId);
+            const grandTotal = document.getElementById(grandTotalId);
+            
+            // Calculate total
+            if (quantityInput && priceInput && totalInput) {
+                quantityInput.addEventListener('input', calculateTotal);
+                priceInput.addEventListener('input', calculateTotal);
+                
+                function calculateTotal() {
+                    const quantity = parseFloat(quantityInput.value) || 0;
+                    const price = parseFloat(priceInput.value) || 0;
+                    const total = quantity * price;
+                    totalInput.value = total.toFixed(2);
+                }
+            }
+            
+            // Form submit handler
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const dateInput = document.getElementById(`${billType}-date`);
+                const billNoInput = document.getElementById(`${billType}-billno`);
+                const descriptionInput = document.getElementById(`${billType}-description`);
+                
+                const date = dateInput.value;
+                const billNo = billNoInput.value;
+                const description = descriptionInput.value;
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const total = quantity * price;
+                
+                // For individual bills, get customer info
+                let customerName = '';
+                let customerAddress = '';
+                
+                if (billType === 'individual') {
+                    customerName = document.getElementById('individual-customer-name').value;
+                    customerAddress = document.getElementById('individual-customer-address').value;
+                }
+                
+                const bill = {
+                    id: Date.now().toString(),
+                    date,
+                    billNo,
+                    description,
+                    quantity,
+                    price,
+                    total,
+                    type: billType,
+                    customerName,
+                    customerAddress
+                };
+                
+                // Add to bills array
+                bills[billType].push(bill);
+                
+                // Re-render entire table
+                renderBillsByType(billType);
+                
+                // Update grand total
+                updateGrandTotal();
+                
+                // Save to Firebase
+                saveBillToFirebase(bill);
+                
+                // Show success message
+                showToast('Bill item added successfully', 'success');
+                
+                // Reset form
+                form.reset();
+                totalInput.value = '0.00';
+                
+                // Set today's date
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                let mm = today.getMonth() + 1;
+                let dd = today.getDate();
+                
+                if (dd < 10) dd = '0' + dd;
+                if (mm < 10) mm = '0' + mm;
+                
+                const formattedToday = `${yyyy}-${mm}-${dd}`;
+                dateInput.value = formattedToday;
+                
+                // Update progress view if on progress page
+                updateProgressView();
+            });
+                   
+            function updateGrandTotal() {
+                let total = 0;
+                const rows = billList.querySelectorAll('tr');
+                
+                rows.forEach(row => {
+                    // Safety check: ensure row has enough cells
+                    if (row.cells && row.cells.length > (billType === 'individual' ? 6 : 5)) {
+                        const totalCell = billType === 'individual' ? row.cells[6] : row.cells[5];
+                        if (totalCell && totalCell.textContent) {
+                            total += parseFloat(totalCell.textContent) || 0;
+                        }
+                    }
+                });
+                
+                if (grandTotal) {
+                    grandTotal.textContent = `RM ${total.toFixed(2)}`;
+                }
+            }
+            
+            // Return updateGrandTotal function for external calls
+            return updateGrandTotal;
+        }
         
         // Setup all bill forms
         const updatePeriodicTotal = setupBillForm(
@@ -2831,56 +3450,58 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
         );
         
         // Inventory Form Handling
-        inventoryForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('product-name').value;
-            const sku = document.getElementById('product-sku').value;
-            const category = document.getElementById('product-category').value;
-            const quantity = parseInt(document.getElementById('product-quantity').value);
-            const lowStockThreshold = parseInt(document.getElementById('product-low-stock').value);
-            const costPrice = parseFloat(document.getElementById('product-cost').value);
-            const sellingPrice = parseFloat(document.getElementById('product-price').value);
-            const supplier = document.getElementById('product-supplier').value;
-            const description = document.getElementById('product-description').value;
-            
-            const product = {
-                id: Date.now().toString(),
-                name,
-                sku,
-                category,
-                quantity,
-                lowStockThreshold,
-                costPrice,
-                sellingPrice,
-                supplier,
-                description,
-                stockValue: costPrice * quantity,
-                createdAt: new Date().toISOString()
-            };
-            
-            // Add to inventory array
-            inventory.push(product);
-            
-            // Add to UI
-            addProductToUI(product);
-            
-            // Save to Firebase
-            saveProductToFirebase(product);
-            
-            // Show success message
-            showToast('Product added successfully', 'success');
-            
-            // Reset form
-            inventoryForm.reset();
-            document.getElementById('product-low-stock').value = '10';
-            
-            // Update inventory total value
-            updateInventoryTotalValue();
-            
-            // Update dashboard
-            updateDashboard();
-        });
+        if (inventoryForm) {
+            inventoryForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('product-name').value;
+                const sku = document.getElementById('product-sku').value;
+                const category = document.getElementById('product-category').value;
+                const quantity = parseInt(document.getElementById('product-quantity').value);
+                const lowStockThreshold = parseInt(document.getElementById('product-low-stock').value);
+                const costPrice = parseFloat(document.getElementById('product-cost').value);
+                const sellingPrice = parseFloat(document.getElementById('product-price').value);
+                const supplier = document.getElementById('product-supplier').value;
+                const description = document.getElementById('product-description').value;
+                
+                const product = {
+                    id: Date.now().toString(),
+                    name,
+                    sku,
+                    category,
+                    quantity,
+                    lowStockThreshold,
+                    costPrice,
+                    sellingPrice,
+                    supplier,
+                    description,
+                    stockValue: costPrice * quantity,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Add to inventory array
+                inventory.push(product);
+                
+                // Add to UI
+                addProductToUI(product);
+                
+                // Save to Firebase
+                saveProductToFirebase(product);
+                
+                // Show success message
+                showToast('Product added successfully', 'success');
+                
+                // Reset form
+                inventoryForm.reset();
+                document.getElementById('product-low-stock').value = '10';
+                
+                // Update inventory total value
+                updateInventoryTotalValue();
+                
+                // Update dashboard
+                updateDashboard();
+            });
+        }
         
         function addProductToUI(product) {
             const status = getStockStatus(product.quantity, product.lowStockThreshold);
@@ -2903,7 +3524,7 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
                     <i class="fas fa-trash action-btn text-danger" onclick="deleteProduct('${product.id}')"></i>
                 </td>
             `;
-            inventoryList.appendChild(newRow);
+            if (inventoryList) inventoryList.appendChild(newRow);
         }
         
         function getStockStatus(quantity, threshold) {
@@ -2917,6 +3538,8 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
         }
         
         function updateInventoryTotalValue() {
+            if (!inventoryList) return;
+            
             let totalValue = 0;
             const rows = inventoryList.querySelectorAll('tr');
             
@@ -2925,11 +3548,17 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
                 totalValue += parseFloat(valueCell.textContent);
             });
             
-            inventoryTotalValue.textContent = `RM ${totalValue.toFixed(2)}`;
-            document.getElementById('inventory-value').textContent = `RM ${totalValue.toFixed(2)}`;
+            if (inventoryTotalValue) {
+                inventoryTotalValue.textContent = `RM ${totalValue.toFixed(2)}`;
+            }
+            if (inventoryValue) {
+                inventoryValue.textContent = `RM ${totalValue.toFixed(2)}`;
+            }
         }
         
         function updateInventoryList() {
+            if (!inventoryList) return;
+            
             inventoryList.innerHTML = '';
             inventory.forEach(product => {
                 addProductToUI(product);
@@ -2938,12 +3567,14 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
         }
         
         // Inventory search and filter
-        inventorySearchBtn.addEventListener('click', filterInventory);
-        inventorySearch.addEventListener('keyup', filterInventory);
-        inventoryCategoryFilter.addEventListener('change', filterInventory);
-        inventoryStockFilter.addEventListener('change', filterInventory);
+        if (inventorySearchBtn) inventorySearchBtn.addEventListener('click', filterInventory);
+        if (inventorySearch) inventorySearch.addEventListener('keyup', filterInventory);
+        if (inventoryCategoryFilter) inventoryCategoryFilter.addEventListener('change', filterInventory);
+        if (inventoryStockFilter) inventoryStockFilter.addEventListener('change', filterInventory);
         
         function filterInventory() {
+            if (!inventoryList) return;
+            
             const searchTerm = inventorySearch.value.toLowerCase();
             const categoryFilter = inventoryCategoryFilter.value;
             const stockFilter = inventoryStockFilter.value;
@@ -3048,33 +3679,34 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
         
         // PDF Generation
         function setupPdfGeneration(button, listId, title) {
+            if (!button) return;
+            
             button.addEventListener('click', function() {
-        // ✅ 正确初始化 jsPDF
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        
-        // 检查 autoTable 是否可用
-        if (!doc.autoTable) {
-            showToast('PDF library not properly loaded. Please refresh the page.', 'error');
-            console.error('autoTable is not available:', doc);
-            return;
-        }
-        
-        // Add title
-        doc.setFontSize(18);
-        doc.text(`${title} Report`, 14, 22);
-        
-        // Add date
-        doc.setFontSize(12);
-        doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-        
-        // Add table
-        doc.autoTable({
-            startY: 40,
-            head: [['Date', 'Bill No', 'Description', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
-            body: getTableData(listId)
-        });
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
                 
+                // Check if autoTable is available
+                if (!doc.autoTable) {
+                    showToast('PDF library not properly loaded. Please refresh the page.', 'error');
+                    console.error('autoTable is not available:', doc);
+                    return;
+                }
+                
+                // Add title
+                doc.setFontSize(18);
+                doc.text(`${title} Report`, 14, 22);
+                
+                // Add date
+                doc.setFontSize(12);
+                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+                
+                // Add table
+                doc.autoTable({
+                    startY: 40,
+                    head: [['Date', 'Bill No', 'Description', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
+                    body: getTableData(listId)
+                });
+                        
                 // Add grand total
                 const rows = document.querySelectorAll(`#${listId} tr`);
                 let grandTotal = 0;
@@ -3096,90 +3728,94 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
         }
         
         // Individual PDF Generation (with customer info)
-        generateIndividualPdf.addEventListener('click', function() {
-            const doc = new jsPDF();
-            
-            // Add title
-            doc.setFontSize(18);
-            doc.text('Individual Bills Report', 14, 22);
-            
-            // Add date
-            doc.setFontSize(12);
-            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-            
-            // Add table
-            doc.autoTable({
-                startY: 40,
-                head: [['Date', 'Bill No', 'Description', 'Customer', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
-                body: getIndividualTableData()
+        if (generateIndividualPdf) {
+            generateIndividualPdf.addEventListener('click', function() {
+                const doc = new jsPDF();
+                
+                // Add title
+                doc.setFontSize(18);
+                doc.text('Individual Bills Report', 14, 22);
+                
+                // Add date
+                doc.setFontSize(12);
+                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+                
+                // Add table
+                doc.autoTable({
+                    startY: 40,
+                    head: [['Date', 'Bill No', 'Description', 'Customer', 'Quantity', 'Unit Price (RM)', 'Total (RM)']],
+                    body: getIndividualTableData()
+                });
+                
+                // Add grand total
+                const rows = document.querySelectorAll('#individual-bills-list tr');
+                let grandTotal = 0;
+                
+                rows.forEach(row => {
+                    const totalCell = row.cells[6];
+                    grandTotal += parseFloat(totalCell.textContent);
+                });
+                
+                const finalY = doc.lastAutoTable.finalY + 10;
+                doc.setFontSize(12);
+                doc.text(`Grand Total: RM ${grandTotal.toFixed(2)}`, 14, finalY);
+                
+                // Save the PDF
+                doc.save('individual-bills-report.pdf');
+                
+                showToast('PDF generated successfully', 'success');
             });
-            
-            // Add grand total
-            const rows = document.querySelectorAll('#individual-bills-list tr');
-            let grandTotal = 0;
-            
-            rows.forEach(row => {
-                const totalCell = row.cells[6];
-                grandTotal += parseFloat(totalCell.textContent);
-            });
-            
-            const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(12);
-            doc.text(`Grand Total: RM ${grandTotal.toFixed(2)}`, 14, finalY);
-            
-            // Save the PDF
-            doc.save('individual-bills-report.pdf');
-            
-            showToast('PDF generated successfully', 'success');
-        });
+        }
         
         function getIndividualTableData() {
-    const data = [];
-    const rows = document.querySelectorAll('#individual-bills-list tr');
-    
-    rows.forEach(row => {
-        // 安全检查：确保行有足够的单元格
-        if (row.cells && row.cells.length >= 7) {
-            const rowData = [];
-            for (let i = 0; i < 7; i++) {
-                rowData.push(row.cells[i].textContent || '');
-            }
-            data.push(rowData);
-        }
-    });
-    
-    return data;
-}
-        
-        // Inventory PDF Generation
-        generateInventoryPdf.addEventListener('click', function() {
-            const doc = new jsPDF();
+            const data = [];
+            const rows = document.querySelectorAll('#individual-bills-list tr');
             
-            // Add title
-            doc.setFontSize(18);
-            doc.text('Inventory Report', 14, 22);
-            
-            // Add date
-            doc.setFontSize(12);
-            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
-            
-            // Add table
-            doc.autoTable({
-                startY: 40,
-                head: [['Product Name', 'SKU', 'Category', 'Quantity', 'Cost Price (RM)', 'Selling Price (RM)', 'Stock Value (RM)', 'Status']],
-                body: getInventoryTableData()
+            rows.forEach(row => {
+                // Safety check: ensure row has enough cells
+                if (row.cells && row.cells.length >= 7) {
+                    const rowData = [];
+                    for (let i = 0; i < 7; i++) {
+                        rowData.push(row.cells[i].textContent || '');
+                    }
+                    data.push(rowData);
+                }
             });
             
-            // Add total value
-            const finalY = doc.lastAutoTable.finalY + 10;
-            doc.setFontSize(12);
-            doc.text(`Total Inventory Value: RM ${inventoryTotalValue.textContent.replace('RM ', '')}`, 14, finalY);
-            
-            // Save the PDF
-            doc.save('inventory-report.pdf');
-            
-            showToast('Inventory PDF generated successfully', 'success');
-        });
+            return data;
+        }
+        
+        // Inventory PDF Generation
+        if (generateInventoryPdf) {
+            generateInventoryPdf.addEventListener('click', function() {
+                const doc = new jsPDF();
+                
+                // Add title
+                doc.setFontSize(18);
+                doc.text('Inventory Report', 14, 22);
+                
+                // Add date
+                doc.setFontSize(12);
+                doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+                
+                // Add table
+                doc.autoTable({
+                    startY: 40,
+                    head: [['Product Name', 'SKU', 'Category', 'Quantity', 'Cost Price (RM)', 'Selling Price (RM)', 'Stock Value (RM)', 'Status']],
+                    body: getInventoryTableData()
+                });
+                
+                // Add total value
+                const finalY = doc.lastAutoTable.finalY + 10;
+                doc.setFontSize(12);
+                doc.text(`Total Inventory Value: RM ${inventoryTotalValue.textContent.replace('RM ', '')}`, 14, finalY);
+                
+                // Save the PDF
+                doc.save('inventory-report.pdf');
+                
+                showToast('Inventory PDF generated successfully', 'success');
+            });
+        }
         
         function getInventoryTableData() {
             const data = [];
@@ -3203,22 +3839,22 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
         }
             
         function getTableData(listId) {
-    const data = [];
-    const rows = document.querySelectorAll(`#${listId} tr`);
-    
-    rows.forEach(row => {
-        // 安全检查：确保行有足够的单元格
-        if (row.cells && row.cells.length >= 6) {
-            const rowData = [];
-            for (let i = 0; i < 6; i++) {
-                rowData.push(row.cells[i].textContent || '');
-            }
-            data.push(rowData);
+            const data = [];
+            const rows = document.querySelectorAll(`#${listId} tr`);
+            
+            rows.forEach(row => {
+                // Safety check: ensure row has enough cells
+                if (row.cells && row.cells.length >= 6) {
+                    const rowData = [];
+                    for (let i = 0; i < 6; i++) {
+                        rowData.push(row.cells[i].textContent || '');
+                    }
+                    data.push(rowData);
+                }
+            });
+            
+            return data;
         }
-    });
-    
-    return data;
-}
         
         // Setup PDF generation for all bill types
         setupPdfGeneration(generatePeriodicPdf, 'periodic-bills-list', 'Periodic Bills');
@@ -3226,108 +3862,117 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
         setupPdfGeneration(generateYearlyPdf, 'yearly-bills-list', 'Yearly Bills');
         
         // CSV Export for Inventory
-        exportInventoryCsv.addEventListener('click', function() {
-            let csvContent = "data:text/csv;charset=utf-8,";
-            
-            // Add headers
-            csvContent += "Product Name,SKU,Category,Quantity,Cost Price (RM),Selling Price (RM),Stock Value (RM),Status\n";
-            
-            // Add data
-            const rows = inventoryList.querySelectorAll('tr');
-            rows.forEach(row => {
-                const rowData = [];
-                for (let i = 0; i < 8; i++) {
-                    if (i === 7) {
-                        // Get status from span text
-                        const statusSpan = row.cells[i].querySelector('.stock-alert');
-                        rowData.push(statusSpan ? `"${statusSpan.textContent}"` : '');
-                    } else {
-                        rowData.push(`"${row.cells[i].textContent}"`);
+        if (exportInventoryCsv) {
+            exportInventoryCsv.addEventListener('click', function() {
+                let csvContent = "data:text/csv;charset=utf-8,";
+                
+                // Add headers
+                csvContent += "Product Name,SKU,Category,Quantity,Cost Price (RM),Selling Price (RM),Stock Value (RM),Status\n";
+                
+                // Add data
+                const rows = inventoryList.querySelectorAll('tr');
+                rows.forEach(row => {
+                    const rowData = [];
+                    for (let i = 0; i < 8; i++) {
+                        if (i === 7) {
+                            // Get status from span text
+                            const statusSpan = row.cells[i].querySelector('.stock-alert');
+                            rowData.push(statusSpan ? `"${statusSpan.textContent}"` : '');
+                        } else {
+                            rowData.push(`"${row.cells[i].textContent}"`);
+                        }
                     }
-                }
-                csvContent += rowData.join(',') + '\n';
+                    csvContent += rowData.join(',') + '\n';
+                });
+                
+                // Add total value
+                csvContent += `\nTotal Inventory Value,${inventoryTotalValue.textContent.replace('RM ', '')}`;
+                
+                // Create download link
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", "inventory_report.csv");
+                document.body.appendChild(link);
+                
+                // Trigger download
+                link.click();
+                document.body.removeChild(link);
+                
+                showToast('CSV exported successfully', 'success');
             });
-            
-            // Add total value
-            csvContent += `\nTotal Inventory Value,${inventoryTotalValue.textContent.replace('RM ', '')}`;
-            
-            // Create download link
-            const encodedUri = encodeURI(csvContent);
-            const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "inventory_report.csv");
-            document.body.appendChild(link);
-            
-            // Trigger download
-            link.click();
-            document.body.removeChild(link);
-            
-            showToast('CSV exported successfully', 'success');
-        });
+        }
         
         // Profit/Loss Calculation
-        profitLossForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const revenue = parseFloat(document.getElementById('revenue').value);
-            const expenses = parseFloat(document.getElementById('expenses').value);
-            
-            if (isNaN(revenue) || isNaN(expenses)) {
-                resultText.textContent = 'Please enter valid numbers for revenue and expenses.';
-                profitLossResult.className = 'alert alert-danger';
+        if (profitLossForm) {
+            profitLossForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const revenue = parseFloat(document.getElementById('revenue').value);
+                const expenses = parseFloat(document.getElementById('expenses').value);
+                
+                if (isNaN(revenue) || isNaN(expenses)) {
+                    resultText.textContent = 'Please enter valid numbers for revenue and expenses.';
+                    profitLossResult.className = 'alert alert-danger';
+                    profitLossResult.style.display = 'block';
+                    return;
+                }
+                
+                const profitLoss = revenue - expenses;
+                
+                if (profitLoss > 0) {
+                    resultText.textContent = `Net Profit: RM ${profitLoss.toFixed(2)}`;
+                    profitLossResult.className = 'alert alert-success';
+                } else if (profitLoss < 0) {
+                    resultText.textContent = `Net Loss: RM ${Math.abs(profitLoss).toFixed(2)}`;
+                    profitLossResult.className = 'alert alert-danger';
+                } else {
+                    resultText.textContent = 'Break Even: No profit or loss';
+                    profitLossResult.className = 'alert alert-info';
+                }
+                
                 profitLossResult.style.display = 'block';
-                return;
-            }
-            
-            const profitLoss = revenue - expenses;
-            
-            if (profitLoss > 0) {
-                resultText.textContent = `Net Profit: RM ${profitLoss.toFixed(2)}`;
-                profitLossResult.className = 'alert alert-success';
-            } else if (profitLoss < 0) {
-                resultText.textContent = `Net Loss: RM ${Math.abs(profitLoss).toFixed(2)}`;
-                profitLossResult.className = 'alert alert-danger';
-            } else {
-                resultText.textContent = 'Break Even: No profit or loss';
-                profitLossResult.className = 'alert alert-info';
-            }
-            
-            profitLossResult.style.display = 'block';
-        });
+            });
+        }
         
         // Customer Form Handling
-        customerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const name = document.getElementById('customer-name').value;
-            const email = document.getElementById('customer-email').value;
-            const phone = document.getElementById('customer-phone').value;
-            const address = document.getElementById('customer-address').value;
-            
-            const customer = {
-                id: Date.now().toString(),
-                name,
-                email,
-                phone,
-                address,
-                createdAt: new Date().toISOString()
-            };
-            
-            // Add to customers array
-            customers.push(customer);
-            
-            // Add to UI
-            addCustomerToUI(customer);
-            
-            // Save to Firebase
-            saveCustomerToFirebase(customer);
-            
-            // Show success message
-            showToast('Customer added successfully', 'success');
-            
-            // Reset form
-            customerForm.reset();
-        });
+        if (customerForm) {
+            customerForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const name = document.getElementById('customer-name').value;
+                const email = document.getElementById('customer-email').value;
+                const phone = document.getElementById('customer-phone').value;
+                const address = document.getElementById('customer-address').value;
+                
+                const customer = {
+                    id: Date.now().toString(),
+                    name,
+                    email,
+                    phone,
+                    address,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Add to customers array
+                customers.push(customer);
+                
+                // Add to UI
+                addCustomerToUI(customer);
+                
+                // Save to Firebase
+                saveCustomerToFirebase(customer);
+                
+                // Update customer datalist
+                updateCustomerDatalist();
+                
+                // Show success message
+                showToast('Customer added successfully', 'success');
+                
+                // Reset form
+                customerForm.reset();
+            });
+        }
         
         function addCustomerToUI(customer) {
             const customerCard = document.createElement('div');
@@ -3343,75 +3988,75 @@ function setupBillForm(form, quantityId, priceId, totalId, listId, grandTotalId,
                 </div>
             `;
             
-            customersList.appendChild(customerCard);
+            if (customersList) customersList.appendChild(customerCard);
         }
         
         // Bill editing and deletion
         window.editBill = function(billType, billId) {
-    const billIndex = bills[billType].findIndex(bill => bill.id === billId);
-    if (billIndex === -1) return;
-    
-    const bill = bills[billType][billIndex];
-    
-    // Populate form with bill data
-    document.getElementById(`${billType}-date`).value = bill.date;
-    document.getElementById(`${billType}-billno`).value = bill.billNo;
-    document.getElementById(`${billType}-description`).value = bill.description;
-    document.getElementById(`${billType}-quantity`).value = bill.quantity;
-    document.getElementById(`${billType}-price`).value = bill.price;
-    
-    // For individual bills, populate customer info
-    if (billType === 'individual') {
-        document.getElementById('individual-customer-name').value = bill.customerName || '';
-        document.getElementById('individual-customer-address').value = bill.customerAddress || '';
-    }
-    
-    // Remove the bill from array
-    bills[billType].splice(billIndex, 1);
-    
-    // ✅ 使用统一渲染函数重新渲染
-    renderBillsByType(billType);
-    
-    // Update grand total
-    if (billType === 'periodic') updatePeriodicTotal();
-    if (billType === 'individual') updateIndividualTotal();
-    if (billType === 'monthly') updateMonthlyTotal();
-    if (billType === 'yearly') updateYearlyTotal();
-    
-    // Delete from Firebase
-    deleteBillFromFirebase(billId);
-    
-    showToast('Bill loaded for editing', 'info');
-};
+            const billIndex = bills[billType].findIndex(bill => bill.id === billId);
+            if (billIndex === -1) return;
+            
+            const bill = bills[billType][billIndex];
+            
+            // Populate form with bill data
+            document.getElementById(`${billType}-date`).value = bill.date;
+            document.getElementById(`${billType}-billno`).value = bill.billNo;
+            document.getElementById(`${billType}-description`).value = bill.description;
+            document.getElementById(`${billType}-quantity`).value = bill.quantity;
+            document.getElementById(`${billType}-price`).value = bill.price;
+            
+            // For individual bills, populate customer info
+            if (billType === 'individual') {
+                document.getElementById('individual-customer-name').value = bill.customerName || '';
+                document.getElementById('individual-customer-address').value = bill.customerAddress || '';
+            }
+            
+            // Remove the bill from array
+            bills[billType].splice(billIndex, 1);
+            
+            // Use unified rendering function to re-render
+            renderBillsByType(billType);
+            
+            // Update grand total
+            if (billType === 'periodic') updatePeriodicTotal();
+            if (billType === 'individual') updateIndividualTotal();
+            if (billType === 'monthly') updateMonthlyTotal();
+            if (billType === 'yearly') updateYearlyTotal();
+            
+            // Delete from Firebase
+            deleteBillFromFirebase(billId);
+            
+            showToast('Bill loaded for editing', 'info');
+        };
 
-window.deleteBill = function(billType, billId) {
-    const billIndex = bills[billType].findIndex(bill => bill.id === billId);
-    if (billIndex === -1) return;
-    
-    if (!confirm('Are you sure you want to delete this bill?')) return;
-    
-    // Remove the bill from array
-    bills[billType].splice(billIndex, 1);
-    
-    // ✅ 使用统一渲染函数重新渲染
-    renderBillsByType(billType);
-    
-    // ⭐ 安全地更新总计
-    try {
-        if (billType === 'periodic') updatePeriodicTotal();
-        if (billType === 'individual') updateIndividualTotal();
-        if (billType === 'monthly') updateMonthlyTotal();
-        if (billType === 'yearly') updateYearlyTotal();
-    } catch (error) {
-        console.warn('Error updating total:', error);
-        updateGrandTotalFromArray(billType);
-    }
-    
-    // Delete from Firebase
-    deleteBillFromFirebase(billId);
-    
-    showToast('Bill deleted successfully', 'success');
-};
+        window.deleteBill = function(billType, billId) {
+            const billIndex = bills[billType].findIndex(bill => bill.id === billId);
+            if (billIndex === -1) return;
+            
+            if (!confirm('Are you sure you want to delete this bill?')) return;
+            
+            // Remove the bill from array
+            bills[billType].splice(billIndex, 1);
+            
+            // Use unified rendering function to re-render
+            renderBillsByType(billType);
+            
+            // Safely update totals
+            try {
+                if (billType === 'periodic') updatePeriodicTotal();
+                if (billType === 'individual') updateIndividualTotal();
+                if (billType === 'monthly') updateMonthlyTotal();
+                if (billType === 'yearly') updateYearlyTotal();
+            } catch (error) {
+                console.warn('Error updating total:', error);
+                updateGrandTotalFromArray(billType);
+            }
+            
+            // Delete from Firebase
+            deleteBillFromFirebase(billId);
+            
+            showToast('Bill deleted successfully', 'success');
+        };
         
         // Customer management functions
         window.editCustomer = function(customerId) {
@@ -3440,6 +4085,9 @@ window.deleteBill = function(billType, billId) {
                 }
             }
             
+            // Update customer datalist
+            updateCustomerDatalist();
+            
             // Delete from Firebase
             deleteCustomerFromFirebase(customerId);
             
@@ -3465,6 +4113,9 @@ window.deleteBill = function(billType, billId) {
                     break;
                 }
             }
+            
+            // Update customer datalist
+            updateCustomerDatalist();
             
             // Delete from Firebase
             deleteCustomerFromFirebase(customerId);
@@ -3532,200 +4183,229 @@ window.deleteBill = function(billType, billId) {
                     showToast('Error deleting product. Please try again.', 'error');
                 });
         }
-        // 统一渲染函数
-function renderBillsByType(type) {
-    const billList = document.getElementById(`${type}-bills-list`);
-    if (!billList) return;
-    
-    // 清空表格
-    billList.innerHTML = '';
-    
-    // 检查是否有数据
-    if (!bills[type] || bills[type].length === 0) {
-        const colSpan = type === 'individual' ? 8 : 7;
-        billList.innerHTML = `
-            <tr>
-                <td colspan="${colSpan}" class="text-center text-muted">
-                    No bills yet. Add your first bill above.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-    
-    // 重新渲染所有账单
-    bills[type].forEach(bill => {
-        let newRow;
-        if (type === 'individual') {
-            newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td>${bill.date || ''}</td>
-                <td>${bill.billNo || ''}</td>
-                <td>${bill.description || ''}</td>
-                <td>${bill.customerName || 'N/A'}</td>
-                <td>${bill.quantity || 0}</td>
-                <td>${(bill.price || 0).toFixed(2)}</td>
-                <td>${(bill.total || 0).toFixed(2)}</td>
-                <td>
-                    <i class="fas fa-edit action-btn text-primary" onclick="editBill('${type}', '${bill.id}')"></i>
-                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${type}', '${bill.id}')"></i>
-                </td>
-            `;
-        } else {
-            newRow = document.createElement('tr');
-            newRow.innerHTML = `
-                <td>${bill.date || ''}</td>
-                <td>${bill.billNo || ''}</td>
-                <td>${bill.description || ''}</td>
-                <td>${bill.quantity || 0}</td>
-                <td>${(bill.price || 0).toFixed(2)}</td>
-                <td>${(bill.total || 0).toFixed(2)}</td>
-                <td>
-                    <i class="fas fa-edit action-btn text-primary" onclick="editBill('${type}', '${bill.id}')"></i>
-                    <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${type}', '${bill.id}')"></i>
-                </td>
-            `;
-        }
         
-        billList.appendChild(newRow);
-    });
-}
+        // Unified rendering function
+        function renderBillsByType(type) {
+            const billList = document.getElementById(`${type}-bills-list`);
+            if (!billList) return;
             
-        function loadUserData() {
-    if (!auth.currentUser) return;
-    
-    // Load bills
-    db.collection('users').doc(auth.currentUser.uid).collection('bills').get()
-        .then(querySnapshot => {
-            bills = {
-                periodic: [],
-                individual: [],
-                monthly: [],
-                yearly: []
-            };
+            // Clear table
+            billList.innerHTML = '';
             
-            querySnapshot.forEach(doc => {
-                try {
-                    const bill = doc.data();
-                    if (bill && bill.type && bill.id) {
-                        bills[bill.type].push(bill);
-                    }
-                } catch (error) {
-                    console.warn('Error processing bill:', error);
+            // Check if there is data
+            if (!bills[type] || bills[type].length === 0) {
+                const colSpan = type === 'individual' ? 8 : 7;
+                billList.innerHTML = `
+                    <tr>
+                        <td colspan="${colSpan}" class="text-center text-muted">
+                            No bills yet. Add your first bill above.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            // Re-render all bills
+            bills[type].forEach(bill => {
+                let newRow;
+                if (type === 'individual') {
+                    newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${bill.date || ''}</td>
+                        <td>${bill.billNo || ''}</td>
+                        <td>${bill.description || ''}</td>
+                        <td>${bill.customerName || 'N/A'}</td>
+                        <td>${bill.quantity || 0}</td>
+                        <td>${(bill.price || 0).toFixed(2)}</td>
+                        <td>${(bill.total || 0).toFixed(2)}</td>
+                        <td>
+                            <i class="fas fa-edit action-btn text-primary" onclick="editBill('${type}', '${bill.id}')"></i>
+                            <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${type}', '${bill.id}')"></i>
+                        </td>
+                    `;
+                } else {
+                    newRow = document.createElement('tr');
+                    newRow.innerHTML = `
+                        <td>${bill.date || ''}</td>
+                        <td>${bill.billNo || ''}</td>
+                        <td>${bill.description || ''}</td>
+                        <td>${bill.quantity || 0}</td>
+                        <td>${(bill.price || 0).toFixed(2)}</td>
+                        <td>${(bill.total || 0).toFixed(2)}</td>
+                        <td>
+                            <i class="fas fa-edit action-btn text-primary" onclick="editBill('${type}', '${bill.id}')"></i>
+                            <i class="fas fa-trash action-btn text-danger" onclick="deleteBill('${type}', '${bill.id}')"></i>
+                        </td>
+                    `;
                 }
-            });
-            
-            // 使用统一渲染函数
-            ['periodic', 'individual', 'monthly', 'yearly'].forEach(type => {
-                renderBillsByType(type);
-            });
-            
-            // 安全地更新总计
-            setTimeout(() => {
-                try {
-                    if (typeof updatePeriodicTotal === 'function') updatePeriodicTotal();
-                    if (typeof updateIndividualTotal === 'function') updateIndividualTotal();
-                    if (typeof updateMonthlyTotal === 'function') updateMonthlyTotal();
-                    if (typeof updateYearlyTotal === 'function') updateYearlyTotal();
-                } catch (error) {
-                    console.warn('Error updating totals:', error);
-                }
-            }, 100);
-            
-            // 更新仪表板
-            updateDashboard();
-            updateProgressView();
-        })
-        .catch(error => {
-            console.error("Error loading bills: ", error);
-            showToast('Error loading bills data.', 'error');
-        });
-            
-            // Load customers
-            db.collection('users').doc(auth.currentUser.uid).collection('customers').get()
-                .then(querySnapshot => {
-                    customers = [];
-                    customersList.innerHTML = '';
-                    
-                    querySnapshot.forEach(doc => {
-                        const customer = doc.data();
-                        customers.push(customer);
-                        
-                        // Add to UI
-                        addCustomerToUI(customer);
-                    });
-                })
-                .catch(error => {
-                    console.error("Error loading customers: ", error);
-                    showToast('Error loading customers data.', 'error');
-                });
                 
-            // Load inventory
-            db.collection('users').doc(auth.currentUser.uid).collection('inventory').get()
+                billList.appendChild(newRow);
+            });
+        }
+                
+        function loadUserData() {
+            if (!auth.currentUser) return;
+            
+            // Load bills
+            db.collection('users').doc(auth.currentUser.uid).collection('bills').get()
                 .then(querySnapshot => {
-                    inventory = [];
-                    inventoryList.innerHTML = '';
+                    bills = {
+                        periodic: [],
+                        individual: [],
+                        monthly: [],
+                        yearly: []
+                    };
                     
                     querySnapshot.forEach(doc => {
-                        const product = doc.data();
-                        inventory.push(product);
-                        
-                        // Add to UI
-                        addProductToUI(product);
+                        try {
+                            const bill = doc.data();
+                            if (bill && bill.type && bill.id) {
+                                bills[bill.type].push(bill);
+                            }
+                        } catch (error) {
+                            console.warn('Error processing bill:', error);
+                        }
                     });
                     
-                    // Update inventory total value
-                    updateInventoryTotalValue();
+                    // Use unified rendering function
+                    ['periodic', 'individual', 'monthly', 'yearly'].forEach(type => {
+                        renderBillsByType(type);
+                    });
+                    
+                    // Safely update totals
+                    setTimeout(() => {
+                        try {
+                            if (typeof updatePeriodicTotal === 'function') updatePeriodicTotal();
+                            if (typeof updateIndividualTotal === 'function') updateIndividualTotal();
+                            if (typeof updateMonthlyTotal === 'function') updateMonthlyTotal();
+                            if (typeof updateYearlyTotal === 'function') updateYearlyTotal();
+                        } catch (error) {
+                            console.warn('Error updating totals:', error);
+                        }
+                    }, 100);
                     
                     // Update dashboard
                     updateDashboard();
+                    updateProgressView();
                 })
                 .catch(error => {
-                    console.error("Error loading inventory: ", error);
-                    showToast('Error loading inventory data.', 'error');
+                    console.error("Error loading bills: ", error);
+                    showToast('Error loading bills data.', 'error');
                 });
                 
-            // Load breakdown data
-            loadBreakdownData();
-            
-            // Load progress data
-            loadProgressData();
-        }
+                // Load customers
+                db.collection('users').doc(auth.currentUser.uid).collection('customers').get()
+                    .then(querySnapshot => {
+                        customers = [];
+                        if (customersList) customersList.innerHTML = '';
+                        
+                        querySnapshot.forEach(doc => {
+                            const customer = doc.data();
+                            customers.push(customer);
+                            
+                            // Add to UI
+                            addCustomerToUI(customer);
+                        });
+                        
+                        // Update customer datalist
+                        updateCustomerDatalist();
+                    })
+                    .catch(error => {
+                        console.error("Error loading customers: ", error);
+                        showToast('Error loading customers data.', 'error');
+                    });
+                    
+                // Load inventory
+                db.collection('users').doc(auth.currentUser.uid).collection('inventory').get()
+                    .then(querySnapshot => {
+                        inventory = [];
+                        if (inventoryList) inventoryList.innerHTML = '';
+                        
+                        querySnapshot.forEach(doc => {
+                            const product = doc.data();
+                            inventory.push(product);
+                            
+                            // Add to UI
+                            addProductToUI(product);
+                        });
+                        
+                        // Update inventory total value
+                        updateInventoryTotalValue();
+                        
+                        // Update dashboard
+                        updateDashboard();
+                    })
+                    .catch(error => {
+                        console.error("Error loading inventory: ", error);
+                        showToast('Error loading inventory data.', 'error');
+                    });
+                    
+                // Load breakdown data
+                loadBreakdownData();
+                
+                // Load progress data
+                loadProgressData();
+                
+                // Load manual records
+                loadManualRecords();
+            }
 
             function updateGrandTotalFromArray(type) {
-    let total = 0;
-    
-    if (bills[type] && bills[type].length > 0) {
-        bills[type].forEach(bill => {
-            total += bill.total || 0;
-        });
-    }
-    
-    const grandTotalElement = document.getElementById(`${type}-grand-total`);
-    if (grandTotalElement) {
-        grandTotalElement.textContent = `RM ${total.toFixed(2)}`;
-    }
-}
+                let total = 0;
+                
+                if (bills[type] && bills[type].length > 0) {
+                    bills[type].forEach(bill => {
+                        total += bill.total || 0;
+                    });
+                }
+                
+                const grandTotalElement = document.getElementById(`${type}-grand-total`);
+                if (grandTotalElement) {
+                    grandTotalElement.textContent = `RM ${total.toFixed(2)}`;
+                }
+            }
+        
         // Dashboard functions
         function updateDashboard() {
             // Calculate totals from all bills
-            let revenue = 0;
-            let expenses = 0;
-            
+            let billRevenue = 0;
             for (const type in bills) {
                 bills[type].forEach(bill => {
-                    revenue += bill.total;
+                    billRevenue += bill.total;
                 });
             }
             
-            // For demo purposes, let's assume expenses are 70% of revenue
-            expenses = revenue * 0.7;
-            const profit = revenue - expenses;
+            // Calculate totals from manual records
+            let manualRevenueTotal = 0;
+            let manualExpenseTotal = 0;
+            
+            manualRecords.forEach(record => {
+                if (record.type === 'revenue') {
+                    manualRevenueTotal += record.amount;
+                } else if (record.type === 'expense') {
+                    manualExpenseTotal += record.amount;
+                }
+            });
+            
+            // Calculate combined totals
+            const totalCombinedRevenue = billRevenue + manualRevenueTotal;
+            const totalCombinedExpenses = manualExpenseTotal; // Can add other expenses if needed
+            const profit = totalCombinedRevenue - totalCombinedExpenses;
             
             // Update UI
-            totalRevenue.textContent = `RM ${revenue.toFixed(2)}`;
-            totalExpenses.textContent = `RM ${expenses.toFixed(2)}`;
-            netProfit.textContent = `RM ${profit.toFixed(2)}`;
+            if (totalRevenue) totalRevenue.textContent = `RM ${totalCombinedRevenue.toFixed(2)}`;
+            if (totalExpenses) totalExpenses.textContent = `RM ${totalCombinedExpenses.toFixed(2)}`;
+            if (netProfit) {
+                netProfit.textContent = `RM ${profit.toFixed(2)}`;
+                // Update profit/loss style
+                if (profit > 0) {
+                    netProfit.className = 'stat-value profit';
+                } else if (profit < 0) {
+                    netProfit.className = 'stat-value loss';
+                } else {
+                    netProfit.className = 'stat-value';
+                }
+            }
             
             // Update inventory value
             updateInventoryTotalValue();
@@ -3735,9 +4415,17 @@ function renderBillsByType(type) {
             
             // Update low stock alerts
             updateLowStockAlerts();
+            
+            // Update profit/loss page if needed
+            if (plRevenue && plExpenses) {
+                plRevenue.textContent = `RM ${totalCombinedRevenue.toFixed(2)}`;
+                plExpenses.textContent = `RM ${totalCombinedExpenses.toFixed(2)}`;
+            }
         }
         
         function updateRecentBills() {
+            if (!recentBills) return;
+            
             recentBills.innerHTML = '';
             
             // Get all bills and sort by date (newest first)
@@ -3763,6 +4451,8 @@ function renderBillsByType(type) {
         }
         
         function updateLowStockAlerts() {
+            if (!lowStockAlerts) return;
+            
             lowStockAlerts.innerHTML = '';
             
             // Get low stock and out of stock items
@@ -3821,26 +4511,38 @@ function renderBillsByType(type) {
         
         function updateProfitLoss() {
             // Calculate totals from all bills
-            let revenue = 0;
-            
+            let billRevenue = 0;
             for (const type in bills) {
                 bills[type].forEach(bill => {
-                    revenue += bill.total;
+                    billRevenue += bill.total;
                 });
             }
             
-            // For demo purposes, let's assume expenses are 70% of revenue
-            const expenses = revenue * 0.7;
-            const profit = revenue - expenses;
+            // Calculate totals from manual records
+            let manualRevenueTotal = 0;
+            let manualExpenseTotal = 0;
+            
+            manualRecords.forEach(record => {
+                if (record.type === 'revenue') {
+                    manualRevenueTotal += record.amount;
+                } else if (record.type === 'expense') {
+                    manualExpenseTotal += record.amount;
+                }
+            });
+            
+            // Calculate combined totals
+            const totalCombinedRevenue = billRevenue + manualRevenueTotal;
+            const totalCombinedExpenses = manualExpenseTotal;
+            const profit = totalCombinedRevenue - totalCombinedExpenses;
             
             // Update UI
-            plRevenue.textContent = `RM ${revenue.toFixed(2)}`;
-            plExpenses.textContent = `RM ${expenses.toFixed(2)}`;
-            revenueComparison.textContent = `Last month: RM ${(revenue * 0.9).toFixed(2)}`;
-            expensesComparison.textContent = `Last month: RM ${(expenses * 0.9).toFixed(2)}`;
+            if (plRevenue) plRevenue.textContent = `RM ${totalCombinedRevenue.toFixed(2)}`;
+            if (plExpenses) plExpenses.textContent = `RM ${totalCombinedExpenses.toFixed(2)}`;
+            if (revenueComparison) revenueComparison.textContent = `Last month: RM ${(totalCombinedRevenue * 0.9).toFixed(2)}`;
+            if (expensesComparison) expensesComparison.textContent = `Last month: RM ${(totalCombinedExpenses * 0.9).toFixed(2)}`;
             
             // Update breakdown
-            updatePLBreakdown(revenue, expenses);
+            updatePLBreakdown(totalCombinedRevenue, totalCombinedExpenses);
         }
         
         function updatePLBreakdown(revenue, expenses) {
@@ -3928,14 +4630,15 @@ function renderBillsByType(type) {
                 mainContainer.style.display = 'none';
                 
                 // Clear all data from UI
-                document.getElementById('periodic-bills-list').innerHTML = '';
-                document.getElementById('individual-bills-list').innerHTML = '';
-                document.getElementById('monthly-bills-list').innerHTML = '';
-                document.getElementById('yearly-bills-list').innerHTML = '';
-                document.getElementById('customers-list').innerHTML = '';
-                document.getElementById('inventory-list').innerHTML = '';
-                document.getElementById('pl-breakdown').innerHTML = '';
-                document.getElementById('progress-bills-list').innerHTML = '';
+                if (periodicBillsList) periodicBillsList.innerHTML = '';
+                if (individualBillsList) individualBillsList.innerHTML = '';
+                if (monthlyBillsList) monthlyBillsList.innerHTML = '';
+                if (yearlyBillsList) yearlyBillsList.innerHTML = '';
+                if (customersList) customersList.innerHTML = '';
+                if (inventoryList) inventoryList.innerHTML = '';
+                if (plBreakdown) plBreakdown.innerHTML = '';
+                if (progressBillsList) progressBillsList.innerHTML = '';
+                if (manualRecordsList) manualRecordsList.innerHTML = '';
                 
                 // Reset data
                 bills = {
@@ -3960,171 +4663,180 @@ function renderBillsByType(type) {
                 // Reset bill addresses
                 billAddresses = {};
                 
+                // Reset manual records
+                manualRecords = [];
+                
                 showToast('Logged out successfully', 'info');
             });
         });
         
-       function initCharts() {
-    // 销毁旧图表实例
-    if (performanceChartInstance) {
-        performanceChartInstance.destroy();
-        performanceChartInstance = null;
-    }
-    
-    if (profitLossChartInstance) {
-        profitLossChartInstance.destroy();
-        profitLossChartInstance = null;
-    }
-    
-    // 性能图表
-    const perfCtx = document.getElementById('performanceChart');
-    if (perfCtx) {
-        // 设置canvas尺寸以匹配容器
-        perfCtx.style.width = '100%';
-        perfCtx.style.height = '100%';
-        
-        performanceChartInstance = new Chart(perfCtx.getContext('2d'), {
-            type: 'line',
-            data: {
-                labels: monthlyData.labels,
-                datasets: [{
-                    label: 'Revenue',
-                    data: monthlyData.revenue,
-                    borderColor: '#3498db',
-                    backgroundColor: 'rgba(52, 152, 219, 0.1)',
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // 关键：不维持宽高比
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
-                            font: {
-                                size: 12
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
-                            display: true
-                        },
-                        ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
-                            display: true
-                        },
-                        ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
-                            callback: function(value) {
-                                return 'RM ' + value.toLocaleString();
-                            }
-                        }
-                    }
-                }
+        function initCharts() {
+            // Destroy old chart instances
+            if (performanceChartInstance) {
+                performanceChartInstance.destroy();
+                performanceChartInstance = null;
             }
-        });
-    }
-    
-    // 利润/损失图表
-    const plCtx = document.getElementById('profitLossChart');
-    if (plCtx) {
-        // 设置canvas尺寸以匹配容器
-        plCtx.style.width = '100%';
-        plCtx.style.height = '100%';
-        
-        profitLossChartInstance = new Chart(plCtx.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels: monthlyData.labels,
-                datasets: [
-                    {
-                        label: 'Revenue',
-                        data: monthlyData.revenue,
-                        backgroundColor: '#27ae60',
-                        borderColor: '#27ae60',
-                        borderWidth: 1
-                    },
-                    {
-                        label: 'Expenses',
-                        data: monthlyData.expenses,
-                        backgroundColor: '#e74c3c',
-                        borderColor: '#e74c3c',
-                        borderWidth: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false, // 关键：不维持宽高比
-                plugins: {
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
-                            font: {
-                                size: 12
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
-                            display: true
-                        },
-                        ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
-                            maxRotation: 45,
-                            minRotation: 45
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
-                            display: true
-                        },
-                        ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
-                            callback: function(value) {
-                                return 'RM ' + value.toLocaleString();
-                            }
-                        }
-                    }
-                }
+            
+            if (profitLossChartInstance) {
+                profitLossChartInstance.destroy();
+                profitLossChartInstance = null;
             }
+            
+            // Performance chart
+            const perfCtx = document.getElementById('performanceChart');
+            if (perfCtx) {
+                // Set canvas dimensions to match container
+                perfCtx.style.width = '100%';
+                perfCtx.style.height = '100%';
+                
+                // Get enhanced data including manual records
+                const chartData = getEnhancedChartData();
+                
+                performanceChartInstance = new Chart(perfCtx.getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [{
+                            label: 'Revenue',
+                            data: chartData.revenue,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, // Key: don't maintain aspect ratio
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+                                    display: true
+                                },
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+                                    display: true
+                                },
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                                    callback: function(value) {
+                                        return 'RM ' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Profit/loss chart
+            const plCtx = document.getElementById('profitLossChart');
+            if (plCtx) {
+                // Set canvas dimensions to match container
+                plCtx.style.width = '100%';
+                plCtx.style.height = '100%';
+                
+                // Get enhanced data including manual records
+                const chartData = getEnhancedChartData();
+                
+                profitLossChartInstance = new Chart(plCtx.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: chartData.labels,
+                        datasets: [
+                            {
+                                label: 'Revenue',
+                                data: chartData.revenue,
+                                backgroundColor: '#27ae60',
+                                borderColor: '#27ae60',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Expenses',
+                                data: chartData.expenses,
+                                backgroundColor: '#e74c3c',
+                                borderColor: '#e74c3c',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, // Key: don't maintain aspect ratio
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                                    font: {
+                                        size: 12
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+                                    display: true
+                                },
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                                    maxRotation: 45,
+                                    minRotation: 45
+                                }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+                                    display: true
+                                },
+                                ticks: {
+                                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                                    callback: function(value) {
+                                        return 'RM ' + value.toLocaleString();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Add chart theme update function
+        function updateChartsTheme() {
+            // Reinitialize charts to apply new theme
+            if (performanceChartInstance) performanceChartInstance.destroy();
+            if (profitLossChartInstance) profitLossChartInstance.destroy();
+            initCharts();
+        }
+
+        // Call on theme toggle
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            setTimeout(updateChartsTheme, 300);
         });
-    }
-}
-
-// 添加图表主题更新功能
-function updateChartsTheme() {
-    // 重新初始化图表以应用新主题
-    if (window.myPerformanceChart) window.myPerformanceChart.destroy();
-    if (window.myProfitLossChart) window.myProfitLossChart.destroy();
-    initCharts();
-}
-
-// 在主题切换时调用
-document.getElementById('theme-toggle').addEventListener('click', function() {
-    setTimeout(updateChartsTheme, 300);
-});
         
         // Set today's date as default for all date inputs
         function setDefaultDates() {
@@ -4160,112 +4872,114 @@ document.getElementById('theme-toggle').addEventListener('click', function() {
             initProgressTracking();
             initThemeToggle();
             initResponsiveDesign();
+            initSmartCustomerSelection();
+            initManualRevenueExpenseSystem();
         });
 
-        // 响应式设计功能
-function initResponsiveDesign() {
-    // 检测设备类型并调整布局
-    const isMobile = window.innerWidth <= 768;
-    const isTablet = window.innerWidth <= 992;
-    
-    if (isMobile) {
-        // 移动设备优化
-        optimizeForMobile();
-    } else if (isTablet) {
-        // 平板设备优化
-        optimizeForTablet();
-    } else {
-        // 桌面设备优化
-        optimizeForDesktop();
-    }
-    
-    // 监听窗口大小变化
-    let resizeTimeout;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(initResponsiveDesign, 250);
-    });
-}
-
-function optimizeForMobile() {
-    // 调整表格为滚动视图
-    document.querySelectorAll('.bill-table').forEach(table => {
-        table.parentElement.classList.add('table-responsive');
-    });
-    
-    // 调整表单布局
-    document.querySelectorAll('.row .col-md-3, .row .col-md-4, .row .col-md-6').forEach(col => {
-        col.classList.add('col-12');
-        col.classList.remove('col-md-3', 'col-md-4', 'col-md-6');
-    });
-    
-    // 调整按钮大小
-    document.querySelectorAll('button, .btn').forEach(btn => {
-        if (!btn.classList.contains('btn-sm')) {
-            btn.classList.add('btn-sm');
+        // Responsive design function
+        function initResponsiveDesign() {
+            // Detect device type and adjust layout
+            const isMobile = window.innerWidth <= 768;
+            const isTablet = window.innerWidth <= 992;
+            
+            if (isMobile) {
+                // Mobile optimization
+                optimizeForMobile();
+            } else if (isTablet) {
+                // Tablet optimization
+                optimizeForTablet();
+            } else {
+                // Desktop optimization
+                optimizeForDesktop();
+            }
+            
+            // Listen for window resize
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+                clearTimeout(resizeTimeout);
+                resizeTimeout = setTimeout(initResponsiveDesign, 250);
+            });
         }
-    });
-    
-    // 调整字体大小
-    document.querySelectorAll('h1, h2, h3, h4, h5').forEach(heading => {
-        const currentSize = parseInt(window.getComputedStyle(heading).fontSize);
-        heading.style.fontSize = (currentSize * 0.9) + 'px';
-    });
-}
 
-function optimizeForTablet() {
-    // 平板设备调整
-    document.querySelectorAll('.row .col-md-3').forEach(col => {
-        col.classList.add('col-6');
-    });
-    
-    document.querySelectorAll('.row .col-md-4').forEach(col => {
-        col.classList.add('col-6');
-    });
-    
-    document.querySelectorAll('.row .col-md-6').forEach(col => {
-        col.classList.add('col-12');
-    });
-}
-
-function optimizeForDesktop() {
-    // 桌面设备恢复原始布局
-    document.querySelectorAll('.table-responsive').forEach(table => {
-        table.parentElement.classList.remove('table-responsive');
-    });
-}
-
-        // 主题切换功能
-function initThemeToggle() {
-    const themeToggle = document.getElementById('theme-toggle');
-    const themeIcon = themeToggle.querySelector('i');
-    
-    // 检查本地存储的主题偏好
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateThemeIcon(savedTheme);
-    
-    themeToggle.addEventListener('click', function() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        updateThemeIcon(newTheme);
-        
-        showToast(`切换至${newTheme === 'dark' ? '深色' : '浅色'}模式`, 'success');
-    });
-    
-    function updateThemeIcon(theme) {
-        if (theme === 'dark') {
-            themeIcon.className = 'fas fa-sun';
-        } else {
-            themeIcon.className = 'fas fa-moon';
+        function optimizeForMobile() {
+            // Adjust tables for scroll view
+            document.querySelectorAll('.bill-table').forEach(table => {
+                table.parentElement.classList.add('table-responsive');
+            });
+            
+            // Adjust form layout
+            document.querySelectorAll('.row .col-md-3, .row .col-md-4, .row .col-md-6').forEach(col => {
+                col.classList.add('col-12');
+                col.classList.remove('col-md-3', 'col-md-4', 'col-md-6');
+            });
+            
+            // Adjust button size
+            document.querySelectorAll('button, .btn').forEach(btn => {
+                if (!btn.classList.contains('btn-sm')) {
+                    btn.classList.add('btn-sm');
+                }
+            });
+            
+            // Adjust font size
+            document.querySelectorAll('h1, h2, h3, h4, h5').forEach(heading => {
+                const currentSize = parseInt(window.getComputedStyle(heading).fontSize);
+                heading.style.fontSize = (currentSize * 0.9) + 'px';
+            });
         }
-    }
-}
+
+        function optimizeForTablet() {
+            // Tablet adjustments
+            document.querySelectorAll('.row .col-md-3').forEach(col => {
+                col.classList.add('col-6');
+            });
+            
+            document.querySelectorAll('.row .col-md-4').forEach(col => {
+                col.classList.add('col-6');
+            });
+            
+            document.querySelectorAll('.row .col-md-6').forEach(col => {
+                col.classList.add('col-12');
+            });
+        }
+
+        function optimizeForDesktop() {
+            // Restore original layout for desktop
+            document.querySelectorAll('.table-responsive').forEach(table => {
+                table.parentElement.classList.remove('table-responsive');
+            });
+        }
+
+        // Theme toggle function
+        function initThemeToggle() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const themeIcon = themeToggle.querySelector('i');
+            
+            // Check local storage for theme preference
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeIcon(savedTheme);
+            
+            themeToggle.addEventListener('click', function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+                
+                document.documentElement.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeIcon(newTheme);
+                
+                showToast(`Switched to ${newTheme === 'dark' ? 'dark' : 'light'} mode`, 'success');
+            });
+            
+            function updateThemeIcon(theme) {
+                if (theme === 'dark') {
+                    themeIcon.className = 'fas fa-sun';
+                } else {
+                    themeIcon.className = 'fas fa-moon';
+                }
+            }
+        }
     
-</script>
+    </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
     Developed by Tan Jun Yuan
