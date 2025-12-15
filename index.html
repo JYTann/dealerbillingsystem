@@ -1631,6 +1631,9 @@
         
         // Initialize jsPDF
         window.jsPDF = window.jspdf.jsPDF;
+
+        let performanceChartInstance = null;
+        let profitLossChartInstance = null;
         
         // DOM Elements
         const authContainer = document.getElementById('auth-container');
@@ -3508,12 +3511,26 @@ window.deleteBill = function(billType, billId) {
                 });
         }
         // 统一渲染函数
+// 统一渲染函数 - 添加空数据检查
 function renderBillsByType(type) {
     const billList = document.getElementById(`${type}-bills-list`);
     if (!billList) return;
     
     // 清空表格
     billList.innerHTML = '';
+    
+    // ⭐ 检查是否有数据
+    if (!bills[type] || bills[type].length === 0) {
+        const colSpan = type === 'individual' ? 8 : 7;
+        billList.innerHTML = `
+            <tr>
+                <td colspan="${colSpan}" class="text-center text-muted">
+                    No bills yet. Add your first bill above.
+                </td>
+            </tr>
+        `;
+        return;
+    }
     
     // 重新渲染所有账单
     bills[type].forEach(bill => {
@@ -3901,11 +3918,22 @@ function renderBillsByType(type) {
             });
         });
         
-        function initCharts() {
+       function initCharts() {
+    // 销毁旧图表实例
+    if (performanceChartInstance) {
+        performanceChartInstance.destroy();
+        performanceChartInstance = null;
+    }
+    
+    if (profitLossChartInstance) {
+        profitLossChartInstance.destroy();
+        profitLossChartInstance = null;
+    }
+    
     // 性能图表
     const perfCtx = document.getElementById('performanceChart');
     if (perfCtx) {
-        new Chart(perfCtx.getContext('2d'), {
+        performanceChartInstance = new Chart(perfCtx.getContext('2d'), {
             type: 'line',
             data: {
                 labels: monthlyData.labels,
@@ -3957,7 +3985,7 @@ function renderBillsByType(type) {
     // 利润/损失图表
     const plCtx = document.getElementById('profitLossChart');
     if (plCtx) {
-        new Chart(plCtx.getContext('2d'), {
+        profitLossChartInstance = new Chart(plCtx.getContext('2d'), {
             type: 'bar',
             data: {
                 labels: monthlyData.labels,
