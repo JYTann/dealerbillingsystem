@@ -184,12 +184,15 @@
         }
         
         .chart-container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    margin-bottom: 20px;
+    position: relative; /* 添加相对定位 */
+    height: 400px; /* 固定高度 */
+    width: 100%; /* 确保宽度100% */
+}
         
         .logo {
             text-align: center;
@@ -613,7 +616,7 @@
                 
                 <div class="chart-container">
                     <h5>Monthly Performance</h5>
-                    <canvas id="performanceChart" height="100"></canvas>
+                    <canvas id="performanceChart"></canvas>
                 </div>
                 
                 <div class="row">
@@ -1031,7 +1034,7 @@
                 
                 <div class="chart-container">
                     <h5>Revenue vs Expenses (Last 6 Months)</h5>
-                    <canvas id="profitLossChart" height="100"></canvas>
+                    <canvas id="profitLossChart"></canvas>
                 </div>
                 
                 <div class="form-section">
@@ -2631,40 +2634,46 @@ function getStatusColor(status) {
         });
         
         // Navigation
-        navLinks.forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const targetPage = this.getAttribute('data-page');
-                
-                // Update active navigation link
-                navLinks.forEach(navLink => navLink.classList.remove('active'));
-                this.classList.add('active');
-                
-                // Show target page
-                pages.forEach(page => page.classList.remove('active'));
-                document.getElementById(targetPage).classList.add('active');
-                
-                // If navigating to dashboard, update it
-                if (targetPage === 'dashboard') {
-                    updateDashboard();
-                }
-                
-                // If navigating to profit-loss, update it
-                if (targetPage === 'profit-loss') {
-                    updateProfitLoss();
-                }
-                
-                // If navigating to inventory-tracking, update it
-                if (targetPage === 'inventory-tracking') {
-                    updateInventoryList();
-                }
-                
-                // If navigating to progress-tracking, update it
-                if (targetPage === 'progress-tracking') {
-                    updateProgressView();
-                }
-            });
-        });
+        // 在导航事件监听器中添加图表重绘
+navLinks.forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const targetPage = this.getAttribute('data-page');
+        
+        // Update active navigation link
+        navLinks.forEach(navLink => navLink.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Show target page
+        pages.forEach(page => page.classList.remove('active'));
+        document.getElementById(targetPage).classList.add('active');
+        
+        // 重新初始化图表
+        setTimeout(() => {
+            initCharts();
+        }, 100);
+        
+        // If navigating to dashboard, update it
+        if (targetPage === 'dashboard') {
+            updateDashboard();
+        }
+        
+        // If navigating to profit-loss, update it
+        if (targetPage === 'profit-loss') {
+            updateProfitLoss();
+        }
+        
+        // If navigating to inventory-tracking, update it
+        if (targetPage === 'inventory-tracking') {
+            updateInventoryList();
+        }
+        
+        // If navigating to progress-tracking, update it
+        if (targetPage === 'progress-tracking') {
+            updateProgressView();
+        }
+    });
+});
         
         // Setup bill form handlers
        // Setup bill form handlers
@@ -3970,6 +3979,10 @@ function renderBillsByType(type) {
     // 性能图表
     const perfCtx = document.getElementById('performanceChart');
     if (perfCtx) {
+        // 设置canvas尺寸以匹配容器
+        perfCtx.style.width = '100%';
+        perfCtx.style.height = '100%';
+        
         performanceChartInstance = new Chart(perfCtx.getContext('2d'), {
             type: 'line',
             data: {
@@ -3985,27 +3998,35 @@ function renderBillsByType(type) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: false, // 关键：不维持宽高比
                 plugins: {
                     legend: {
+                        position: 'top',
                         labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            font: {
+                                size: 12
+                            }
                         }
                     }
                 },
                 scales: {
                     x: {
                         grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+                            display: true
                         },
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            maxRotation: 45,
+                            minRotation: 45
                         }
                     },
                     y: {
                         beginAtZero: true,
                         grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+                            display: true
                         },
                         ticks: {
                             color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
@@ -4022,6 +4043,10 @@ function renderBillsByType(type) {
     // 利润/损失图表
     const plCtx = document.getElementById('profitLossChart');
     if (plCtx) {
+        // 设置canvas尺寸以匹配容器
+        plCtx.style.width = '100%';
+        plCtx.style.height = '100%';
+        
         profitLossChartInstance = new Chart(plCtx.getContext('2d'), {
             type: 'bar',
             data: {
@@ -4045,27 +4070,35 @@ function renderBillsByType(type) {
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false,
+                maintainAspectRatio: false, // 关键：不维持宽高比
                 plugins: {
                     legend: {
+                        position: 'top',
                         labels: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            font: {
+                                size: 12
+                            }
                         }
                     }
                 },
                 scales: {
                     x: {
                         grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+                            display: true
                         },
                         ticks: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
+                            maxRotation: 45,
+                            minRotation: 45
                         }
                     },
                     y: {
                         beginAtZero: true,
                         grid: {
-                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color')
+                            color: getComputedStyle(document.documentElement).getPropertyValue('--border-color'),
+                            display: true
                         },
                         ticks: {
                             color: getComputedStyle(document.documentElement).getPropertyValue('--text-color'),
