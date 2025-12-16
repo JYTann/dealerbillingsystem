@@ -59,7 +59,6 @@
         }
         
         .main-container {
-            display: none;
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
@@ -5749,9 +5748,7 @@ setTimeout(populateBillDropdowns, 1000);
             // This function is now handled by the editable breakdown system
         }
         
-        // Authentication functions
-        // 替换现有的登录按钮事件监听器：
-// 简化版本 - 移除复杂动画
+// 修改现有的登录按钮事件监听器：
 loginBtn.addEventListener('click', function() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -6148,49 +6145,47 @@ loginBtn.addEventListener('click', function() {
         auth.onAuthStateChanged((user) => {
     console.log("Auth state changed, user:", user ? user.email : "No user");
     
-    if (user) {
-        // 检查邮箱是否已验证
-        if (!user.emailVerified) {
-            console.log("User email not verified:", user.email);
+    if (user && user.emailVerified) {
+        console.log("User is logged in and verified:", user.email);
+        
+        // 确保使用正确的类名和样式
+        const authContainer = document.getElementById('auth-container');
+        const mainContainer = document.getElementById('main-container');
+        
+        if (authContainer && mainContainer) {
+            // 使用CSS类而不是直接设置display
+            authContainer.classList.add('hidden');
+            authContainer.classList.remove('visible');
             
-            // 如果用户试图进入主界面，强制登出并显示提示
-            if (mainContainer.style.display === 'block') {
-                showToast('Please verify your email before accessing the system', 'warning');
-                
-                // 短暂延迟后登出
-                setTimeout(() => {
-                    auth.signOut();
-                }, 2000);
-                
-                // 显示验证提醒
-                const reminderHTML = `
-                    <div class="alert alert-warning mt-3">
-                        <h6><i class="fas fa-envelope"></i> Email Verification Required</h6>
-                        <p>Please check your email (${user.email}) for the verification link.</p>
-                        <button class="btn btn-sm btn-primary" id="resend-verification">
-                            <i class="fas fa-paper-plane"></i> Resend Verification Email
-                        </button>
-                    </div>
-                `;
-                
-                // 添加到登录页面
-                const authContainer = document.getElementById('auth-container');
-                if (authContainer && !document.getElementById('verification-reminder')) {
-                    authContainer.insertAdjacentHTML('beforeend', reminderHTML);
-                    
-                    // 添加重新发送验证邮件的功能
-                    document.getElementById('resend-verification').addEventListener('click', function() {
-    // ✅ 正确：使用 firebase.auth().currentUser
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-        currentUser.sendEmailVerification()
-            .then(() => {
-                showToast('Verification email resent. Please check your inbox.', 'success');
-            })
-            .catch(error => {
-                console.error("Error resending verification:", error);
-                showToast('Error resending verification email', 'error');
-            });
+            mainContainer.classList.add('visible');
+            mainContainer.classList.remove('hidden');
+            
+            // 确保CSS生效
+            mainContainer.style.display = 'block';
+            authContainer.style.display = 'none';
+            
+            // 延迟加载数据，确保DOM已完全渲染
+            setTimeout(() => {
+                loadUserData();
+                updateDashboard();
+                initCharts();
+            }, 100);
+        }
+    } else {
+        console.log("No user logged in, showing auth container");
+        
+        const authContainer = document.getElementById('auth-container');
+        const mainContainer = document.getElementById('main-container');
+        
+        if (authContainer && mainContainer) {
+            authContainer.classList.remove('hidden');
+            authContainer.classList.add('visible');
+            authContainer.style.display = 'block';
+            
+            mainContainer.classList.remove('visible');
+            mainContainer.classList.add('hidden');
+            mainContainer.style.display = 'none';
+        }
     }
 });
                 }
@@ -8004,60 +7999,44 @@ function handleEnhancedRegistration() {
 function initializeAfterDOMReady() {
     console.log("Initializing after DOM ready...");
     
-    // 检查所有必要的元素
-    const requiredElements = [
-        'auth-container',
-        'main-container',
-        'login-section',
-        'register-section',
-        'login-btn',
-        'register-btn'
-    ];
+    // 检查容器状态
+    const authContainer = document.getElementById('auth-container');
+    const mainContainer = document.getElementById('main-container');
     
-    requiredElements.forEach(id => {
-        const element = document.getElementById(id);
-        if (!element) {
-            console.error(`Element #${id} not found!`);
-        }
+    console.log("Auth container:", {
+        exists: !!authContainer,
+        display: authContainer ? authContainer.style.display : 'N/A',
+        classes: authContainer ? authContainer.className : 'N/A'
     });
     
-    // 延迟初始化图表和其他组件
-    setTimeout(() => {
-        try {
-            if (performanceChartInstance) {
-                performanceChartInstance.destroy();
-                performanceChartInstance = null;
-            }
-            if (profitLossChartInstance) {
-                profitLossChartInstance.destroy();
-                profitLossChartInstance = null;
-            }
-            
-            initCharts();
-            console.log("Charts re-initialized");
-        } catch (error) {
-            console.error("Error re-initializing charts:", error);
-        }
-    }, 1000);
-}
-
-// 使用多个事件监听器确保 DOM 就绪
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeAfterDOMReady);
-} else {
-    setTimeout(initializeAfterDOMReady, 500);
-}
-
-// 额外的安全措施
-window.addEventListener('load', function() {
-    console.log("Window fully loaded, final initialization...");
+    console.log("Main container:", {
+        exists: !!mainContainer,
+        display: mainContainer ? mainContainer.style.display : 'N/A',
+        classes: mainContainer ? mainContainer.className : 'N/A'
+    });
     
-    // 重新绑定所有事件监听器
-    setTimeout(() => {
-        bindEventListeners();
-        updateAllUI();
-    }, 500);
-});
+    // 检查用户登录状态
+    const user = auth.currentUser;
+    console.log("Current user at init:", user ? `${user.email} (verified: ${user.emailVerified})` : "No user");
+    
+    // 如果用户已登录，确保显示主容器
+    if (user && user.emailVerified) {
+        console.log("User already logged in, showing main container");
+        
+        if (authContainer && mainContainer) {
+            authContainer.style.display = 'none';
+            mainContainer.style.display = 'block';
+            mainContainer.classList.add('visible');
+            
+            // 立即加载数据
+            setTimeout(() => {
+                loadUserData();
+                initCharts();
+                updateDashboard();
+            }, 500);
+        }
+    }
+}
 
 // 修复事件监听器绑定的函数
 function bindEventListeners() {
