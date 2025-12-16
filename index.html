@@ -5793,14 +5793,6 @@ loginBtn.addEventListener('click', function() {
             .then((userCredential) => {
                 console.log("登录成功，用户:", userCredential.user.email);
                 
-                // 直接设置样式，不使用动画延迟
-                authContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
-                mainContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
-                
-                // 添加类名（双重保障）
-                authContainer.classList.add('hidden');
-                mainContainer.classList.add('visible');
-                
                 // 加载用户数据
                 loadUserData();
                 
@@ -5854,8 +5846,6 @@ loginBtn.addEventListener('click', function() {
             auth.signInWithPopup(provider)
                 .then((result) => {
                     // Signed in
-                    authContainer.style.display = 'none';
-                    mainContainer.style.display = 'block';
                     loadUserData();
                     showToast('Google login successful!', 'success');
                 })
@@ -5905,9 +5895,6 @@ loginBtn.addEventListener('click', function() {
                 
                 showToast('Registration successful! You are now logged in.', 'success');
                 
-                // 自动登录
-                authContainer.style.display = 'none';
-                mainContainer.style.display = 'block';
                 loadUserData();
             })
             .catch((error) => {
@@ -5948,8 +5935,6 @@ loginBtn.addEventListener('click', function() {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
             auth.signOut().then(() => {
-                authContainer.style.display = 'block';
-                mainContainer.style.display = 'none';
                 
                 // Clear all data from UI
                 if (periodicBillsList) periodicBillsList.innerHTML = '';
@@ -6227,40 +6212,30 @@ loginBtn.addEventListener('click', function() {
                 }
             }
             
-            // 保持显示登录页面
-            if (authContainer && mainContainer) {
-                authContainer.style.display = 'block';
-                mainContainer.style.display = 'none';
-            }
+            renderApp(null)
             return;
         }
         
         // 用户已登录且邮箱已验证
         console.log("User is logged in and verified:", user.email);
         
-        if (authContainer && mainContainer) {
-            authContainer.style.display = 'none';
-            mainContainer.style.display = 'block';
-            loadUserData();
-            
-            // 移除验证提醒（如果存在）
-            const reminder = document.getElementById('verification-reminder');
-            if (reminder) reminder.remove();
-        }
+        renderApp(user);
+        loadUserData();
+        
+        // 移除验证提醒（如果存在）
+        const reminder = document.getElementById('verification-reminder');
+        if (reminder) reminder.remove();
     } else {
         // 用户未登录
         console.log("No user logged in, showing auth container");
         
-        if (authContainer && mainContainer) {
-            authContainer.style.display = 'block';
-            mainContainer.style.display = 'none';
-            
-            // 确保登录页面可见
-            const loginSection = document.getElementById('login-section');
-            const registerSection = document.getElementById('register-section');
-            if (loginSection) loginSection.style.display = 'block';
-            if (registerSection) registerSection.style.display = 'none';
-        }
+        renderApp(null);
+        
+        // 确保登录页面可见
+        const loginSection = document.getElementById('login-section');
+        const registerSection = document.getElementById('register-section');
+        if (loginSection) loginSection.style.display = 'block';
+        if (registerSection) registerSection.style.display = 'none';
     }
 });
         
@@ -8344,6 +8319,43 @@ window.addEventListener('load', function() {
         console.error("URL错误参数:", urlParams.get('error'));
     }
 });
+
+        // ============== 唯一的UI控制函数 ==============
+function renderApp(user) {
+    const auth = document.getElementById("auth-container");
+    const main = document.getElementById("main-container");
+
+    console.log("🔥 renderApp called with user:", user?.email);
+
+    if (user && user.emailVerified) {
+        // 显示主界面
+        auth.style.display = "none";
+        auth.classList.add("hidden");
+        
+        main.style.display = "block";
+        main.classList.add("visible");
+
+        // 强制显示 dashboard
+        document.querySelectorAll(".page").forEach(p => {
+            p.style.display = "none";
+            p.classList.remove("active");
+        });
+
+        const dashboard = document.getElementById("dashboard");
+        if (dashboard) {
+            dashboard.style.display = "block";
+            dashboard.classList.add("active");
+        }
+
+    } else {
+        // 显示登录页
+        auth.style.display = "block";
+        auth.classList.remove("hidden");
+        
+        main.style.display = "none";
+        main.classList.remove("visible");
+    }
+}
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
