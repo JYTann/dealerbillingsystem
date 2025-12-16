@@ -6140,19 +6140,22 @@ loginBtn.addEventListener('click', function() {
                 if (authContainer && !document.getElementById('verification-reminder')) {
                     authContainer.insertAdjacentHTML('beforeend', reminderHTML);
                     
-                    // 添加重新发送验证邮件的功能
-                    document.getElementById('resend-verification').addEventListener('click', function() {
-                        user.sendEmailVerification()
-                            .then(() => {
-                                showToast('Verification email resent. Please check your inbox.', 'success');
-                            })
-                            .catch(error => {
-                                console.error("Error resending verification:", error);
-                                showToast('Error resending verification email', 'error');
-                            });
-                    });
-                }
-            }
+                   // 添加重新发送验证邮件的功能
+document.getElementById('resend-verification').addEventListener('click', function() {
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+        currentUser.sendEmailVerification()
+            .then(() => {
+                showToast('Verification email resent. Please check your inbox.', 'success');
+            })
+            .catch(error => {
+                console.error("Error resending verification:", error);
+                showToast('Error resending verification email', 'error');
+            });
+    } else {
+        showToast('No user found. Please log in again.', 'error');
+    }
+});
             
             // 保持显示登录页面
             if (authContainer && mainContainer) {
