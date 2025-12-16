@@ -7068,6 +7068,147 @@ window.showBulkExportModal = function() {
     // Navigate to batch operations page
     document.querySelector('.sidebar a[data-page="batch-operations"]').click();
 };
+
+        // ============== MISSING FUNCTIONS ==============
+
+// Add this function to handle CSV export for batch operations
+function batchExportAsCSV() {
+    const selectedCheckboxes = document.querySelectorAll('#batch-bills-list .bill-select:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        showToast('Please select bills to export', 'error');
+        return;
+    }
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Add headers
+    csvContent += "Bill No,Date,Type,Description,Amount (RM)\n";
+    
+    // Add selected bills data
+    selectedCheckboxes.forEach((checkbox, index) => {
+        const row = checkbox.closest('tr');
+        const cells = row.querySelectorAll('td');
+        
+        const billData = [
+            `"${cells[2].textContent}"`,        // Bill No
+            `"${cells[1].textContent}"`,        // Date
+            `"${cells[3].textContent}"`,        // Type
+            `"${cells[4].textContent}"`,        // Description
+            `"${cells[5].textContent}"`         // Amount
+        ];
+        
+        csvContent += billData.join(',') + '\n';
+    });
+    
+    // Create download link
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `batch-export-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    
+    // Trigger download
+    link.click();
+    document.body.removeChild(link);
+    
+    showToast(`Exported ${selectedCheckboxes.length} bill(s) as CSV`, 'success');
+}
+
+// Update the initBatchOperations function to fix the reference
+function initBatchOperations() {
+    // Load bills for batch operations
+    loadBatchBills();
+    
+    // Event listeners
+    const applyFilterBtn = document.getElementById('apply-batch-filter');
+    if (applyFilterBtn) {
+        applyFilterBtn.addEventListener('click', loadBatchBills);
+    }
+    
+    const selectAllBatch = document.getElementById('select-all-batch');
+    if (selectAllBatch) {
+        selectAllBatch.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#batch-bills-list .bill-select');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+    }
+    
+    // Batch operations buttons
+    const batchCopyBtn = document.getElementById('batch-copy');
+    if (batchCopyBtn) {
+        batchCopyBtn.addEventListener('click', batchCopyBills);
+    }
+    
+    const batchDeleteBtn = document.getElementById('batch-delete');
+    if (batchDeleteBtn) {
+        batchDeleteBtn.addEventListener('click', batchDeleteBills);
+    }
+    
+    const batchExportPdfBtn = document.getElementById('batch-export-pdf');
+    if (batchExportPdfBtn) {
+        batchExportPdfBtn.addEventListener('click', batchExportAsPDF);
+    }
+    
+    const batchExportCsvBtn = document.getElementById('batch-export-csv');
+    if (batchExportCsvBtn) {
+        // Fixed: Use the defined batchExportAsCSV function
+        batchExportCsvBtn.addEventListener('click', batchExportAsCSV);
+    }
+}
+
+// Make sure these functions are available globally
+window.showQuickCopyModal = function() {
+    populateBillDropdowns();
+    const modal = new bootstrap.Modal(document.getElementById('quickCopyModal'));
+    modal.show();
+};
+
+window.showBulkDeleteModal = function() {
+    // Navigate to batch operations page
+    document.querySelector('.sidebar a[data-page="batch-operations"]').click();
+};
+
+window.showBulkExportModal = function() {
+    // Navigate to batch operations page
+    document.querySelector('.sidebar a[data-page="batch-operations"]').click();
+};
+
+        // Add this function to handle login errors
+function handleLoginError(error) {
+    let errorMessage = 'Login failed. Please try again.';
+    
+    switch (error.code) {
+        case 'auth/user-not-found':
+            errorMessage = 'No account found with this email.';
+            break;
+        case 'auth/wrong-password':
+            errorMessage = 'Incorrect password. Please try again.';
+            break;
+        case 'auth/invalid-email':
+            errorMessage = 'Invalid email address.';
+            break;
+        case 'auth/user-disabled':
+            errorMessage = 'This account has been disabled.';
+            break;
+        case 'auth/too-many-requests':
+            errorMessage = 'Too many failed attempts. Please try again later.';
+            break;
+    }
+    
+    loginError.textContent = errorMessage;
+    loginError.style.display = 'block';
+    
+    // Add shake animation to form
+    const authContainer = document.getElementById('auth-container');
+    authContainer.classList.add('shake');
+    setTimeout(() => {
+        authContainer.classList.remove('shake');
+    }, 500);
+}
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
