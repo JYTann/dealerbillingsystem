@@ -941,6 +941,30 @@ tr:hover .template-actions {
         margin: 3px;
     }
 }
+
+        /* 修复显示问题 - 强制覆盖 */
+#main-container[style*="display: block"] {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+#auth-container[style*="display: none"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* 确保没有其他样式覆盖 */
+body > div {
+    transition: none !important;
+}
+
+/* 移除任何可能影响显示的变换 */
+#main-container {
+    transform: none !important;
+    transition: none !important;
+}
     </style>
 </head>
 <body>
@@ -5749,7 +5773,6 @@ setTimeout(populateBillDropdowns, 1000);
         }
         
         // Authentication functions
-        // 替换现有的登录按钮事件监听器：
 // 简化版本 - 移除复杂动画
 loginBtn.addEventListener('click', function() {
     const email = document.getElementById('email').value.trim();
@@ -5761,57 +5784,66 @@ loginBtn.addEventListener('click', function() {
         this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing in...';
         this.disabled = true;
         
+        // 清除之前的错误
+        loginError.style.display = 'none';
+        
+        console.log("尝试登录:", email);
+        
         auth.signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                // 登录成功
+                console.log("登录成功，用户:", userCredential.user.email);
+                
+                // 直接设置样式，不使用动画延迟
+                authContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+                mainContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+                
+                // 添加类名（双重保障）
+                authContainer.classList.add('hidden');
+                mainContainer.classList.add('visible');
+                
+                // 加载用户数据
+                loadUserData();
+                
+                // 更新按钮状态
                 this.innerHTML = '<i class="fas fa-check me-2"></i>Success!';
                 
-                // 直接切换显示，不等待动画
+                // 延迟恢复按钮
                 setTimeout(() => {
-                    // 立即隐藏登录容器，显示主容器
-                    authContainer.style.display = 'none';
-                    mainContainer.style.display = 'block';
-                    
-                    // 重置所有CSS变换
-                    authContainer.style.opacity = '1';
-                    authContainer.style.transform = 'none';
-                    mainContainer.style.opacity = '1';
-                    mainContainer.style.transform = 'none';
-                    mainContainer.style.transition = 'none';
-                    
-                    // 加载用户数据
-                    loadUserData();
-                    
-                    showToast('Welcome back! Login successful!', 'success');
-                    
-                    // 恢复按钮状态
-                    setTimeout(() => {
-                        this.innerHTML = originalText;
-                        this.disabled = false;
-                    }, 1000);
-                }, 300);
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                }, 1000);
+                
+                showToast('Welcome back! Login successful!', 'success');
+                
+                // 强制重绘
+                setTimeout(() => {
+                    document.body.style.display = 'none';
+                    document.body.offsetHeight;
+                    document.body.style.display = '';
+                }, 50);
             })
             .catch((error) => {
+                console.error("登录错误:", error);
+                
                 // 恢复按钮状态
                 this.innerHTML = originalText;
                 this.disabled = false;
                 
                 // 显示错误
-                handleLoginError(error);
-                console.error("Login error: ", error);
+                let errorMessage = 'Login failed. Please try again.';
+                if (error.code === 'auth/user-not-found') {
+                    errorMessage = 'No account found with this email.';
+                } else if (error.code === 'auth/wrong-password') {
+                    errorMessage = 'Incorrect password.';
+                } else if (error.code === 'auth/invalid-email') {
+                    errorMessage = 'Invalid email address.';
+                }
+                
+                loginError.textContent = errorMessage;
+                loginError.style.display = 'block';
             });
     } else {
-        // 添加表单验证效果
-        if (!email) {
-            document.getElementById('email').classList.add('is-invalid');
-            document.getElementById('email').focus();
-        }
-        if (!password) {
-            document.getElementById('password').classList.add('is-invalid');
-            if (email) document.getElementById('password').focus();
-        }
-        
-        loginError.textContent = 'Please fill in all required fields.';
+        loginError.textContent = 'Please enter email and password.';
         loginError.style.display = 'block';
     }
 });
@@ -8275,6 +8307,43 @@ function toggleElementVisibility(elementId, show) {
         return true;
     });
 }
+
+        // 页面加载时检查登录状态
+window.addEventListener('load', function() {
+    console.log("页面加载完成，检查认证状态...");
+    
+    // 检查Firebase认证状态
+    auth.onAuthStateChanged(function(user) {
+        console.log("认证状态变化，用户:", user ? user.email : "未登录");
+        
+        if (user && user.emailVerified) {
+            console.log("用户已登录且已验证，显示主界面");
+            
+            // 直接显示主界面
+            const authContainer = document.getElementById('auth-container');
+            const mainContainer = document.getElementById('main-container');
+            
+            if (authContainer && mainContainer) {
+                authContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+                mainContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+                
+                // 加载数据
+                setTimeout(() => {
+                    loadUserData();
+                    console.log("用户数据加载完成");
+                }, 500);
+            }
+        } else {
+            console.log("用户未登录或未验证，显示登录界面");
+        }
+    });
+    
+    // 检查当前URL，如果有错误参数则处理
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('error')) {
+        console.error("URL错误参数:", urlParams.get('error'));
+    }
+});
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
