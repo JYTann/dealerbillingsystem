@@ -731,6 +731,87 @@
         margin-top: 5px;
     }
 }
+        /* Template and Batch Operations Styles */
+.template-card, .batch-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+}
+
+.template-card:hover, .batch-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.comment-item {
+    transition: all 0.3s ease;
+}
+
+.comment-item:hover {
+    background-color: var(--light-color);
+}
+
+.attachment-thumbnail {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.attachment-thumbnail:hover {
+    opacity: 0.8;
+}
+
+/* Batch operations checkbox */
+.batch-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+/* Comment type badges */
+.badge-general {
+    background-color: #6c757d;
+}
+
+.badge-followup {
+    background-color: #17a2b8;
+}
+
+.badge-issue {
+    background-color: #dc3545;
+}
+
+.badge-reminder {
+    background-color: #ffc107;
+    color: #000;
+}
+
+/* Attachment preview modal */
+#attachmentPreviewModal .modal-xl {
+    max-width: 90%;
+}
+
+/* Template actions */
+.template-actions {
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+tr:hover .template-actions {
+    opacity: 1;
+}
+
+/* Responsive adjustments for new features */
+@media (max-width: 768px) {
+    .template-actions {
+        opacity: 1;
+    }
+    
+    .attachment-thumbnail {
+        height: 120px;
+    }
+}
     </style>
 </head>
 <body>
@@ -902,6 +983,8 @@
             <a href="#" data-page="yearly-bills"><i class="fas fa-calendar"></i> Yearly Bills</a>
             <a href="#" data-page="profit-loss"><i class="fas fa-chart-line"></i> Profit & Loss</a>
             <a href="#" data-page="customer-management"><i class="fas fa-users"></i> Customer Management</a>
+            <a href="#" data-page="templates"><i class="fas fa-copy"></i> Bill Templates</a>
+            <a href="#" data-page="batch-operations"><i class="fas fa-layer-group"></i> Batch Operations</a>
             <a href="#" data-page="inventory-tracking"><i class="fas fa-box"></i> Inventory Tracking</a>
             <!-- Add progress tracking page -->
             <a href="#" data-page="progress-tracking"><i class="fas fa-clipboard-check"></i> Progress Tracking</a>
@@ -1905,6 +1988,396 @@
                 </div>
             </div>
 
+            <!-- Bill Templates Page -->
+<div id="templates" class="page">
+    <h2>Bill Templates</h2>
+    
+    <div class="form-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5>Save Current Bill as Template</h5>
+            <button class="btn btn-primary" id="save-current-template">
+                <i class="fas fa-save"></i> Save Current Bill
+            </button>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="template-name" class="form-label">Template Name</label>
+                    <input type="text" class="form-control" id="template-name" placeholder="e.g., Monthly Service Bill">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label for="template-type" class="form-label">Bill Type</label>
+                    <select class="form-select" id="template-type">
+                        <option value="individual">Individual Bill</option>
+                        <option value="periodic">Periodic Bill</option>
+                        <option value="monthly">Monthly Bill</option>
+                        <option value="yearly">Yearly Bill</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <label for="template-description" class="form-label">Description (Optional)</label>
+            <textarea class="form-control" id="template-description" rows="2" placeholder="Describe this template..."></textarea>
+        </div>
+    </div>
+    
+    <div class="form-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5>Saved Templates</h5>
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-secondary" id="refresh-templates">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <button class="btn btn-outline-danger" id="delete-selected-templates">
+                    <i class="fas fa-trash"></i> Delete Selected
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="bill-table">
+                <thead>
+                    <tr>
+                        <th width="50">
+                            <input type="checkbox" id="select-all-templates">
+                        </th>
+                        <th>Template Name</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Items Count</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="templates-list">
+                    <!-- Templates will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Batch Operations Page -->
+<div id="batch-operations" class="page">
+    <h2>Batch Operations</h2>
+    
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-copy fa-3x mb-3 text-primary"></i>
+                    <h5>Quick Copy Bills</h5>
+                    <p class="text-muted">Duplicate existing bills with one click</p>
+                    <button class="btn btn-primary mt-2" onclick="showQuickCopyModal()">
+                        <i class="fas fa-clone"></i> Copy Bills
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-trash-alt fa-3x mb-3 text-primary"></i>
+                    <h5>Bulk Delete</h5>
+                    <p class="text-muted">Delete multiple bills at once</p>
+                    <button class="btn btn-danger mt-2" onclick="showBulkDeleteModal()">
+                        <i class="fas fa-trash"></i> Delete Bills
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center h-100">
+                <div class="card-body">
+                    <i class="fas fa-file-export fa-3x mb-3 text-primary"></i>
+                    <h5>Bulk Export</h5>
+                    <p class="text-muted">Export multiple bills to PDF/CSV</p>
+                    <button class="btn btn-success mt-2" onclick="showBulkExportModal()">
+                        <i class="fas fa-download"></i> Export Bills
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-section">
+        <h5>Batch Operations Panel</h5>
+        
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="batch-bill-type" class="form-label">Bill Type</label>
+                <select class="form-select" id="batch-bill-type">
+                    <option value="all">All Types</option>
+                    <option value="individual">Individual Bills</option>
+                    <option value="periodic">Periodic Bills</option>
+                    <option value="monthly">Monthly Bills</option>
+                    <option value="yearly">Yearly Bills</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="batch-date-from" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="batch-date-from">
+            </div>
+            <div class="col-md-4">
+                <label for="batch-date-to" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="batch-date-to">
+            </div>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="select-all-batch">
+                <label class="form-check-label" for="select-all-batch">
+                    Select all bills
+                </label>
+            </div>
+            <div>
+                <span id="selected-count" class="badge bg-primary me-2">0 selected</span>
+                <button class="btn btn-outline-secondary" id="apply-batch-filter">
+                    <i class="fas fa-filter"></i> Filter
+                </button>
+            </div>
+        </div>
+        
+        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+            <table class="bill-table">
+                <thead>
+                    <tr>
+                        <th width="50">Select</th>
+                        <th>Date</th>
+                        <th>Bill No</th>
+                        <th>Type</th>
+                        <th>Description</th>
+                        <th>Amount (RM)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="batch-bills-list">
+                    <!-- Bills for batch operations -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-3 d-flex gap-2">
+            <button class="btn btn-success" id="batch-copy">
+                <i class="fas fa-copy"></i> Copy Selected
+            </button>
+            <button class="btn btn-primary" id="batch-export-pdf">
+                <i class="fas fa-file-pdf"></i> Export as PDF
+            </button>
+            <button class="btn btn-info" id="batch-export-csv">
+                <i class="fas fa-file-csv"></i> Export as CSV
+            </button>
+            <button class="btn btn-danger" id="batch-delete">
+                <i class="fas fa-trash"></i> Delete Selected
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Attachments Page -->
+<div id="attachments" class="page">
+    <h2>Bill Attachments</h2>
+    
+    <div class="form-section">
+        <h5>Upload Attachment</h5>
+        <form id="attachment-form">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="attachment-bill" class="form-label">Select Bill</label>
+                        <select class="form-select" id="attachment-bill" required>
+                            <option value="">-- Select a bill --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="attachment-type" class="form-label">Attachment Type</label>
+                        <select class="form-select" id="attachment-type">
+                            <option value="receipt">Receipt</option>
+                            <option value="invoice">Invoice</option>
+                            <option value="contract">Contract</option>
+                            <option value="photo">Photo</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="attachment-file" class="form-label">File</label>
+                <input type="file" class="form-control" id="attachment-file" 
+                       accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.xls,.xlsx" required>
+                <div class="form-text">Supported files: Images (JPG, PNG), PDF, Word, Excel</div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="attachment-description" class="form-label">Description (Optional)</label>
+                <input type="text" class="form-control" id="attachment-description" 
+                       placeholder="e.g., Customer signature, Delivery proof">
+            </div>
+            
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-upload"></i> Upload Attachment
+            </button>
+        </form>
+    </div>
+    
+    <div class="form-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5>Attachments</h5>
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-secondary" id="filter-all-attachments">
+                    All
+                </button>
+                <button class="btn btn-outline-secondary" id="filter-images">
+                    <i class="fas fa-image"></i> Images
+                </button>
+                <button class="btn btn-outline-secondary" id="filter-documents">
+                    <i class="fas fa-file"></i> Documents
+                </button>
+            </div>
+        </div>
+        
+        <div class="row" id="attachments-grid">
+            <!-- Attachments will be displayed here -->
+        </div>
+    </div>
+</div>
+
+<!-- Comments Page -->
+<div id="comments" class="page">
+    <h2>Bill Comments</h2>
+    
+    <div class="form-section">
+        <h5>Add Comment</h5>
+        <form id="comment-form">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="comment-bill" class="form-label">Select Bill</label>
+                        <select class="form-select" id="comment-bill" required>
+                            <option value="">-- Select a bill --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="comment-type" class="form-label">Comment Type</label>
+                        <select class="form-select" id="comment-type">
+                            <option value="general">General Note</option>
+                            <option value="followup">Follow-up</option>
+                            <option value="issue">Issue</option>
+                            <option value="reminder">Reminder</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="comment-text" class="form-label">Comment</label>
+                <textarea class="form-control" id="comment-text" rows="3" 
+                          placeholder="Enter your comment here..." required></textarea>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="comment-important">
+                    <label class="form-check-label" for="comment-important">
+                        Mark as important
+                    </label>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-comment"></i> Add Comment
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="form-section">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5>Recent Comments</h5>
+            <div class="btn-group" role="group">
+                <button class="btn btn-outline-secondary active" id="filter-all-comments">
+                    All Comments
+                </button>
+                <button class="btn btn-outline-secondary" id="filter-important-comments">
+                    Important Only
+                </button>
+                <button class="btn btn-outline-secondary" id="filter-my-comments">
+                    My Comments
+                </button>
+            </div>
+        </div>
+        
+        <div id="comments-list">
+            <!-- Comments will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- Modals for new features -->
+<div class="modal fade" id="quickCopyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Quick Copy Bill</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="copy-source-bill" class="form-label">Select Bill to Copy</label>
+                    <select class="form-select" id="copy-source-bill">
+                        <option value="">-- Select a bill --</option>
+                    </select>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="copy-changes" class="form-label">Make Changes (Optional)</label>
+                    <textarea class="form-control" id="copy-changes" rows="3" 
+                              placeholder="Enter any changes you want to make to the copied bill..."></textarea>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> This will create an exact copy of the selected bill with a new bill number.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirm-copy-bill">Copy Bill</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="attachmentPreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attachment-preview-title">Attachment Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <div id="attachment-preview-content">
+                    <!-- Preview will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary" id="download-attachment" download>
+                    <i class="fas fa-download"></i> Download
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
             <!-- More Page -->
             <div id="more" class="page">
                 <h2>Additional Features</h2>
@@ -1949,6 +2422,37 @@
                             </div>
                         </div>
                     </div>
+                    <!-- 添加到 More 页面中 -->
+<div class="col-md-4 mb-4">
+    <div class="card">
+        <div class="card-body text-center">
+            <i class="fas fa-copy fa-3x mb-3 text-primary"></i>
+            <h5>Bill Templates</h5>
+            <p>Save and manage frequently used bill formats</p>
+            <button class="btn btn-outline-primary" data-page="templates">Manage Templates</button>
+        </div>
+    </div>
+</div>
+<div class="col-md-4 mb-4">
+    <div class="card">
+        <div class="card-body text-center">
+            <i class="fas fa-file-upload fa-3x mb-3 text-primary"></i>
+            <h5>Attachments</h5>
+            <p>Upload images and documents to bills</p>
+            <button class="btn btn-outline-primary" data-page="attachments">Manage Attachments</button>
+        </div>
+    </div>
+</div>
+<div class="col-md-4 mb-4">
+    <div class="card">
+        <div class="card-body text-center">
+            <i class="fas fa-comments fa-3x mb-3 text-primary"></i>
+            <h5>Comments</h5>
+            <p>Add notes and comments to bills</p>
+            <button class="btn btn-outline-primary" data-page="comments">View Comments</button>
+        </div>
+    </div>
+</div>
                     <div class="col-md-4 mb-4">
                         <div class="card">
                             <div class="card-body text-center">
@@ -4694,6 +5198,13 @@ if (rememberMe) {
                 
                 // Load manual records
                 loadManualRecords();
+// Load new data types
+loadTemplates();
+loadAttachments();
+loadComments();
+
+// Populate dropdowns after loading
+setTimeout(populateBillDropdowns, 1000);
             }
 
             function updateGrandTotalFromArray(type) {
@@ -5361,7 +5872,1202 @@ loginBtn.addEventListener('click', function() {
                 }
             }
         }
+    // ============== BILL TEMPLATES SYSTEM ==============
+let templates = [];
+
+// Initialize templates system
+function initTemplatesSystem() {
+    if (!auth.currentUser) return;
     
+    // Load templates
+    loadTemplates();
+    
+    // Save current bill as template
+    const saveTemplateBtn = document.getElementById('save-current-template');
+    if (saveTemplateBtn) {
+        saveTemplateBtn.addEventListener('click', saveCurrentBillAsTemplate);
+    }
+    
+    // Template checkbox handling
+    const selectAllCheckbox = document.getElementById('select-all-templates');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#templates-list input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    }
+    
+    // Delete selected templates
+    const deleteSelectedBtn = document.getElementById('delete-selected-templates');
+    if (deleteSelectedBtn) {
+        deleteSelectedBtn.addEventListener('click', deleteSelectedTemplates);
+    }
+    
+    // Refresh templates
+    const refreshBtn = document.getElementById('refresh-templates');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', loadTemplates);
+    }
+}
+
+function saveCurrentBillAsTemplate() {
+    const templateName = document.getElementById('template-name').value.trim();
+    const templateType = document.getElementById('template-type').value;
+    const description = document.getElementById('template-description').value.trim();
+    
+    if (!templateName) {
+        showToast('Please enter a template name', 'error');
+        return;
+    }
+    
+    // Get current bill data based on active page
+    let billData = null;
+    const activePage = document.querySelector('.page.active').id;
+    
+    switch (activePage) {
+        case 'individual-bills':
+            billData = getCurrentIndividualBillData();
+            break;
+        case 'periodic-bills':
+            billData = getCurrentPeriodicBillData();
+            break;
+        case 'monthly-bills':
+            billData = getCurrentMonthlyBillData();
+            break;
+        case 'yearly-bills':
+            billData = getCurrentYearlyBillData();
+            break;
+        default:
+            showToast('Please navigate to a bill page to save as template', 'error');
+            return;
+    }
+    
+    if (!billData || billData.items.length === 0) {
+        showToast('No bill items to save as template', 'error');
+        return;
+    }
+    
+    const template = {
+        id: Date.now().toString(),
+        name: templateName,
+        type: templateType,
+        description: description,
+        data: billData,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    // Save to local array
+    templates.push(template);
+    
+    // Save to Firebase
+    saveTemplateToFirebase(template);
+    
+    // Update UI
+    addTemplateToUI(template);
+    
+    // Clear form
+    document.getElementById('template-name').value = '';
+    document.getElementById('template-description').value = '';
+    
+    showToast('Template saved successfully!', 'success');
+}
+
+function getCurrentIndividualBillData() {
+    return {
+        type: 'individual',
+        items: bills.individual.map(bill => ({
+            description: bill.description,
+            quantity: bill.quantity,
+            price: bill.price,
+            customerName: bill.customerName,
+            customerAddress: bill.customerAddress
+        }))
+    };
+}
+
+// Similar functions for other bill types...
+
+function addTemplateToUI(template) {
+    const templatesList = document.getElementById('templates-list');
+    if (!templatesList) return;
+    
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td>
+            <input type="checkbox" class="template-select" value="${template.id}">
+        </td>
+        <td>
+            <strong>${template.name}</strong>
+            ${template.description ? `<br><small class="text-muted">${template.description}</small>` : ''}
+        </td>
+        <td>
+            <span class="badge bg-info">${template.type}</span>
+        </td>
+        <td>${template.description || '-'}</td>
+        <td>${template.data.items.length}</td>
+        <td>${new Date(template.createdAt).toLocaleDateString()}</td>
+        <td>
+            <button class="btn btn-sm btn-primary" onclick="useTemplate('${template.id}')">
+                <i class="fas fa-play"></i> Use
+            </button>
+            <button class="btn btn-sm btn-success" onclick="duplicateTemplate('${template.id}')">
+                <i class="fas fa-copy"></i> Copy
+            </button>
+            <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${template.id}')">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    templatesList.appendChild(row);
+}
+
+function useTemplate(templateId) {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+    
+    // Navigate to the appropriate bill page
+    const pageMap = {
+        'individual': 'individual-bills',
+        'periodic': 'periodic-bills',
+        'monthly': 'monthly-bills',
+        'yearly': 'yearly-bills'
+    };
+    
+    const targetPage = pageMap[template.type];
+    if (targetPage) {
+        // Trigger navigation
+        document.querySelector(`.sidebar a[data-page="${targetPage}"]`).click();
+        
+        // Populate form with template data after a short delay
+        setTimeout(() => {
+            populateFormWithTemplate(template);
+        }, 500);
+    }
+    
+    showToast(`Template "${template.name}" loaded`, 'success');
+}
+
+function duplicateTemplate(templateId) {
+    const template = templates.find(t => t.id === templateId);
+    if (!template) return;
+    
+    const newTemplate = {
+        ...template,
+        id: Date.now().toString(),
+        name: `${template.name} (Copy)`,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    templates.push(newTemplate);
+    saveTemplateToFirebase(newTemplate);
+    addTemplateToUI(newTemplate);
+    
+    showToast('Template duplicated successfully', 'success');
+}
+
+function deleteTemplate(templateId) {
+    if (!confirm('Are you sure you want to delete this template?')) return;
+    
+    const index = templates.findIndex(t => t.id === templateId);
+    if (index !== -1) {
+        templates.splice(index, 1);
+        
+        // Remove from UI
+        const row = document.querySelector(`#templates-list tr:has(input[value="${templateId}"])`);
+        if (row) row.remove();
+        
+        // Delete from Firebase
+        deleteTemplateFromFirebase(templateId);
+        
+        showToast('Template deleted successfully', 'success');
+    }
+}
+
+function deleteSelectedTemplates() {
+    const selectedCheckboxes = document.querySelectorAll('#templates-list .template-select:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        showToast('Please select templates to delete', 'error');
+        return;
+    }
+    
+    if (!confirm(`Delete ${selectedCheckboxes.length} selected template(s)?`)) return;
+    
+    selectedCheckboxes.forEach(checkbox => {
+        deleteTemplate(checkbox.value);
+    });
+}
+
+// Firebase operations for templates
+function saveTemplateToFirebase(template) {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('templates').doc(template.id).set(template)
+        .catch(error => {
+            console.error("Error saving template: ", error);
+            showToast('Error saving template', 'error');
+        });
+}
+
+function loadTemplates() {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('templates').get()
+        .then(querySnapshot => {
+            templates = [];
+            const templatesList = document.getElementById('templates-list');
+            if (templatesList) templatesList.innerHTML = '';
+            
+            querySnapshot.forEach(doc => {
+                const template = doc.data();
+                templates.push(template);
+                
+                if (templatesList) {
+                    addTemplateToUI(template);
+                }
+            });
+        })
+        .catch(error => {
+            console.error("Error loading templates: ", error);
+        });
+}
+
+function deleteTemplateFromFirebase(templateId) {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('templates').doc(templateId).delete()
+        .catch(error => {
+            console.error("Error deleting template: ", error);
+        });
+}
+
+// ============== QUICK COPY BILL SYSTEM ==============
+function initQuickCopySystem() {
+    // Quick copy button in bill rows
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('fa-clone') || e.target.parentElement.classList.contains('fa-clone')) {
+            const billRow = e.target.closest('tr');
+            if (billRow) {
+                const billId = billRow.dataset.billId || billRow.dataset.id;
+                const billType = billRow.dataset.billType;
+                
+                if (billId && billType) {
+                    quickCopyBill(billId, billType);
+                }
+            }
+        }
+    });
+    
+    // Quick copy modal
+    if (document.getElementById('confirm-copy-bill')) {
+        document.getElementById('confirm-copy-bill').addEventListener('click', function() {
+            const sourceBillId = document.getElementById('copy-source-bill').value;
+            if (!sourceBillId) return;
+            
+            const sourceBill = getBillById(sourceBillId);
+            if (sourceBill) {
+                duplicateBill(sourceBill);
+                const modal = bootstrap.Modal.getInstance(document.getElementById('quickCopyModal'));
+                if (modal) modal.hide();
+            }
+        });
+    }
+}
+
+function quickCopyBill(billId, billType) {
+    let bill = null;
+    
+    // Find the bill
+    if (bills[billType]) {
+        bill = bills[billType].find(b => b.id === billId);
+    }
+    
+    if (!bill) {
+        // Try to find in all bills
+        for (const type in bills) {
+            bill = bills[type].find(b => b.id === billId);
+            if (bill) {
+                billType = type;
+                break;
+            }
+        }
+    }
+    
+    if (bill) {
+        duplicateBill(bill, billType);
+    }
+}
+
+function duplicateBill(originalBill, billType) {
+    const newBill = {
+        ...originalBill,
+        id: Date.now().toString(),
+        billNo: `${originalBill.billNo}-COPY-${Date.now().toString().slice(-4)}`,
+        date: new Date().toISOString().split('T')[0]
+    };
+    
+    // Add to appropriate array
+    if (billType && bills[billType]) {
+        bills[billType].push(newBill);
+    } else if (newBill.type && bills[newBill.type]) {
+        bills[newBill.type].push(newBill);
+    }
+    
+    // Save to Firebase
+    saveBillToFirebase(newBill);
+    
+    // Update UI
+    renderBillsByType(billType || newBill.type);
+    
+    showToast('Bill copied successfully!', 'success');
+}
+
+// ============== BATCH OPERATIONS SYSTEM ==============
+function initBatchOperations() {
+    // Load bills for batch operations
+    loadBatchBills();
+    
+    // Event listeners
+    const applyFilterBtn = document.getElementById('apply-batch-filter');
+    if (applyFilterBtn) {
+        applyFilterBtn.addEventListener('click', loadBatchBills);
+    }
+    
+    const selectAllBatch = document.getElementById('select-all-batch');
+    if (selectAllBatch) {
+        selectAllBatch.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#batch-bills-list .bill-select');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateSelectedCount();
+        });
+    }
+    
+    // Batch operations buttons
+    const batchCopyBtn = document.getElementById('batch-copy');
+    if (batchCopyBtn) {
+        batchCopyBtn.addEventListener('click', batchCopyBills);
+    }
+    
+    const batchDeleteBtn = document.getElementById('batch-delete');
+    if (batchDeleteBtn) {
+        batchDeleteBtn.addEventListener('click', batchDeleteBills);
+    }
+    
+    const batchExportPdfBtn = document.getElementById('batch-export-pdf');
+    if (batchExportPdfBtn) {
+        batchExportPdfBtn.addEventListener('click', batchExportAsPDF);
+    }
+    
+    const batchExportCsvBtn = document.getElementById('batch-export-csv');
+    if (batchExportCsvBtn) {
+        batchExportCsvBtn.addEventListener('click', batchExportAsCSV);
+    }
+}
+
+function loadBatchBills() {
+    const billType = document.getElementById('batch-bill-type').value;
+    const dateFrom = document.getElementById('batch-date-from').value;
+    const dateTo = document.getElementById('batch-date-to').value;
+    
+    const batchBillsList = document.getElementById('batch-bills-list');
+    if (!batchBillsList) return;
+    
+    batchBillsList.innerHTML = '';
+    
+    // Collect all bills
+    const allBills = [];
+    for (const type in bills) {
+        if (billType === 'all' || billType === type) {
+            bills[type].forEach(bill => {
+                // Apply date filter
+                if (dateFrom && bill.date < dateFrom) return;
+                if (dateTo && bill.date > dateTo) return;
+                
+                allBills.push({
+                    ...bill,
+                    originalType: type
+                });
+            });
+        }
+    }
+    
+    // Display bills
+    allBills.forEach(bill => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <input type="checkbox" class="bill-select" value="${bill.id}">
+            </td>
+            <td>${bill.date}</td>
+            <td>${bill.billNo}</td>
+            <td>
+                <span class="badge bg-secondary">${bill.originalType}</span>
+            </td>
+            <td>${bill.description}</td>
+            <td>${bill.total.toFixed(2)}</td>
+            <td>
+                <button class="btn btn-sm btn-outline-primary" onclick="quickCopyBill('${bill.id}', '${bill.originalType}')">
+                    <i class="fas fa-clone"></i>
+                </button>
+            </td>
+        `;
+        
+        // Add event listener to checkbox
+        const checkbox = row.querySelector('.bill-select');
+        checkbox.addEventListener('change', updateSelectedCount);
+        
+        batchBillsList.appendChild(row);
+    });
+    
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    const selectedCount = document.querySelectorAll('#batch-bills-list .bill-select:checked').length;
+    const selectedCountElement = document.getElementById('selected-count');
+    if (selectedCountElement) {
+        selectedCountElement.textContent = `${selectedCount} selected`;
+    }
+}
+
+function batchCopyBills() {
+    const selectedCheckboxes = document.querySelectorAll('#batch-bills-list .bill-select:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        showToast('Please select bills to copy', 'error');
+        return;
+    }
+    
+    if (!confirm(`Copy ${selectedCheckboxes.length} selected bill(s)?`)) return;
+    
+    let copiedCount = 0;
+    selectedCheckboxes.forEach(checkbox => {
+        const billId = checkbox.value;
+        const row = checkbox.closest('tr');
+        const billType = row.querySelector('.badge').textContent.toLowerCase();
+        
+        quickCopyBill(billId, billType);
+        copiedCount++;
+    });
+    
+    showToast(`${copiedCount} bill(s) copied successfully`, 'success');
+}
+
+function batchDeleteBills() {
+    const selectedCheckboxes = document.querySelectorAll('#batch-bills-list .bill-select:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        showToast('Please select bills to delete', 'error');
+        return;
+    }
+    
+    if (!confirm(`Delete ${selectedCheckboxes.length} selected bill(s)? This action cannot be undone.`)) return;
+    
+    selectedCheckboxes.forEach(checkbox => {
+        const billId = checkbox.value;
+        const row = checkbox.closest('tr');
+        const billType = row.querySelector('.badge').textContent.toLowerCase();
+        
+        // Find and delete bill
+        const billIndex = bills[billType].findIndex(b => b.id === billId);
+        if (billIndex !== -1) {
+            bills[billType].splice(billIndex, 1);
+            deleteBillFromFirebase(billId);
+        }
+        
+        // Remove row
+        row.remove();
+    });
+    
+    updateSelectedCount();
+    showToast(`${selectedCheckboxes.length} bill(s) deleted successfully`, 'success');
+}
+
+function batchExportAsPDF() {
+    const selectedCheckboxes = document.querySelectorAll('#batch-bills-list .bill-select:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        showToast('Please select bills to export', 'error');
+        return;
+    }
+    
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(18);
+    doc.text('Batch Bill Export Report', 14, 22);
+    
+    // Add export info
+    doc.setFontSize(12);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+    doc.text(`Total Bills: ${selectedCheckboxes.length}`, 14, 38);
+    
+    let yPos = 50;
+    
+    selectedCheckboxes.forEach((checkbox, index) => {
+        const billId = checkbox.value;
+        const row = checkbox.closest('tr');
+        const cells = row.querySelectorAll('td');
+        
+        // Add bill header
+        doc.setFontSize(14);
+        doc.text(`Bill ${index + 1}: ${cells[1].textContent} - ${cells[2].textContent}`, 14, yPos);
+        
+        yPos += 10;
+        
+        // Add bill details
+        doc.setFontSize(12);
+        doc.text(`Type: ${cells[3].textContent}`, 14, yPos);
+        yPos += 7;
+        doc.text(`Description: ${cells[4].textContent}`, 14, yPos);
+        yPos += 7;
+        doc.text(`Amount: ${cells[5].textContent}`, 14, yPos);
+        yPos += 10;
+        
+        // Add page break if needed
+        if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+        }
+    });
+    
+    // Save PDF
+    doc.save(`batch-export-${new Date().toISOString().slice(0, 10)}.pdf`);
+    showToast(`Exported ${selectedCheckboxes.length} bill(s) as PDF`, 'success');
+}
+
+// ============== ATTACHMENTS SYSTEM ==============
+let attachments = [];
+
+function initAttachmentsSystem() {
+    // Load attachments
+    loadAttachments();
+    
+    // Setup file upload
+    const attachmentForm = document.getElementById('attachment-form');
+    if (attachmentForm) {
+        attachmentForm.addEventListener('submit', handleAttachmentUpload);
+    }
+    
+    // Populate bill dropdown
+    populateBillDropdowns();
+    
+    // Filter buttons
+    const filterImagesBtn = document.getElementById('filter-images');
+    const filterDocumentsBtn = document.getElementById('filter-documents');
+    const filterAllBtn = document.getElementById('filter-all-attachments');
+    
+    if (filterImagesBtn) {
+        filterImagesBtn.addEventListener('click', () => filterAttachments('image'));
+    }
+    
+    if (filterDocumentsBtn) {
+        filterDocumentsBtn.addEventListener('click', () => filterAttachments('document'));
+    }
+    
+    if (filterAllBtn) {
+        filterAllBtn.addEventListener('click', () => filterAttachments('all'));
+    }
+}
+
+function handleAttachmentUpload(e) {
+    e.preventDefault();
+    
+    const fileInput = document.getElementById('attachment-file');
+    const billId = document.getElementById('attachment-bill').value;
+    const attachmentType = document.getElementById('attachment-type').value;
+    const description = document.getElementById('attachment-description').value.trim();
+    
+    if (!billId || !fileInput.files.length) {
+        showToast('Please select a bill and file', 'error');
+        return;
+    }
+    
+    const file = fileInput.files[0];
+    const reader = new FileReader();
+    
+    reader.onload = function(e) {
+        const attachment = {
+            id: Date.now().toString(),
+            billId: billId,
+            fileName: file.name,
+            fileType: file.type,
+            fileSize: file.size,
+            fileData: e.target.result,
+            attachmentType: attachmentType,
+            description: description,
+            uploadedAt: new Date().toISOString(),
+            uploadedBy: auth.currentUser ? auth.currentUser.email : 'Anonymous'
+        };
+        
+        // Save to local array
+        attachments.push(attachment);
+        
+        // Save to Firebase
+        saveAttachmentToFirebase(attachment);
+        
+        // Add to UI
+        addAttachmentToUI(attachment);
+        
+        // Reset form
+        document.getElementById('attachment-form').reset();
+        
+        showToast('Attachment uploaded successfully', 'success');
+    };
+    
+    reader.readAsDataURL(file);
+}
+
+function addAttachmentToUI(attachment) {
+    const attachmentsGrid = document.getElementById('attachments-grid');
+    if (!attachmentsGrid) return;
+    
+    // Get bill info
+    const bill = getBillById(attachment.billId);
+    const billInfo = bill ? `${bill.billNo} - ${bill.description}` : 'Unknown Bill';
+    
+    const isImage = attachment.fileType.startsWith('image/');
+    
+    const col = document.createElement('div');
+    col.className = 'col-md-4 mb-4';
+    col.innerHTML = `
+        <div class="card h-100">
+            <div class="card-body">
+                ${isImage ? 
+                    `<img src="${attachment.fileData}" class="img-fluid mb-2" style="max-height: 150px; object-fit: cover; cursor: pointer;" 
+                          onclick="previewAttachment('${attachment.id}')">` :
+                    `<div class="text-center py-4" onclick="previewAttachment('${attachment.id}')" style="cursor: pointer;">
+                        <i class="fas fa-file fa-3x text-secondary"></i>
+                        <p class="mt-2">${attachment.fileName}</p>
+                    </div>`
+                }
+                <h6 class="card-title">${attachment.description || attachment.fileName}</h6>
+                <p class="card-text small">
+                    <strong>Bill:</strong> ${billInfo}<br>
+                    <strong>Type:</strong> ${attachment.attachmentType}<br>
+                    <strong>Size:</strong> ${formatFileSize(attachment.fileSize)}<br>
+                    <strong>Uploaded:</strong> ${new Date(attachment.uploadedAt).toLocaleDateString()}
+                </p>
+            </div>
+            <div class="card-footer">
+                <button class="btn btn-sm btn-primary" onclick="previewAttachment('${attachment.id}')">
+                    <i class="fas fa-eye"></i> View
+                </button>
+                <button class="btn btn-sm btn-success" onclick="downloadAttachment('${attachment.id}')">
+                    <i class="fas fa-download"></i>
+                </button>
+                <button class="btn btn-sm btn-danger float-end" onclick="deleteAttachment('${attachment.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    attachmentsGrid.appendChild(col);
+}
+
+function previewAttachment(attachmentId) {
+    const attachment = attachments.find(a => a.id === attachmentId);
+    if (!attachment) return;
+    
+    const modalTitle = document.getElementById('attachment-preview-title');
+    const modalContent = document.getElementById('attachment-preview-content');
+    const downloadLink = document.getElementById('download-attachment');
+    
+    if (modalTitle) modalTitle.textContent = attachment.fileName;
+    
+    if (modalContent) {
+        if (attachment.fileType.startsWith('image/')) {
+            modalContent.innerHTML = `<img src="${attachment.fileData}" class="img-fluid" style="max-height: 70vh;">`;
+        } else if (attachment.fileType === 'application/pdf') {
+            modalContent.innerHTML = `
+                <iframe src="${attachment.fileData}" width="100%" height="600px"></iframe>
+            `;
+        } else {
+            modalContent.innerHTML = `
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Preview not available for this file type.
+                    Please download the file to view it.
+                </div>
+            `;
+        }
+    }
+    
+    if (downloadLink) {
+        downloadLink.href = attachment.fileData;
+        downloadLink.download = attachment.fileName;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('attachmentPreviewModal'));
+    modal.show();
+}
+
+function downloadAttachment(attachmentId) {
+    const attachment = attachments.find(a => a.id === attachmentId);
+    if (!attachment) return;
+    
+    const link = document.createElement('a');
+    link.href = attachment.fileData;
+    link.download = attachment.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function deleteAttachment(attachmentId) {
+    if (!confirm('Are you sure you want to delete this attachment?')) return;
+    
+    const index = attachments.findIndex(a => a.id === attachmentId);
+    if (index !== -1) {
+        attachments.splice(index, 1);
+        
+        // Remove from UI
+        const attachmentElement = document.querySelector(`[onclick*="${attachmentId}"]`).closest('.col-md-4');
+        if (attachmentElement) attachmentElement.remove();
+        
+        // Delete from Firebase
+        deleteAttachmentFromFirebase(attachmentId);
+        
+        showToast('Attachment deleted successfully', 'success');
+    }
+}
+
+function filterAttachments(filterType) {
+    const attachmentsGrid = document.getElementById('attachments-grid');
+    if (!attachmentsGrid) return;
+    
+    attachmentsGrid.innerHTML = '';
+    
+    let filteredAttachments = attachments;
+    
+    if (filterType === 'image') {
+        filteredAttachments = attachments.filter(a => a.fileType.startsWith('image/'));
+    } else if (filterType === 'document') {
+        filteredAttachments = attachments.filter(a => !a.fileType.startsWith('image/'));
+    }
+    
+    filteredAttachments.forEach(attachment => {
+        addAttachmentToUI(attachment);
+    });
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Firebase operations for attachments
+function saveAttachmentToFirebase(attachment) {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('attachments').doc(attachment.id).set(attachment)
+        .catch(error => {
+            console.error("Error saving attachment: ", error);
+            showToast('Error saving attachment', 'error');
+        });
+}
+
+function loadAttachments() {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('attachments').get()
+        .then(querySnapshot => {
+            attachments = [];
+            const attachmentsGrid = document.getElementById('attachments-grid');
+            if (attachmentsGrid) attachmentsGrid.innerHTML = '';
+            
+            querySnapshot.forEach(doc => {
+                const attachment = doc.data();
+                attachments.push(attachment);
+                
+                if (attachmentsGrid) {
+                    addAttachmentToUI(attachment);
+                }
+            });
+        })
+        .catch(error => {
+            console.error("Error loading attachments: ", error);
+        });
+}
+
+function deleteAttachmentFromFirebase(attachmentId) {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('attachments').doc(attachmentId).delete()
+        .catch(error => {
+            console.error("Error deleting attachment: ", error);
+        });
+}
+
+// ============== COMMENTS SYSTEM ==============
+let comments = [];
+
+function initCommentsSystem() {
+    // Load comments
+    loadComments();
+    
+    // Setup comment form
+    const commentForm = document.getElementById('comment-form');
+    if (commentForm) {
+        commentForm.addEventListener('submit', handleCommentSubmit);
+    }
+    
+    // Populate bill dropdowns
+    populateBillDropdowns();
+    
+    // Filter buttons
+    const filterAllBtn = document.getElementById('filter-all-comments');
+    const filterImportantBtn = document.getElementById('filter-important-comments');
+    const filterMyBtn = document.getElementById('filter-my-comments');
+    
+    if (filterAllBtn) {
+        filterAllBtn.addEventListener('click', () => filterComments('all'));
+    }
+    
+    if (filterImportantBtn) {
+        filterImportantBtn.addEventListener('click', () => filterComments('important'));
+    }
+    
+    if (filterMyBtn) {
+        filterMyBtn.addEventListener('click', () => filterComments('mine'));
+    }
+}
+
+function handleCommentSubmit(e) {
+    e.preventDefault();
+    
+    const billId = document.getElementById('comment-bill').value;
+    const commentType = document.getElementById('comment-type').value;
+    const commentText = document.getElementById('comment-text').value.trim();
+    const isImportant = document.getElementById('comment-important').checked;
+    
+    if (!billId || !commentText) {
+        showToast('Please select a bill and enter a comment', 'error');
+        return;
+    }
+    
+    const comment = {
+        id: Date.now().toString(),
+        billId: billId,
+        commentType: commentType,
+        text: commentText,
+        isImportant: isImportant,
+        createdBy: auth.currentUser ? auth.currentUser.email : 'Anonymous',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+    };
+    
+    // Save to local array
+    comments.push(comment);
+    
+    // Save to Firebase
+    saveCommentToFirebase(comment);
+    
+    // Add to UI
+    addCommentToUI(comment);
+    
+    // Reset form
+    document.getElementById('comment-form').reset();
+    
+    showToast('Comment added successfully', 'success');
+}
+
+function addCommentToUI(comment) {
+    const commentsList = document.getElementById('comments-list');
+    if (!commentsList) return;
+    
+    // Get bill info
+    const bill = getBillById(comment.billId);
+    const billInfo = bill ? `${bill.billNo} - ${bill.description}` : 'Unknown Bill';
+    
+    const commentDiv = document.createElement('div');
+    commentDiv.className = `comment-item mb-3 p-3 rounded ${comment.isImportant ? 'border border-warning bg-warning bg-opacity-10' : 'border'}`;
+    commentDiv.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h6 class="mb-1">
+                    <span class="badge bg-${getCommentTypeColor(comment.commentType)} me-2">
+                        ${comment.commentType}
+                    </span>
+                    ${comment.isImportant ? '<i class="fas fa-exclamation-circle text-warning"></i> ' : ''}
+                    ${billInfo}
+                </h6>
+                <p class="mb-1">${comment.text}</p>
+                <small class="text-muted">
+                    <i class="fas fa-user"></i> ${comment.createdBy} 
+                    • <i class="fas fa-clock"></i> ${new Date(comment.createdAt).toLocaleString()}
+                </small>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-outline-primary" onclick="editComment('${comment.id}')">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteComment('${comment.id}')">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    commentsList.appendChild(commentDiv);
+}
+
+function editComment(commentId) {
+    const comment = comments.find(c => c.id === commentId);
+    if (!comment) return;
+    
+    // Populate form
+    document.getElementById('comment-bill').value = comment.billId;
+    document.getElementById('comment-type').value = comment.commentType;
+    document.getElementById('comment-text').value = comment.text;
+    document.getElementById('comment-important').checked = comment.isImportant;
+    
+    // Remove from array
+    const index = comments.findIndex(c => c.id === commentId);
+    if (index !== -1) {
+        comments.splice(index, 1);
+        
+        // Remove from UI
+        const commentElements = document.querySelectorAll('.comment-item');
+        for (let element of commentElements) {
+            const editBtn = element.querySelector('[onclick*="editComment"]');
+            if (editBtn && editBtn.onclick.toString().includes(commentId)) {
+                element.remove();
+                break;
+            }
+        }
+        
+        // Delete from Firebase
+        deleteCommentFromFirebase(commentId);
+        
+        showToast('Comment loaded for editing', 'info');
+    }
+}
+
+function deleteComment(commentId) {
+    if (!confirm('Are you sure you want to delete this comment?')) return;
+    
+    const index = comments.findIndex(c => c.id === commentId);
+    if (index !== -1) {
+        comments.splice(index, 1);
+        
+        // Remove from UI
+        const commentElements = document.querySelectorAll('.comment-item');
+        for (let element of commentElements) {
+            const deleteBtn = element.querySelector('[onclick*="deleteComment"]');
+            if (deleteBtn && deleteBtn.onclick.toString().includes(commentId)) {
+                element.remove();
+                break;
+            }
+        }
+        
+        // Delete from Firebase
+        deleteCommentFromFirebase(commentId);
+        
+        showToast('Comment deleted successfully', 'success');
+    }
+}
+
+function filterComments(filterType) {
+    const commentsList = document.getElementById('comments-list');
+    if (!commentsList) return;
+    
+    commentsList.innerHTML = '';
+    
+    let filteredComments = comments;
+    
+    if (filterType === 'important') {
+        filteredComments = comments.filter(c => c.isImportant);
+    } else if (filterType === 'mine') {
+        const currentUser = auth.currentUser ? auth.currentUser.email : '';
+        filteredComments = comments.filter(c => c.createdBy === currentUser);
+    }
+    
+    filteredComments.forEach(comment => {
+        addCommentToUI(comment);
+    });
+}
+
+function getCommentTypeColor(type) {
+    const colors = {
+        'general': 'secondary',
+        'followup': 'info',
+        'issue': 'danger',
+        'reminder': 'warning'
+    };
+    return colors[type] || 'secondary';
+}
+
+// Firebase operations for comments
+function saveCommentToFirebase(comment) {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('comments').doc(comment.id).set(comment)
+        .catch(error => {
+            console.error("Error saving comment: ", error);
+            showToast('Error saving comment', 'error');
+        });
+}
+
+function loadComments() {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('comments').get()
+        .then(querySnapshot => {
+            comments = [];
+            const commentsList = document.getElementById('comments-list');
+            if (commentsList) commentsList.innerHTML = '';
+            
+            querySnapshot.forEach(doc => {
+                const comment = doc.data();
+                comments.push(comment);
+                
+                if (commentsList) {
+                    addCommentToUI(comment);
+                }
+            });
+        })
+        .catch(error => {
+            console.error("Error loading comments: ", error);
+        });
+}
+
+function deleteCommentFromFirebase(commentId) {
+    if (!auth.currentUser) return;
+    
+    db.collection('users').doc(auth.currentUser.uid).collection('comments').doc(commentId).delete()
+        .catch(error => {
+            console.error("Error deleting comment: ", error);
+        });
+}
+
+// ============== UTILITY FUNCTIONS ==============
+function populateBillDropdowns() {
+    const billDropdowns = document.querySelectorAll('#attachment-bill, #comment-bill, #copy-source-bill');
+    
+    if (billDropdowns.length === 0) return;
+    
+    // Clear existing options except first
+    billDropdowns.forEach(dropdown => {
+        while (dropdown.options.length > 1) {
+            dropdown.remove(1);
+        }
+    });
+    
+    // Collect all bills
+    const allBills = [];
+    for (const type in bills) {
+        bills[type].forEach(bill => {
+            allBills.push({
+                id: bill.id,
+                text: `${bill.billNo} - ${bill.description} (${type})`,
+                type: type
+            });
+        });
+    }
+    
+    // Sort by bill number
+    allBills.sort((a, b) => b.id - a.id);
+    
+    // Add options to all dropdowns
+    allBills.forEach(bill => {
+        billDropdowns.forEach(dropdown => {
+            const option = document.createElement('option');
+            option.value = bill.id;
+            option.textContent = bill.text;
+            dropdown.appendChild(option);
+        });
+    });
+}
+
+function getBillById(billId) {
+    for (const type in bills) {
+        const bill = bills[type].find(b => b.id === billId);
+        if (bill) return bill;
+    }
+    return null;
+}
+
+// ============== INITIALIZE NEW SYSTEMS ==============
+document.addEventListener('DOMContentLoaded', function() {
+    // Add to existing initialization
+    initTemplatesSystem();
+    initQuickCopySystem();
+    initBatchOperations();
+    initAttachmentsSystem();
+    initCommentsSystem();
+    
+    // Update user data loading to include new data
+    const originalLoadUserData = loadUserData;
+    loadUserData = function() {
+        originalLoadUserData();
+        
+        // Load new data types
+        loadTemplates();
+        loadAttachments();
+        loadComments();
+        
+        // Populate dropdowns after loading
+        setTimeout(populateBillDropdowns, 1000);
+    };
+});
+
+// Add to navigation event listeners to populate dropdowns when navigating to new pages
+const originalNavLinks = document.querySelectorAll('.sidebar a[data-page]');
+originalNavLinks.forEach(link => {
+    const originalClick = link.onclick;
+    link.addEventListener('click', function(e) {
+        if (originalClick) originalClick.call(this, e);
+        
+        // Populate dropdowns after navigation
+        setTimeout(populateBillDropdowns, 500);
+    });
+});
+
+// Add new pages to the page list
+const newPages = ['templates', 'batch-operations', 'attachments', 'comments'];
+newPages.forEach(pageId => {
+    const page = document.getElementById(pageId);
+    if (page) {
+        pages = document.querySelectorAll('.page');
+    }
+});
+
+// Add to the navLinks NodeList
+newPages.forEach(pageId => {
+    const link = document.querySelector(`.sidebar a[data-page="${pageId}"]`);
+    if (link) {
+        navLinks = document.querySelectorAll('.sidebar a[data-page]');
+    }
+});
+
+// Utility function to show quick copy modal
+window.showQuickCopyModal = function() {
+    populateBillDropdowns();
+    const modal = new bootstrap.Modal(document.getElementById('quickCopyModal'));
+    modal.show();
+};
+
+window.showBulkDeleteModal = function() {
+    // Navigate to batch operations page
+    document.querySelector('.sidebar a[data-page="batch-operations"]').click();
+};
+
+window.showBulkExportModal = function() {
+    // Navigate to batch operations page
+    document.querySelector('.sidebar a[data-page="batch-operations"]').click();
+};
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
