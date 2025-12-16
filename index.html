@@ -65,10 +65,12 @@
             padding: 20px;
         }
 
-        .main-container.visible {
+        /* 确保main-container正确显示 */
+.main-container.visible {
     display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
+    position: relative !important;
 }
 
 /* 确保auth-container正确隐藏 */
@@ -76,6 +78,9 @@
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
 }
         
         .sidebar {
@@ -587,7 +592,28 @@
     height: 2rem;
     color: var(--secondary-color);
 }
+/* 验证提醒样式 */
+#verification-reminder {
+    animation: fadeIn 0.5s ease;
+    border-left: 4px solid #ffc107;
+}
 
+#verification-reminder h6 {
+    color: #856404;
+}
+
+#verification-reminder p {
+    margin-bottom: 10px;
+}
+
+#resend-verification, #logout-unverified {
+    margin-top: 5px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 /* 成功/错误消息动画 */
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -6148,53 +6174,145 @@ loginBtn.addEventListener('click', function() {
         auth.onAuthStateChanged((user) => {
     console.log("Auth state changed, user:", user ? user.email : "No user");
     
+    const authContainer = document.getElementById('auth-container');
+    const mainContainer = document.getElementById('main-container');
+    
     if (user) {
         // 检查邮箱是否已验证
         if (!user.emailVerified) {
             console.log("User email not verified:", user.email);
             
-            // 如果用户试图进入主界面，强制登出并显示提示
-            if (mainContainer.style.display === 'block') {
-                showToast('Please verify your email before accessing the system', 'warning');
-                
-                // 短暂延迟后登出
-                setTimeout(() => {
-                    auth.signOut();
-                }, 2000);
-                
-                // 显示验证提醒
-                const reminderHTML = `
-                    <div class="alert alert-warning mt-3">
-                        <h6><i class="fas fa-envelope"></i> Email Verification Required</h6>
-                        <p>Please check your email (${user.email}) for the verification link.</p>
-                        <button class="btn btn-sm btn-primary" id="resend-verification">
-                            <i class="fas fa-paper-plane"></i> Resend Verification Email
-                        </button>
-                    </div>
-                `;
-                
-                // 添加到登录页面
-                const authContainer = document.getElementById('auth-container');
-                if (authContainer && !document.getElementById('verification-reminder')) {
-                    authContainer.insertAdjacentHTML('beforeend', reminderHTML);
+            // 强制显示登录页面
+            if (authContainer) {
+                authContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+            }
+            if (mainContainer) {
+                mainContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+            }
+            
+            // 清除任何可能的主页面内容
+            if (mainContainer && mainContainer.classList.contains('visible')) {
+                mainContainer.classList.remove('visible');
+            }
+            
+            // 显示验证提醒
+            setTimeout(() => {
+                if (!document.getElementById('verification-reminder')) {
+                    const reminderHTML = `
+                        <div class="alert alert-warning mt-3" id="verification-reminder">
+                            <h6><i class="fas fa-envelope"></i> Email Verification Required</h6>
+                            <p>Please check your email (${user.email}) for the verification link.</p>
+                            <p class="mb-2 small">You need to verify your email before accessing the system.</p>
+                            <button class="btn btn-sm btn-primary" id="resend-verification">
+                                <i class="fas fa-paper-plane"></i> Resend Verification Email
+                            </button>
+                            <button class="btn btn-sm btn-secondary ms-2" id="logout-unverified">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+                    `;
                     
-                    // 添加重新发送验证邮件的功能
-                    document.getElementById('resend-verification').addEventListener('click', function() {
-    // ✅ 正确：使用 firebase.auth().currentUser
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-        currentUser.sendEmailVerification()
-            .then(() => {
-                showToast('Verification email resent. Please check your inbox.', 'success');
-            })
-            .catch(error => {
-                console.error("Error resending verification:", error);
-                showToast('Error resending verification email', 'error');
-            });
+                    // 添加到登录页面
+                    if (authContainer) {
+                        const existingReminder = document.getElementById('verification-reminder');
+                        if (!existingReminder) {
+                            const loginSection = document.getElementById('login-section');
+                            if (loginSection) {
+                                loginSection.insertAdjacentHTML('beforeend', reminderHTML);
+                            } else {
+                                authContainer.insertAdjacentHTML('beforeend', reminderHTML);
+                            }
+                            
+                            // 添加重新发送验证邮件的功能
+                            const resendBtn = document.getElementById('resend-verification');
+                            if (resendBtn) {
+                                resendBtn.addEventListener('click', function() {
+                                    const currentUser = auth.currentUser;
+                                    if (currentUser) {
+                                        currentUser.sendEmailVerification()
+                                            .then(() => {
+                                                showToast('Verification email resent. Please check your inbox.', 'success');
+                                            })
+                                            .catch(error => {
+                                                console.error("Error resending verification:", error);
+                                                showToast('Error resending verification email', 'error');
+                                            });
+                                    }
+                                });
+                            }
+                            
+                            // 添加注销按钮功能
+                            const logoutBtn = document.getElementById('logout-unverified');
+                            if (logoutBtn) {
+                                logoutBtn.addEventListener('click', function() {
+                                    auth.signOut();
+                                });
+                            }
+                        }
+                    }
+                }
+            }, 500);
+            
+            showToast('Please verify your email before accessing the system', 'warning');
+            return; // 重要：退出函数，不继续执行
+        }
+        
+        // 用户已登录且邮箱已验证
+        console.log("User is logged in and verified:", user.email);
+        
+        // 确保登录页面完全隐藏，主页面完全显示
+        setTimeout(() => {
+            if (authContainer) {
+                authContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+                authContainer.classList.add('hidden');
+            }
+            
+            if (mainContainer) {
+                mainContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+                mainContainer.classList.add('visible');
+                
+                // 移除验证提醒（如果存在）
+                const reminder = document.getElementById('verification-reminder');
+                if (reminder) reminder.remove();
+                
+                // 确保登录部分可见
+                const loginSection = document.getElementById('login-section');
+                const registerSection = document.getElementById('register-section');
+                if (loginSection) loginSection.style.display = 'block';
+                if (registerSection) registerSection.style.display = 'none';
+                
+                // 加载用户数据
+                loadUserData();
+            }
+        }, 100);
+        
+    } else {
+        // 用户未登录
+        console.log("No user logged in, showing auth container");
+        
+        setTimeout(() => {
+            if (authContainer) {
+                authContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+                authContainer.classList.remove('hidden');
+                
+                // 确保登录部分可见
+                const loginSection = document.getElementById('login-section');
+                const registerSection = document.getElementById('register-section');
+                if (loginSection) loginSection.style.display = 'block';
+                if (registerSection) registerSection.style.display = 'none';
+                
+                // 移除验证提醒（如果存在）
+                const reminder = document.getElementById('verification-reminder');
+                if (reminder) reminder.remove();
+            }
+            
+            if (mainContainer) {
+                mainContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+                mainContainer.classList.remove('visible');
+            }
+        }, 100);
     }
 });
-                }
-            }
             
             // 保持显示登录页面
             if (authContainer && mainContainer) {
