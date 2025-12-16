@@ -6107,28 +6107,72 @@ loginBtn.addEventListener('click', function() {
             });
         }
         
-        // Check if user is already logged in
-        // 在 auth.onAuthStateChanged 部分修改：
-// 在 auth.onAuthStateChanged 部分修改为：
-auth.onAuthStateChanged((user) => {
+        auth.onAuthStateChanged((user) => {
     console.log("Auth state changed, user:", user ? user.email : "No user");
     
     if (user) {
-        // 用户已登录（包括刚注册的用户）
-        console.log("User is logged in:", user.email, "Email verified:", user.emailVerified);
+        // 检查邮箱是否已验证
+        if (!user.emailVerified) {
+            console.log("User email not verified:", user.email);
+            
+            // 如果用户试图进入主界面，强制登出并显示提示
+            if (mainContainer.style.display === 'block') {
+                showToast('Please verify your email before accessing the system', 'warning');
+                
+                // 短暂延迟后登出
+                setTimeout(() => {
+                    auth.signOut();
+                }, 2000);
+                
+                // 显示验证提醒
+                const reminderHTML = `
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-envelope"></i> Email Verification Required</h6>
+                        <p>Please check your email (${user.email}) for the verification link.</p>
+                        <button class="btn btn-sm btn-primary" id="resend-verification">
+                            <i class="fas fa-paper-plane"></i> Resend Verification Email
+                        </button>
+                    </div>
+                `;
+                
+                // 添加到登录页面
+                const authContainer = document.getElementById('auth-container');
+                if (authContainer && !document.getElementById('verification-reminder')) {
+                    authContainer.insertAdjacentHTML('beforeend', reminderHTML);
+                    
+                    // 添加重新发送验证邮件的功能
+                    document.getElementById('resend-verification').addEventListener('click', function() {
+                        user.sendEmailVerification()
+                            .then(() => {
+                                showToast('Verification email resent. Please check your inbox.', 'success');
+                            })
+                            .catch(error => {
+                                console.error("Error resending verification:", error);
+                                showToast('Error resending verification email', 'error');
+                            });
+                    });
+                }
+            }
+            
+            // 保持显示登录页面
+            if (authContainer && mainContainer) {
+                authContainer.style.display = 'block';
+                mainContainer.style.display = 'none';
+            }
+            return;
+        }
         
-        // 确保主容器可见
+        // 用户已登录且邮箱已验证
+        console.log("User is logged in and verified:", user.email);
+        
         if (authContainer && mainContainer) {
             authContainer.style.display = 'none';
             mainContainer.style.display = 'block';
-            
-            // 如果是刚注册的用户，提醒验证邮箱
-            if (!user.emailVerified) {
-                showToast('Please verify your email address for full access', 'info');
-            }
-            
-            // 加载用户数据
             loadUserData();
+            
+            // 移除验证提醒（如果存在）
+            const reminder = document.getElementById('verification-reminder');
+            if (reminder) reminder.remove();
         }
     } else {
         // 用户未登录
@@ -7849,7 +7893,7 @@ function handleEnhancedRegistration() {
     // 创建用户
     auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
-            const user = userCredential.user;
+            const user = userCredential.user; // ✅ 正确获取用户对象
             console.log("User created successfully:", user.uid);
             
             // 发送验证邮件
@@ -7898,29 +7942,34 @@ function handleEnhancedRegistration() {
             
             // 3秒后自动跳转到登录页面
             setTimeout(() => {
-                // 切换到登录页面
-                document.getElementById('register-section').style.display = 'none';
-                document.getElementById('login-section').style.display = 'block';
-                
-                // 预填邮箱
-                document.getElementById('email').value = email;
-                
-                // 重置注册表单
-                document.getElementById('enhanced-register-form').reset();
-                
-                // 重置按钮
-                registerBtn.innerHTML = originalText;
-                registerBtn.disabled = false;
-                
-                // 隐藏成功消息
-                document.getElementById('register-success').style.display = 'none';
-                
-                showToast('Please verify your email before logging in', 'info');
+                // 强制登出（防止未验证用户直接进入系统）
+                auth.signOut().then(() => {
+                    console.log("User signed out after registration (awaiting verification)");
+                    
+                    // 切换到登录页面
+                    document.getElementById('register-section').style.display = 'none';
+                    document.getElementById('login-section').style.display = 'block';
+                    
+                    // 预填邮箱
+                    document.getElementById('email').value = email;
+                    
+                    // 重置注册表单
+                    document.getElementById('enhanced-register-form').reset();
+                    
+                    // 重置按钮
+                    registerBtn.innerHTML = originalText;
+                    registerBtn.disabled = false;
+                    
+                    // 隐藏成功消息
+                    document.getElementById('register-success').style.display = 'none';
+                    
+                    showToast('Please verify your email before logging in', 'info');
+                });
             }, 3000);
         })
         .catch((error) => {
             // 处理错误
-            console.error("Registration error: ", error);
+            console.error("Registration error: ", error.code, error.message);
             
             let errorMessage = 'Registration failed. ';
             
@@ -7939,6 +7988,9 @@ function handleEnhancedRegistration() {
                     break;
                 case 'auth/network-request-failed':
                     errorMessage = 'Network error. Please check your connection.';
+                    break;
+                case 'auth/user-disabled':
+                    errorMessage = 'This account has been disabled.';
                     break;
                 default:
                     errorMessage = error.message || 'Please try again.';
@@ -8028,6 +8080,41 @@ function socialSignUp(provider) {
             
             showToast(errorMessage, 'error');
         });
+}
+        // 在页面中添加重新发送验证邮件的按钮
+function addResendVerificationButton(email) {
+    const loginForm = document.getElementById('login-section');
+    if (!loginForm || document.getElementById('resend-verification-btn')) return;
+    
+    const resendHTML = `
+        <div class="alert alert-info mt-3" id="verification-alert">
+            <p class="mb-1"><strong>Email Verification Required</strong></p>
+            <p class="mb-2 small">Please verify your email (${email}) to access the system.</p>
+            <button class="btn btn-sm btn-outline-primary" id="resend-verification-btn">
+                <i class="fas fa-paper-plane"></i> Resend Verification Email
+            </button>
+        </div>
+    `;
+    
+    loginForm.insertAdjacentHTML('beforeend', resendHTML);
+    
+    document.getElementById('resend-verification-btn').addEventListener('click', function() {
+        auth.fetchSignInMethodsForEmail(email)
+            .then((providers) => {
+                if (providers.length > 0) {
+                    // 重新发送验证邮件
+                    return auth.sendPasswordResetEmail(email);
+                }
+                throw new Error('Email not registered');
+            })
+            .then(() => {
+                showToast('Verification email resent. Please check your inbox.', 'success');
+            })
+            .catch(error => {
+                console.error("Error resending verification:", error);
+                showToast('Error resending verification email. Please try again.', 'error');
+            });
+    });
 }
 
         // 在 handleEnhancedRegistration 函数开始处添加：
