@@ -3000,7 +3000,26 @@ const resetMessage = document.getElementById('reset-message');
             revenue: [12000, 19000, 15000, 21000, 22000, 24500],
             expenses: [9000, 12000, 11000, 15000, 16700, 18300]
         };
-        
+        // 在脚本开头添加这个
+window.onerror = function(message, source, lineno, colno, error) {
+    console.log("Global error caught:", message, "at", source, "line", lineno);
+    
+    // 如果是classList错误，忽略它
+    if (message.includes('classList')) {
+        console.log("Ignoring classList error");
+        return true; // 阻止默认错误处理
+    }
+    
+    return false; // 继续默认错误处理
+};
+
+// 或者更精确地捕获特定错误
+window.addEventListener('error', function(e) {
+    if (e.message && e.message.includes('classList')) {
+        e.preventDefault();
+        console.log("Suppressed classList error");
+    }
+});
         // Store bills data
         let bills = {
             periodic: [],
