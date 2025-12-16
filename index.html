@@ -64,6 +64,19 @@
             margin: 0 auto;
             padding: 20px;
         }
+
+        .main-container.visible {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 确保auth-container正确隐藏 */
+.auth-container.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
         
         .sidebar {
             background-color: var(--primary-color);
@@ -5738,6 +5751,7 @@ setTimeout(populateBillDropdowns, 1000);
         
         // Authentication functions
         // 替换现有的登录按钮事件监听器：
+// 简化版本 - 移除复杂动画
 loginBtn.addEventListener('click', function() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -5752,26 +5766,31 @@ loginBtn.addEventListener('click', function() {
             .then((userCredential) => {
                 // 登录成功
                 this.innerHTML = '<i class="fas fa-check me-2"></i>Success!';
+                
+                // 直接切换显示，不等待动画
                 setTimeout(() => {
-                    authContainer.style.opacity = '0';
-                    authContainer.style.transform = 'translateY(-20px)';
+                    // 立即隐藏登录容器，显示主容器
+                    authContainer.style.display = 'none';
+                    mainContainer.style.display = 'block';
                     
+                    // 重置所有CSS变换
+                    authContainer.style.opacity = '1';
+                    authContainer.style.transform = 'none';
+                    mainContainer.style.opacity = '1';
+                    mainContainer.style.transform = 'none';
+                    mainContainer.style.transition = 'none';
+                    
+                    // 加载用户数据
+                    loadUserData();
+                    
+                    showToast('Welcome back! Login successful!', 'success');
+                    
+                    // 恢复按钮状态
                     setTimeout(() => {
-                        authContainer.style.display = 'none';
-                        mainContainer.style.display = 'block';
-                        mainContainer.style.opacity = '0';
-                        mainContainer.style.transform = 'translateY(20px)';
-                        
-                        setTimeout(() => {
-                            mainContainer.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                            mainContainer.style.opacity = '1';
-                            mainContainer.style.transform = 'translateY(0)';
-                            loadUserData();
-                        }, 100);
-                        
-                        showToast('Welcome back! Login successful!', 'success');
-                    }, 300);
-                }, 500);
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    }, 1000);
+                }, 300);
             })
             .catch((error) => {
                 // 恢复按钮状态
