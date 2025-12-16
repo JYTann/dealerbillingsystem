@@ -6109,48 +6109,82 @@ loginBtn.addEventListener('click', function() {
         
         // Check if user is already logged in
         // 在 auth.onAuthStateChanged 部分修改：
+// 在 auth.onAuthStateChanged 部分修改为：
 auth.onAuthStateChanged((user) => {
+    console.log("Auth state changed, user:", user ? user.email : "No user");
+    
     if (user) {
-        // 用户已登录
-        console.log("User logged in:", user.email);
+        // 用户已登录（包括刚注册的用户）
+        console.log("User is logged in:", user.email, "Email verified:", user.emailVerified);
         
-        // 等待 DOM 完全加载
-        setTimeout(() => {
+        // 确保主容器可见
+        if (authContainer && mainContainer) {
             authContainer.style.display = 'none';
             mainContainer.style.display = 'block';
-            mainContainer.style.opacity = '0';
             
-            // 使用动画显示主界面
-            setTimeout(() => {
-                mainContainer.style.transition = 'opacity 0.5s ease';
-                mainContainer.style.opacity = '1';
-                loadUserData();
-            }, 100);
-        }, 100);
+            // 如果是刚注册的用户，提醒验证邮箱
+            if (!user.emailVerified) {
+                showToast('Please verify your email address for full access', 'info');
+            }
+            
+            // 加载用户数据
+            loadUserData();
+        }
     } else {
         // 用户未登录
-        console.log("No user logged in");
-        authContainer.style.display = 'block';
-        mainContainer.style.display = 'none';
+        console.log("No user logged in, showing auth container");
         
-        // 确保登录页面可见
-        document.getElementById('login-section').style.display = 'block';
-        document.getElementById('register-section').style.display = 'none';
+        if (authContainer && mainContainer) {
+            authContainer.style.display = 'block';
+            mainContainer.style.display = 'none';
+            
+            // 确保登录页面可见
+            const loginSection = document.getElementById('login-section');
+            const registerSection = document.getElementById('register-section');
+            if (loginSection) loginSection.style.display = 'block';
+            if (registerSection) registerSection.style.display = 'none';
+        }
     }
 });
         
-        // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-            setDefaultDates();
-            initCharts();
-            initBreakdown();
-            initProgressTracking();
-            initThemeToggle();
-            initResponsiveDesign();
-            initSmartCustomerSelection();
-            initManualRevenueExpenseSystem();
-            initEnhancedRegistration();
-        });
+    console.log("DOM fully loaded, initializing app...");
+    
+    // 检查关键元素
+    const elements = {
+        'auth-container': document.getElementById('auth-container'),
+        'main-container': document.getElementById('main-container'),
+        'login-section': document.getElementById('login-section'),
+        'register-section': document.getElementById('register-section')
+    };
+    
+    // 记录元素状态
+    Object.entries(elements).forEach(([id, element]) => {
+        console.log(`${id}:`, element ? "Found" : "Not found");
+    });
+    
+    // 设置默认日期
+    setDefaultDates();
+    
+    // 初始化各个模块
+    try {
+        initCharts();
+        initBreakdown();
+        initProgressTracking();
+        initThemeToggle();
+        initResponsiveDesign();
+        initSmartCustomerSelection();
+        initManualRevenueExpenseSystem();
+        initEnhancedRegistration();
+        console.log("All modules initialized successfully");
+    } catch (error) {
+        console.error("Error initializing modules:", error);
+    }
+    
+    // 检查用户是否已经登录
+    const currentUser = auth.currentUser;
+    console.log("Current user on load:", currentUser ? currentUser.email : "No user");
+});
 
         // Responsive design function
         function initResponsiveDesign() {
@@ -7796,6 +7830,11 @@ function handleEnhancedRegistration() {
     const registerBtn = document.getElementById('register-btn');
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
+    const phone = document.getElementById('register-phone').value.trim();
+    const company = document.getElementById('register-company').value.trim();
+    const address = document.getElementById('register-address').value.trim();
+    const businessType = document.getElementById('register-business-type').value;
+    const newsletter = document.getElementById('register-newsletter').checked;
     
     // 显示加载状态
     const originalText = registerBtn.innerHTML;
@@ -7805,59 +7844,57 @@ function handleEnhancedRegistration() {
     // 清除之前的错误信息
     document.getElementById('register-error').style.display = 'none';
     
+    console.log("Starting registration process for:", email);
+    
     // 创建用户
     auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
             const user = userCredential.user;
+            console.log("User created successfully:", user.uid);
             
-            // 立即发送验证邮件
+            // 发送验证邮件
             return user.sendEmailVerification()
                 .then(() => {
-                    return user;
+                    console.log("Verification email sent to:", user.email);
+                    
+                    // 准备用户数据
+                    const userData = {
+                        uid: user.uid,
+                        email: email,
+                        companyName: company,
+                        phone: phone || null,
+                        address: address || null,
+                        businessType: businessType || 'other',
+                        newsletterSubscription: newsletter,
+                        emailVerified: false,
+                        accountType: 'free',
+                        accountStatus: 'active',
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString(),
+                        settings: {
+                            currency: 'RM',
+                            language: 'en',
+                            dateFormat: 'DD/MM/YYYY',
+                            taxRate: 6.0,
+                            notifications: true
+                        }
+                    };
+                    
+                    // 保存到 Firestore
+                    return db.collection('users').doc(user.uid).set(userData, { merge: true });
                 });
-        })
-        .then((user) => {
-            // 收集其他用户信息
-            const phone = document.getElementById('register-phone').value.trim();
-            const company = document.getElementById('register-company').value.trim();
-            const address = document.getElementById('register-address').value.trim();
-            const businessType = document.getElementById('register-business-type').value;
-            const newsletter = document.getElementById('register-newsletter').checked;
-            
-            // 准备用户数据
-            const userData = {
-                email: email,
-                companyName: company,
-                phone: phone || null,
-                address: address || null,
-                businessType: businessType || 'other',
-                newsletterSubscription: newsletter,
-                emailVerified: false,
-                accountType: 'free',
-                accountStatus: 'active',
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                settings: {
-                    currency: 'RM',
-                    language: 'en',
-                    dateFormat: 'DD/MM/YYYY',
-                    taxRate: 6.0,
-                    notifications: true
-                }
-            };
-            
-            // 保存到 Firestore
-            return db.collection('users').doc(user.uid).set(userData, { merge: true });
         })
         .then(() => {
             // 注册成功
+            console.log("Registration completed successfully");
             registerBtn.innerHTML = '<i class="fas fa-check"></i> Account Created!';
-            showToast('Registration successful! Verification email sent. Please check your inbox.', 'success');
             
             // 显示成功消息
             document.getElementById('register-success').style.display = 'block';
             document.getElementById('register-success-text').textContent = 
                 'Registration successful! Please check your email to verify your account.';
+            
+            showToast('Registration successful! Verification email sent. Please check your inbox.', 'success');
             
             // 3秒后自动跳转到登录页面
             setTimeout(() => {
@@ -7898,7 +7935,7 @@ function handleEnhancedRegistration() {
                     errorMessage = 'Email/password accounts are not enabled.';
                     break;
                 case 'auth/weak-password':
-                    errorMessage = 'Password is too weak.';
+                    errorMessage = 'Password must be at least 6 characters.';
                     break;
                 case 'auth/network-request-failed':
                     errorMessage = 'Network error. Please check your connection.';
@@ -7914,6 +7951,8 @@ function handleEnhancedRegistration() {
             // 重置按钮
             registerBtn.innerHTML = originalText;
             registerBtn.disabled = false;
+            
+            showToast(errorMessage, 'error');
         });
 }
 
