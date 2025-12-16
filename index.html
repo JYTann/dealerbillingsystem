@@ -8212,13 +8212,6 @@ function addResendVerificationButton(email) {
     });
 }
 
-        // 在 handleEnhancedRegistration 函数开始处添加：
-console.log("Starting registration process for:", email);
-// 在每个步骤后添加：
-console.log("User created successfully:", user.uid);
-console.log("Verification email sent");
-console.log("User data saved to Firestore");
-
         // 安全的 DOM 操作包装函数
 function safeDOMOperation(elementId, operation) {
     const element = document.getElementById(elementId);
