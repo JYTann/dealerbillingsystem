@@ -965,6 +965,41 @@ body > div {
     transform: none !important;
     transition: none !important;
 }
+
+        /* ============== 紧急修复：强制显示控制 ============== */
+#main-container.visible {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+#auth-container.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    position: absolute !important;
+    z-index: 0 !important;
+    pointer-events: none !important;
+}
+
+/* 覆盖所有可能的内联样式 */
+#main-container[style*="display: none"],
+#main-container[style*="display:none"] {
+    display: block !important;
+}
+
+#auth-container[style*="display: block"],
+#auth-container[style*="display:block"] {
+    display: none !important;
+}
+
+/* 防止任何动画干扰 */
+#main-container, #auth-container {
+    transition: none !important;
+    animation: none !important;
+}
     </style>
 </head>
 <body>
@@ -8356,6 +8391,122 @@ function renderApp(user) {
         main.classList.remove("visible");
     }
 }
+
+        // ============== 强制修复：防止空白页面 ==============
+(function() {
+    console.log("强制修复脚本开始执行...");
+    
+    // 监听所有可能的UI变化
+    let lastRenderUser = null;
+    let renderLock = false;
+    
+    // 覆盖所有可能修改UI的方法
+    const originalDisplaySetter = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'style').set;
+    Object.defineProperty(HTMLElement.prototype, 'style', {
+        set: function(value) {
+            const auth = document.getElementById('auth-container');
+            const main = document.getElementById('main-container');
+            
+            // 如果是这两个容器，记录谁在修改它们
+            if (this === auth || this === main) {
+                console.warn('⚠️ 检测到直接修改UI:', this.id, new Error().stack);
+            }
+            
+            return originalDisplaySetter.call(this, value);
+        }
+    });
+    
+    // 定时检查UI状态
+    setInterval(() => {
+        const auth = document.getElementById('auth-container');
+        const main = document.getElementById('main-container');
+        const user = firebase.auth().currentUser;
+        
+        if (renderLock) return;
+        
+        // 如果用户存在且已验证，但主界面没有显示
+        if (user && user.emailVerified) {
+            if (main && (main.style.display === 'none' || !main.classList.contains('visible'))) {
+                console.log('🔧 检测到用户已登录但主界面隐藏，正在修复...');
+                renderLock = true;
+                
+                // 强制显示主界面
+                if (auth) {
+                    auth.style.cssText = 'display: none !important';
+                    auth.classList.add('hidden');
+                }
+                if (main) {
+                    main.style.cssText = 'display: block !important';
+                    main.classList.add('visible');
+                }
+                
+                // 显示dashboard
+                document.querySelectorAll('.page').forEach(p => {
+                    p.style.display = 'none';
+                    p.classList.remove('active');
+                });
+                const dashboard = document.getElementById('dashboard');
+                if (dashboard) {
+                    dashboard.style.display = 'block';
+                    dashboard.classList.add('active');
+                }
+                
+                setTimeout(() => { renderLock = false; }, 1000);
+            }
+        }
+        // 如果用户不存在，但登录页面没有显示
+        else if (!user) {
+            if (auth && (auth.style.display === 'none' || auth.classList.contains('hidden'))) {
+                console.log('🔧 检测到用户未登录但登录页隐藏，正在修复...');
+                renderLock = true;
+                
+                // 强制显示登录页
+                if (auth) {
+                    auth.style.cssText = 'display: block !important';
+                    auth.classList.remove('hidden');
+                }
+                if (main) {
+                    main.style.cssText = 'display: none !important';
+                    main.classList.remove('visible');
+                }
+                
+                setTimeout(() => { renderLock = false; }, 1000);
+            }
+        }
+    }, 1000);
+    
+    // 覆盖所有设置display样式的操作
+    document.addEventListener('DOMContentLoaded', function() {
+        // 记录所有样式设置
+        const styleObservers = new Map();
+        
+        ['auth-container', 'main-container'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                const observer = new MutationObserver(function(mutations) {
+                    mutations.forEach(function(mutation) {
+                        if (mutation.type === 'attributes' && 
+                            (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                            console.warn(`🚨 ${id} 的样式被修改:`, {
+                                attribute: mutation.attributeName,
+                                newValue: element.getAttribute(mutation.attributeName),
+                                stack: new Error().stack
+                            });
+                        }
+                    });
+                });
+                
+                observer.observe(element, { 
+                    attributes: true, 
+                    attributeFilter: ['style', 'class'] 
+                });
+                styleObservers.set(id, observer);
+            }
+        });
+    });
+    
+    console.log("强制修复脚本已加载");
+})();
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
