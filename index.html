@@ -6631,20 +6631,25 @@ function deleteTemplateFromFirebase(templateId) {
 
 // ============== QUICK COPY BILL SYSTEM ==============
 function initQuickCopySystem() {
-    // Quick copy button in bill rows
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('fa-clone') || e.target.parentElement.classList.contains('fa-clone')) {
-            const billRow = e.target.closest('tr');
-            if (billRow) {
-                const billId = billRow.dataset.billId || billRow.dataset.id;
-                const billType = billRow.dataset.billType;
-                
-                if (billId && billType) {
-                    quickCopyBill(billId, billType);
-                }
-            }
+    document.addEventListener('click', function (e) {
+
+        // 向上寻找 .fa-clone（最安全）
+        const cloneIcon = e.target.closest('.fa-clone');
+        if (!cloneIcon) return;
+
+        // 找到所在的表格行
+        const billRow = cloneIcon.closest('tr');
+        if (!billRow) return;
+
+        const billId = billRow.dataset.billId || billRow.dataset.id;
+        const billType = billRow.dataset.billType;
+
+        if (billId && billType) {
+            quickCopyBill(billId, billType);
         }
     });
+}
+
     
     // Quick copy modal
     if (document.getElementById('confirm-copy-bill')) {
