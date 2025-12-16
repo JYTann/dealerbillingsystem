@@ -65,12 +65,11 @@
             padding: 20px;
         }
 
-        .main-container.visible {
+/* 移除或修改.visible类 */
+.main-container:not(.hidden) {
     display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
 }
-
+        
 /* 确保auth-container正确隐藏 */
 .auth-container.hidden {
     display: none !important;
