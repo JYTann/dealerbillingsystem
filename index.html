@@ -59,9 +59,11 @@
         }
         
         .main-container {
-    display: flex;
-    min-height: 100vh;
-}
+            display: none;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
         .main-container.visible {
     display: block !important;
@@ -79,11 +81,10 @@
         .sidebar {
             background-color: var(--primary-color);
             color: white;
+            height: 100vh;
             position: fixed;
-    left: 0;
-    top: 0;
-    width: 200px;
-    height: 100vh;
+            padding-top: 20px;
+            border-radius: 10px;
         }
         
         .sidebar a {
@@ -105,11 +106,9 @@
         }
         
         .content {
-    margin-left: 200px;   /* 给 sidebar 留位置 */
-    flex: 1;              /* ★ 关键：占据剩余宽度 */
-    padding: 20px;
-    min-width: 0;         /* 防止 flex 溢出 */
-}
+            margin-left: 220px;
+            padding: 20px;
+        }
         
         .page {
             display: none;
