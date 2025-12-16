@@ -7905,39 +7905,33 @@ function showRegistrationSuccess(message) {
 }
 
 function handleEnhancedRegistration() {
-    if (!validateEnhancedRegistration()) {
-        return;
-    }
-    
+    if (!validateEnhancedRegistration()) return;
+
     const registerBtn = document.getElementById('register-btn');
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
-    
-    // 显示加载状态
+
     const originalText = registerBtn.innerHTML;
     registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
     registerBtn.disabled = true;
-    
-    // 清除错误信息
+
     document.getElementById('register-error').style.display = 'none';
-    
+
     console.log("Starting registration for:", email);
-    
-    // 创建用户（简化版）
-    auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-            const user = userCredential.user;
+
+    firebase.auth()
+        .createUserWithEmailAndPassword(email, password)
+        .then((cred) => {
+            const user = cred.user;
             console.log("User created:", user.uid);
-            
-            // 发送验证邮件
-            return user.sendEmailVerification();
+
+            return user.sendEmailVerification().then(() => user);
         })
-        .then(() => {
+        .then((user) => {
             console.log("Verification email sent");
-            
-            // 保存用户数据到 Firestore
-            return db.collection('users').doc(auth.currentUser.uid).set({
-                email: email,
+
+            return firebase.firestore().collection('users').doc(user.uid).set({
+                email,
                 companyName: document.getElementById('register-company').value.trim(),
                 phone: document.getElementById('register-phone').value.trim() || null,
                 address: document.getElementById('register-address').value.trim() || null,
@@ -7946,82 +7940,40 @@ function handleEnhancedRegistration() {
                 emailVerified: false,
                 accountType: 'free',
                 accountStatus: 'active',
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                settings: {
-                    currency: 'RM',
-                    language: 'en',
-                    dateFormat: 'DD/MM/YYYY',
-                    taxRate: 6.0,
-                    notifications: true
-                }
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
         })
         .then(() => {
-            // 成功处理
             registerBtn.innerHTML = '<i class="fas fa-check"></i> Account Created!';
             document.getElementById('register-success').style.display = 'block';
-            document.getElementById('register-success-text').textContent = 
+            document.getElementById('register-success-text').textContent =
                 'Registration successful! Please check your email to verify your account.';
-            
+
             showToast('Registration successful! Verification email sent.', 'success');
-            
-            // 3秒后跳转到登录
+
             setTimeout(() => {
-                auth.signOut().then(() => {
-                    console.log("Signed out after registration");
-                    
-                    // 切换到登录页面
+                firebase.auth().signOut().then(() => {
                     document.getElementById('register-section').style.display = 'none';
                     document.getElementById('login-section').style.display = 'block';
                     document.getElementById('email').value = email;
-                    
-                    // 重置表单和按钮
+
                     document.getElementById('enhanced-register-form').reset();
                     registerBtn.innerHTML = originalText;
                     registerBtn.disabled = false;
                     document.getElementById('register-success').style.display = 'none';
-                    
-                    showToast('Please verify your email before logging in', 'info');
                 });
             }, 3000);
         })
         .catch((error) => {
-            // 恢复按钮状态
             registerBtn.innerHTML = originalText;
             registerBtn.disabled = false;
-            
-            // 显示具体错误
-            let errorMessage = 'Registration failed. ';
-            switch(error.code) {
-                case 'auth/email-already-in-use':
-                    errorMessage = 'This email is already registered.';
-                    break;
-                case 'auth/invalid-email':
-                    errorMessage = 'Invalid email address.';
-                    break;
-                case 'auth/operation-not-allowed':
-                    errorMessage = 'Email/password accounts are not enabled.';
-                    break;
-                case 'auth/weak-password':
-                    errorMessage = 'Password must be at least 6 characters.';
-                    break;
-                case 'auth/network-request-failed':
-                    errorMessage = 'Network error. Please check your connection.';
-                    break;
-                case 'auth/user-disabled':
-                    errorMessage = 'This account has been disabled.';
-                    break;
-                default:
-                    errorMessage = error.message || 'Please try again.';
-            }
-            
-            // 显示错误
-            document.getElementById('register-error-text').textContent = errorMessage;
+
+            document.getElementById('register-error-text').textContent = error.message;
             document.getElementById('register-error').style.display = 'block';
-            
-            showToast(errorMessage, 'error');
-            console.error("Registration error: ", error);
+
+            showToast(error.message, 'error');
+            console.error("Registration error:", error);
         });
 }
 
