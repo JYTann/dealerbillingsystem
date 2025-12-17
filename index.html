@@ -65,7 +65,10 @@
             padding: 20px;
         }
 
-
+/* 移除或修改.visible类 */
+.main-container:not(.hidden) {
+    display: block !important;
+}
         
 /* 确保auth-container正确隐藏 */
 .auth-container.hidden {
@@ -74,6 +77,14 @@
     visibility: hidden !important;
 }
         
+        .sidebar {
+            background-color: var(--primary-color);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            padding-top: 20px;
+            border-radius: 10px;
+        }
         
         .sidebar a {
             color: white;
@@ -935,9 +946,8 @@ tr:hover .template-actions {
 
 /* 默认：未登录 */
 #main-container {
-    display: none;          /* 默认隐藏 */
-    min-height: 100vh;      /* ⭐ 核心：强制有高度 */
-    overflow: auto;         /* 防止 fixed 子元素导致塌陷 */
+    display: none;
+    min-height: 100vh;
 }
 
 #auth-container {
@@ -948,14 +958,6 @@ tr:hover .template-actions {
 #main-container.active {
     display: flex;
     flex-direction: row;
-}
-
-#auth-container.hidden {
-    display: none;
-}
-
-        #main-container.active {
-    display: block;
 }
 
 #auth-container.hidden {
