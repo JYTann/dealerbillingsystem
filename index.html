@@ -63,12 +63,8 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            min-height: 100vh;
         }
-
-/* 移除或修改.visible类 */
-.main-container:not(.hidden) {
-    display: block !important;
-}
         
 /* 确保auth-container正确隐藏 */
 .auth-container.hidden {
@@ -942,41 +938,6 @@ tr:hover .template-actions {
     }
 }
 
-/* ===== Auth / Main 显示控制（唯一来源） ===== */
-
-/* 默认：未登录 */
-#main-container {
-    display: none;
-    min-height: 100vh;
-}
-
-#auth-container {
-    display: block;
-}
-
-/* 登录后 */
-#main-container.active {
-    display: flex;
-    flex-direction: row;
-}
-
-#auth-container.hidden {
-    display: none;
-}
-
-/* ===== 布局（关键） ===== */
-
-.sidebar {
-    position: relative;   /* ❗ 不要 fixed */
-    width: 200px;
-    flex-shrink: 0;
-}
-
-.content {
-    flex: 1;
-    margin-left: 0;       /* ❗ 一定移除 */
-    padding: 20px;
-}
 
     </style>
 </head>
