@@ -1141,6 +1141,121 @@ body::after {
         padding: 0 !important;
     }
         }
+
+        /* ============== 紧急修复：强制显示控制 ============== */
+
+/* 完全覆盖所有可能的隐藏状态 */
+#auth-container[style*="display: block"],
+#auth-container:not([style*="display: none"]) {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    z-index: 1000 !important;
+}
+
+#main-container[style*="display: block"],
+#main-container:not([style*="display: none"]) {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+    z-index: 1001 !important;
+}
+
+/* 用户登录时的强制样式 */
+body[data-logged-in="true"] #auth-container {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
+}
+
+body[data-logged-in="true"] #main-container {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+}
+
+/* 用户未登录时的强制样式 */
+body:not([data-logged-in="true"]) #auth-container {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+    position: relative !important;
+}
+
+body:not([data-logged-in="true"]) #main-container {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
+}
+
+/* 页面切换修复 */
+.page {
+    min-height: 50vh !important;
+    position: relative !important;
+}
+
+.page.active {
+    animation: fadeIn 0.5s ease-in-out !important;
+    min-height: 70vh !important;
+}
+
+/* 强制显示所有关键元素 */
+.sidebar, .content, .page, .bill-table, 
+.chart-container, .summary-card, .form-section,
+.btn, .form-control, .form-select, input, textarea,
+.toast-container, .theme-toggle {
+    opacity: 1 !important;
+    visibility: visible !important;
+    display: block !important;
+}
+
+/* 确保表格内容可见 */
+.bill-table th,
+.bill-table td {
+    color: var(--text-color) !important;
+    background-color: var(--card-bg) !important;
+}
+
+/* 修复可能的JavaScript冲突 */
+*[style*="opacity: 0"]:not(#auth-container):not(#main-container) {
+    opacity: 1 !important;
+}
+
+*[style*="visibility: hidden"]:not(#auth-container):not(#main-container) {
+    visibility: visible !important;
+}
+
+*[style*="display: none"]:not(#auth-container):not(#main-container):not(.page:not(.active)) {
+    display: block !important;
+}
     </style>
 </head>
 <body>
