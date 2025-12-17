@@ -942,64 +942,42 @@ tr:hover .template-actions {
     }
 }
 
-        /* 修复显示问题 - 强制覆盖 */
-#main-container[style*="display: block"] {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
+/* ===== Auth / Main 显示控制（唯一来源） ===== */
 
-#auth-container[style*="display: none"] {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-}
-
-/* 确保没有其他样式覆盖 */
-body > div {
-    transition: none !important;
-}*/
-
-/* 移除任何可能影响显示的变换 */
+/* 默认：未登录 */
 #main-container {
-    transform: none !important;
-    transition: none !important;
+    display: none;
+    min-height: 100vh;
 }
 
-       /* ============== 紧急修复：强制显示控制 ============== */
-#main-container.visible {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    position: relative !important;
-    z-index: 1 !important;
+#auth-container {
+    display: block;
+}
+
+/* 登录后 */
+#main-container.active {
+    display: flex;
+    flex-direction: row;
 }
 
 #auth-container.hidden {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    position: absolute !important;
-    z-index: 0 !important;
-    pointer-events: none !important;
+    display: none;
 }
 
-/* 覆盖所有可能的内联样式 */
-#main-container[style*="display: none"],
-#main-container[style*="display:none"] {
-    display: block !important;
+/* ===== 布局（关键） ===== */
+
+.sidebar {
+    position: relative;   /* ❗ 不要 fixed */
+    width: 200px;
+    flex-shrink: 0;
 }
 
-#auth-container[style*="display: block"],
-#auth-container[style*="display:block"] {
-    display: none !important;
+.content {
+    flex: 1;
+    margin-left: 0;       /* ❗ 一定移除 */
+    padding: 20px;
 }
 
-/* 防止任何动画干扰 */
-#main-container, #auth-container {
-    transition: none !important;
-    animation: none !important;
-}
     </style>
 </head>
 <body>
