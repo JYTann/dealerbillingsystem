@@ -942,7 +942,7 @@ tr:hover .template-actions {
     }
 }
 
-        /* 修复显示问题 - 强制覆盖 
+        /* 修复显示问题 - 强制覆盖 */
 #main-container[style*="display: block"] {
     display: block !important;
     opacity: 1 !important;
@@ -955,18 +955,18 @@ tr:hover .template-actions {
     visibility: hidden !important;
 }
 
-/* 确保没有其他样式覆盖 
+/* 确保没有其他样式覆盖 */
 body > div {
     transition: none !important;
 }*/
 
-/* 移除任何可能影响显示的变换 
+/* 移除任何可能影响显示的变换 */
 #main-container {
     transform: none !important;
     transition: none !important;
 }
 
-        ============== 紧急修复：强制显示控制 ============== 
+       /* ============== 紧急修复：强制显示控制 ============== */
 #main-container.visible {
     display: block !important;
     opacity: 1 !important;
@@ -984,7 +984,7 @@ body > div {
     pointer-events: none !important;
 }
 
-/* 覆盖所有可能的内联样式 
+/* 覆盖所有可能的内联样式 */
 #main-container[style*="display: none"],
 #main-container[style*="display:none"] {
     display: block !important;
@@ -995,11 +995,11 @@ body > div {
     display: none !important;
 }
 
-防止任何动画干扰 
+/* 防止任何动画干扰 */
 #main-container, #auth-container {
     transition: none !important;
     animation: none !important;
-}*/
+}
     </style>
 </head>
 <body>
