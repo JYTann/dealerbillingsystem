@@ -6137,24 +6137,25 @@ loginBtn.addEventListener('click', function() {
         
         auth.onAuthStateChanged((user) => {
     console.log("Auth state changed, user:", user ? user.email : "No user");
-    
+
+    const authContainer = document.getElementById('auth-container');
+    const mainContainer = document.getElementById('main-container');
+
+    // 先隐藏主界面
+    if (mainContainer) mainContainer.style.display = 'none';
+
     if (user) {
-        // 检查邮箱是否已验证
+        // 用户已登录
         if (!user.emailVerified) {
             console.log("User email not verified:", user.email);
-            
-            // 如果用户试图进入主界面，强制登出并显示提示
-            if (mainContainer.style.display === 'block') {
-                showToast('Please verify your email before accessing the system', 'warning');
-                
-                // 短暂延迟后登出
-                setTimeout(() => {
-                    auth.signOut();
-                }, 2000);
-                
-                // 显示验证提醒
+
+            // 显示登录界面
+            if (authContainer) authContainer.style.display = 'block';
+
+            // 添加邮箱验证提醒（只添加一次）
+            if (!document.getElementById('verification-reminder')) {
                 const reminderHTML = `
-                    <div class="alert alert-warning mt-3">
+                    <div id="verification-reminder" class="alert alert-warning mt-3">
                         <h6><i class="fas fa-envelope"></i> Email Verification Required</h6>
                         <p>Please check your email (${user.email}) for the verification link.</p>
                         <button class="btn btn-sm btn-primary" id="resend-verification">
@@ -6162,27 +6163,44 @@ loginBtn.addEventListener('click', function() {
                         </button>
                     </div>
                 `;
-                
-                // 添加到登录页面
-                const authContainer = document.getElementById('auth-container');
-                if (authContainer && !document.getElementById('verification-reminder')) {
-                    authContainer.insertAdjacentHTML('beforeend', reminderHTML);
-                    
-                    // 添加重新发送验证邮件的功能
-                    document.getElementById('resend-verification').addEventListener('click', function() {
-    // ✅ 正确：使用 firebase.auth().currentUser
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-        currentUser.sendEmailVerification()
-            .then(() => {
-                showToast('Verification email resent. Please check your inbox.', 'success');
-            })
-            .catch(error => {
-                console.error("Error resending verification:", error);
-                showToast('Error resending verification email', 'error');
-            });
+                authContainer.insertAdjacentHTML('beforeend', reminderHTML);
+
+                document.getElementById('resend-verification').addEventListener('click', function() {
+                    const currentUser = auth.currentUser;
+                    if (currentUser) {
+                        currentUser.sendEmailVerification()
+                            .then(() => showToast('Verification email resent. Please check your inbox.', 'success'))
+                            .catch(error => {
+                                console.error("Error resending verification:", error);
+                                showToast('Error resending verification email', 'error');
+                            });
+                    }
+                });
+            }
+
+            return; // 阻止进入主界面
+        }
+
+        // 用户邮箱已验证，显示主界面
+        if (authContainer) authContainer.style.display = 'none';
+        if (mainContainer) mainContainer.style.display = 'block';
+
+        renderApp(user);      // 安全渲染
+        loadUserData();       // 加载用户数据
+
+        // 移除验证提醒（如果存在）
+        const reminder = document.getElementById('verification-reminder');
+        if (reminder) reminder.remove();
+
+    } else {
+        // 用户未登录
+        console.log("No user logged in, showing auth container");
+        if (authContainer) authContainer.style.display = 'block';
+        if (mainContainer) mainContainer.style.display = 'none';
+        renderApp(null);  // 渲染空状态或登录状态
     }
 });
+
                 }
             }
             
