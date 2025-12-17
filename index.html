@@ -938,7 +938,209 @@ tr:hover .template-actions {
     }
 }
 
+/* 在现有CSS末尾添加以下修复代码 */
+/* ============== 修复登录后空白页面问题 ============== */
 
+/* 确保正确的显示控制 */
+#auth-container {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transition: all 0.3s ease-in-out;
+}
+
+#main-container {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease-in-out;
+}
+
+/* 当用户登录后应用的类 */
+.auth-hidden #auth-container {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+
+.auth-hidden #main-container {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 移除原有的.hidden和.visible类，避免冲突 */
+.hidden {
+    display: none !important;
+}
+
+.visible {
+    display: block !important;
+}
+
+/* 修复页面切换 */
+.page {
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+}
+
+.page.active {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 修复侧边栏和内容区域 */
+.sidebar {
+    display: block !important;
+}
+
+.content {
+    display: block !important;
+}
+
+/* 修复图表容器 */
+.chart-container canvas {
+    width: 100% !important;
+    height: 350px !important;
+    min-height: 350px !important;
+    max-height: 400px !important;
+}
+
+/* 强制修复所有显示问题 */
+body.user-logged-in #auth-container {
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+}
+
+body.user-logged-in #main-container {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 确保表格正确显示 */
+.table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* 修复按钮和表单的显示 */
+.btn, .form-control, .form-select {
+    display: inline-block !important;
+    visibility: visible !important;
+}
+
+/* 修复主题切换按钮 */
+.theme-toggle {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* 响应式修复 */
+@media (max-width: 768px) {
+    #auth-container {
+        margin: 20px auto !important;
+        padding: 20px !important;
+    }
+    
+    #main-container {
+        padding: 10px !important;
+    }
+    
+    .content {
+        margin-left: 0 !important;
+        padding: 10px !important;
+    }
+}
+
+/* 动画修复 */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.page.active {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* 加载状态修复 */
+.loading-spinner {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+/* 确保所有关键元素可见 */
+#login-section, #register-section, .sidebar, .content, .page, 
+.chart-container, .summary-card, .form-section, .bill-table {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* 修复浮动元素 */
+.floating-label-group {
+    position: relative;
+    display: block !important;
+}
+
+/* 确保模态框正确显示 */
+.modal {
+    display: none;
+    visibility: hidden;
+}
+
+.modal.show {
+    display: block !important;
+    visibility: visible !important;
+}
+
+/* 最后的安全修复 */
+body {
+    min-height: 100vh;
+    position: relative;
+}
+
+body::after {
+    content: '';
+    display: none;
+}
+
+/* 强制显示修复 */
+[style*="display: none"]:not(.hidden):not(.page:not(.active)) {
+    display: none !important;
+}
+
+[style*="display: block"] {
+    display: block !important;
+}
+
+/* 打印样式修复 */
+@media print {
+    #auth-container, .theme-toggle, .sidebar {
+        display: none !important;
+    }
+    
+    #main-container {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+        }
     </style>
 </head>
 <body>
@@ -1312,6 +1514,8 @@ tr:hover .template-actions {
             <a href="#" data-page="more"><i class="fas fa-ellipsis-h"></i> More</a>
             <a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </div>
+
+        
 
         <!-- Main Content -->
         <div class="content">
@@ -8296,41 +8500,52 @@ window.addEventListener('load', function() {
 
         // ============== 唯一的UI控制函数 ==============
 function renderApp(user) {
+    console.log("🔥 renderApp called with user:", user?.email);
+    
     const auth = document.getElementById("auth-container");
     const main = document.getElementById("main-container");
-
-    console.log("🔥 renderApp called with user:", user?.email);
-
+    const body = document.body;
+    
     if (user && user.emailVerified) {
-        // 显示主界面
-        auth.style.display = "none";
-        auth.classList.add("hidden");
+        console.log("✅ 显示主界面");
+        // 使用CSS类控制显示
+        body.classList.add("auth-hidden");
+        body.classList.add("user-logged-in");
         
-        main.style.display = "block";
-        main.classList.add("visible");
-
-        // 强制显示 dashboard
-        document.querySelectorAll(".page").forEach(p => {
-            p.style.display = "none";
-            p.classList.remove("active");
-        });
-
-        const dashboard = document.getElementById("dashboard");
-        if (dashboard) {
-            dashboard.style.display = "block";
-            dashboard.classList.add("active");
-        }
-
+        // 确保dashboard显示
+        setTimeout(() => {
+            document.querySelectorAll(".page").forEach(p => {
+                p.classList.remove("active");
+                p.style.display = "none";
+            });
+            
+            const dashboard = document.getElementById("dashboard");
+            if (dashboard) {
+                dashboard.classList.add("active");
+                dashboard.style.display = "block";
+            }
+            
+            // 重新初始化图表
+            if (typeof initCharts === 'function') {
+                setTimeout(initCharts, 100);
+            }
+        }, 100);
+        
     } else {
-        // 显示登录页
-        auth.style.display = "block";
-        auth.classList.remove("hidden");
+        console.log("🔒 显示登录界面");
+        // 移除相关类
+        body.classList.remove("auth-hidden");
+        body.classList.remove("user-logged-in");
         
-        main.style.display = "none";
-        main.classList.remove("visible");
+        // 确保登录页显示
+        setTimeout(() => {
+            const loginSection = document.getElementById('login-section');
+            const registerSection = document.getElementById('register-section');
+            if (loginSection) loginSection.style.display = 'block';
+            if (registerSection) registerSection.style.display = 'none';
+        }, 100);
     }
 }
-
         // ============== 强制修复：防止空白页面 ==============
 // ============== 强制修复：防止空白页面（安全版） ==============
 (function() {
