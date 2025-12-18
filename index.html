@@ -8435,29 +8435,6 @@ function renderApp(user) {
     console.log("强制修复脚本已加载");
 })();
 
-        function forceUnlockMainContainer() {
-    const main = document.getElementById('main-container');
-    if (!main) return;
-
-    let p = main;
-    while (p && p !== document.body) {
-        p.style.display = 'block';
-        p.style.visibility = 'visible';
-        p.style.opacity = '1';
-        p.classList.remove('hidden');
-        p = p.parentElement;
-    }
-}
-
-auth.onAuthStateChanged((user) => {
-    if (user && user.emailVerified) {
-        renderApp(user);
-        setTimeout(forceUnlockMainContainer, 0);
-    } else {
-        renderApp(null);
-    }
-});
-
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
