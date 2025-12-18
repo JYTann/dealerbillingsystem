@@ -6108,36 +6108,14 @@ loginBtn.addEventListener('click', function() {
         }
         
         // Check if user is already logged in
-        // 在 auth.onAuthStateChanged 部分修改：
-auth.onAuthStateChanged((user) => {
-    if (user) {
-        // 用户已登录
-        console.log("User logged in:", user.email);
-        
-        // 等待 DOM 完全加载
-        setTimeout(() => {
-            authContainer.style.display = 'none';
-            mainContainer.style.display = 'block';
-            mainContainer.style.opacity = '0';
-            
-            // 使用动画显示主界面
-            setTimeout(() => {
-                mainContainer.style.transition = 'opacity 0.5s ease';
-                mainContainer.style.opacity = '1';
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // User is signed in
+                authContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
                 loadUserData();
-            }, 100);
-        }, 100);
-    } else {
-        // 用户未登录
-        console.log("No user logged in");
-        authContainer.style.display = 'block';
-        mainContainer.style.display = 'none';
-        
-        // 确保登录页面可见
-        document.getElementById('login-section').style.display = 'block';
-        document.getElementById('register-section').style.display = 'none';
-    }
-});
+            }
+        });
         
         // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
@@ -7796,122 +7774,110 @@ function handleEnhancedRegistration() {
     const registerBtn = document.getElementById('register-btn');
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
+    const phone = document.getElementById('register-phone').value.trim();
+    const company = document.getElementById('register-company').value.trim();
+    const address = document.getElementById('register-address').value.trim();
+    const businessType = document.getElementById('register-business-type').value;
+    const newsletter = document.getElementById('register-newsletter').checked;
     
-    // 显示加载状态
+    // Show loading state
     const originalText = registerBtn.innerHTML;
     registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
     registerBtn.disabled = true;
     
-    // 清除之前的错误信息
-    document.getElementById('register-error').style.display = 'none';
-    
-    // 创建用户
+    // Create user with Firebase Auth
     auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
             const user = userCredential.user;
             
-            // 立即发送验证邮件
-            return user.sendEmailVerification()
+            // Send email verification
+            user.sendEmailVerification()
                 .then(() => {
-                    return user;
+                    // Prepare user data for Firestore
+                    const userData = {
+                        email: email,
+                        companyName: company,
+                        phone: phone || null,
+                        address: address || null,
+                        businessType: businessType || 'other',
+                        newsletterSubscription: newsletter,
+                        emailVerified: false,
+                        accountType: 'free',
+                        accountStatus: 'active',
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString(),
+                        settings: {
+                            currency: 'RM',
+                            language: 'en',
+                            dateFormat: 'DD/MM/YYYY',
+                            taxRate: 6.0,
+                            notifications: true
+                        }
+                    };
+                    
+                    // Save user data to Firestore
+                    return db.collection('users').doc(user.uid).set(userData, { merge: true });
+                })
+                .then(() => {
+                    // Show success message
+                    showRegistrationSuccess('Account created successfully! Please check your email to verify your account.');
+                    
+                    // Update button
+                    registerBtn.innerHTML = '<i class="fas fa-check"></i> Account Created!';
+                    
+                    // Auto-switch to login after 3 seconds
+                    setTimeout(() => {
+                        // Switch to login page
+                        document.getElementById('register-section').style.display = 'none';
+                        document.getElementById('login-section').style.display = 'block';
+                        
+                        // Pre-fill email
+                        document.getElementById('email').value = email;
+                        
+                        // Reset registration form
+                        document.getElementById('enhanced-register-form').reset();
+                        registerBtn.innerHTML = originalText;
+                        registerBtn.disabled = false;
+                        
+                        // Hide success message
+                        document.getElementById('register-success').style.display = 'none';
+                        
+                        showToast('Please verify your email before logging in', 'info');
+                    }, 3000);
+                })
+                .catch((error) => {
+                    console.error("Error saving user data: ", error);
+                    showRegistrationError('Account created but there was an error saving your profile. Please contact support.');
+                    registerBtn.innerHTML = originalText;
+                    registerBtn.disabled = false;
                 });
         })
-        .then((user) => {
-            // 收集其他用户信息
-            const phone = document.getElementById('register-phone').value.trim();
-            const company = document.getElementById('register-company').value.trim();
-            const address = document.getElementById('register-address').value.trim();
-            const businessType = document.getElementById('register-business-type').value;
-            const newsletter = document.getElementById('register-newsletter').checked;
-            
-            // 准备用户数据
-            const userData = {
-                email: email,
-                companyName: company,
-                phone: phone || null,
-                address: address || null,
-                businessType: businessType || 'other',
-                newsletterSubscription: newsletter,
-                emailVerified: false,
-                accountType: 'free',
-                accountStatus: 'active',
-                createdAt: new Date().toISOString(),
-                lastLogin: new Date().toISOString(),
-                settings: {
-                    currency: 'RM',
-                    language: 'en',
-                    dateFormat: 'DD/MM/YYYY',
-                    taxRate: 6.0,
-                    notifications: true
-                }
-            };
-            
-            // 保存到 Firestore
-            return db.collection('users').doc(user.uid).set(userData, { merge: true });
-        })
-        .then(() => {
-            // 注册成功
-            registerBtn.innerHTML = '<i class="fas fa-check"></i> Account Created!';
-            showToast('Registration successful! Verification email sent. Please check your inbox.', 'success');
-            
-            // 显示成功消息
-            document.getElementById('register-success').style.display = 'block';
-            document.getElementById('register-success-text').textContent = 
-                'Registration successful! Please check your email to verify your account.';
-            
-            // 3秒后自动跳转到登录页面
-            setTimeout(() => {
-                // 切换到登录页面
-                document.getElementById('register-section').style.display = 'none';
-                document.getElementById('login-section').style.display = 'block';
-                
-                // 预填邮箱
-                document.getElementById('email').value = email;
-                
-                // 重置注册表单
-                document.getElementById('enhanced-register-form').reset();
-                
-                // 重置按钮
-                registerBtn.innerHTML = originalText;
-                registerBtn.disabled = false;
-                
-                // 隐藏成功消息
-                document.getElementById('register-success').style.display = 'none';
-                
-                showToast('Please verify your email before logging in', 'info');
-            }, 3000);
-        })
         .catch((error) => {
-            // 处理错误
-            console.error("Registration error: ", error);
-            
-            let errorMessage = 'Registration failed. ';
+            // Handle Firebase Auth errors
+            let errorMessage = 'Registration failed. Please try again.';
             
             switch(error.code) {
                 case 'auth/email-already-in-use':
-                    errorMessage = 'This email is already registered.';
+                    errorMessage = 'This email is already registered. Please use a different email or try logging in.';
                     break;
                 case 'auth/invalid-email':
-                    errorMessage = 'Invalid email address.';
+                    errorMessage = 'Invalid email address format.';
                     break;
                 case 'auth/operation-not-allowed':
-                    errorMessage = 'Email/password accounts are not enabled.';
+                    errorMessage = 'Email/password accounts are not enabled. Please contact support.';
                     break;
                 case 'auth/weak-password':
-                    errorMessage = 'Password is too weak.';
+                    errorMessage = 'Password is too weak. Please use a stronger password.';
                     break;
                 case 'auth/network-request-failed':
-                    errorMessage = 'Network error. Please check your connection.';
+                    errorMessage = 'Network error. Please check your internet connection.';
                     break;
-                default:
-                    errorMessage = error.message || 'Please try again.';
+                case 'auth/too-many-requests':
+                    errorMessage = 'Too many attempts. Please try again later.';
+                    break;
             }
             
-            // 显示错误
-            document.getElementById('register-error-text').textContent = errorMessage;
-            document.getElementById('register-error').style.display = 'block';
-            
-            // 重置按钮
+            showRegistrationError(errorMessage);
             registerBtn.innerHTML = originalText;
             registerBtn.disabled = false;
         });
@@ -7990,13 +7956,6 @@ function socialSignUp(provider) {
             showToast(errorMessage, 'error');
         });
 }
-
-        // 在 handleEnhancedRegistration 函数开始处添加：
-console.log("Starting registration process for:", email);
-// 在每个步骤后添加：
-console.log("User created successfully:", user.uid);
-console.log("Verification email sent");
-console.log("User data saved to Firestore");
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
