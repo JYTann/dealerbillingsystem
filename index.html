@@ -64,18 +64,6 @@
             margin: 0 auto;
             padding: 20px;
         }
-
-/* 移除或修改.visible类 */
-.main-container:not(.hidden) {
-    display: block !important;
-}
-        
-/* 确保auth-container正确隐藏 */
-.auth-container.hidden {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-}
         
         .sidebar {
             background-color: var(--primary-color);
@@ -941,43 +929,6 @@ tr:hover .template-actions {
         margin: 3px;
     }
 }
-
-/* ===== Auth / Main 显示控制（唯一来源） ===== */
-
-/* 默认：未登录 */
-#main-container {
-    display: none;
-    min-height: 100vh;
-}
-
-#auth-container {
-    display: block;
-}
-
-/* 登录后 */
-#main-container.active {
-    display: flex;
-    flex-direction: row;
-}
-
-#auth-container.hidden {
-    display: none;
-}
-
-/* ===== 布局（关键） ===== */
-
-.sidebar {
-    position: relative;   /* ❗ 不要 fixed */
-    width: 200px;
-    flex-shrink: 0;
-}
-
-.content {
-    flex: 1;
-    margin-left: 0;       /* ❗ 一定移除 */
-    padding: 20px;
-}
-
     </style>
 </head>
 <body>
@@ -5786,7 +5737,7 @@ setTimeout(populateBillDropdowns, 1000);
         }
         
         // Authentication functions
-// 简化版本 - 移除复杂动画
+        // 替换现有的登录按钮事件监听器：
 loginBtn.addEventListener('click', function() {
     const email = document.getElementById('email').value.trim();
     const password = document.getElementById('password').value;
@@ -5797,58 +5748,52 @@ loginBtn.addEventListener('click', function() {
         this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing in...';
         this.disabled = true;
         
-        // 清除之前的错误
-        loginError.style.display = 'none';
-        
-        console.log("尝试登录:", email);
-        
         auth.signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                console.log("登录成功，用户:", userCredential.user.email);
-                
-                // 加载用户数据
-                loadUserData();
-                
-                // 更新按钮状态
+                // 登录成功
                 this.innerHTML = '<i class="fas fa-check me-2"></i>Success!';
-                
-                // 延迟恢复按钮
                 setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                }, 1000);
-                
-                showToast('Welcome back! Login successful!', 'success');
-                
-                // 强制重绘
-                setTimeout(() => {
-                    document.body.style.display = 'none';
-                    document.body.offsetHeight;
-                    document.body.style.display = '';
-                }, 50);
+                    authContainer.style.opacity = '0';
+                    authContainer.style.transform = 'translateY(-20px)';
+                    
+                    setTimeout(() => {
+                        authContainer.style.display = 'none';
+                        mainContainer.style.display = 'block';
+                        mainContainer.style.opacity = '0';
+                        mainContainer.style.transform = 'translateY(20px)';
+                        
+                        setTimeout(() => {
+                            mainContainer.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+                            mainContainer.style.opacity = '1';
+                            mainContainer.style.transform = 'translateY(0)';
+                            loadUserData();
+                        }, 100);
+                        
+                        showToast('Welcome back! Login successful!', 'success');
+                    }, 300);
+                }, 500);
             })
             .catch((error) => {
-                console.error("登录错误:", error);
-                
                 // 恢复按钮状态
                 this.innerHTML = originalText;
                 this.disabled = false;
                 
                 // 显示错误
-                let errorMessage = 'Login failed. Please try again.';
-                if (error.code === 'auth/user-not-found') {
-                    errorMessage = 'No account found with this email.';
-                } else if (error.code === 'auth/wrong-password') {
-                    errorMessage = 'Incorrect password.';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Invalid email address.';
-                }
-                
-                loginError.textContent = errorMessage;
-                loginError.style.display = 'block';
+                handleLoginError(error);
+                console.error("Login error: ", error);
             });
     } else {
-        loginError.textContent = 'Please enter email and password.';
+        // 添加表单验证效果
+        if (!email) {
+            document.getElementById('email').classList.add('is-invalid');
+            document.getElementById('email').focus();
+        }
+        if (!password) {
+            document.getElementById('password').classList.add('is-invalid');
+            if (email) document.getElementById('password').focus();
+        }
+        
+        loginError.textContent = 'Please fill in all required fields.';
         loginError.style.display = 'block';
     }
 });
@@ -5859,6 +5804,8 @@ loginBtn.addEventListener('click', function() {
             auth.signInWithPopup(provider)
                 .then((result) => {
                     // Signed in
+                    authContainer.style.display = 'none';
+                    mainContainer.style.display = 'block';
                     loadUserData();
                     showToast('Google login successful!', 'success');
                 })
@@ -5908,6 +5855,9 @@ loginBtn.addEventListener('click', function() {
                 
                 showToast('Registration successful! You are now logged in.', 'success');
                 
+                // 自动登录
+                authContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
                 loadUserData();
             })
             .catch((error) => {
@@ -5948,6 +5898,8 @@ loginBtn.addEventListener('click', function() {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
             auth.signOut().then(() => {
+                authContainer.style.display = 'block';
+                mainContainer.style.display = 'none';
                 
                 // Clear all data from UI
                 if (periodicBillsList) periodicBillsList.innerHTML = '';
@@ -6225,30 +6177,40 @@ loginBtn.addEventListener('click', function() {
                 }
             }
             
-            renderApp(null)
+            // 保持显示登录页面
+            if (authContainer && mainContainer) {
+                authContainer.style.display = 'block';
+                mainContainer.style.display = 'none';
+            }
             return;
         }
         
         // 用户已登录且邮箱已验证
         console.log("User is logged in and verified:", user.email);
         
-        renderApp(user);
-        loadUserData();
-        
-        // 移除验证提醒（如果存在）
-        const reminder = document.getElementById('verification-reminder');
-        if (reminder) reminder.remove();
+        if (authContainer && mainContainer) {
+            authContainer.style.display = 'none';
+            mainContainer.style.display = 'block';
+            loadUserData();
+            
+            // 移除验证提醒（如果存在）
+            const reminder = document.getElementById('verification-reminder');
+            if (reminder) reminder.remove();
+        }
     } else {
         // 用户未登录
         console.log("No user logged in, showing auth container");
         
-        renderApp(null);
-        
-        // 确保登录页面可见
-        const loginSection = document.getElementById('login-section');
-        const registerSection = document.getElementById('register-section');
-        if (loginSection) loginSection.style.display = 'block';
-        if (registerSection) registerSection.style.display = 'none';
+        if (authContainer && mainContainer) {
+            authContainer.style.display = 'block';
+            mainContainer.style.display = 'none';
+            
+            // 确保登录页面可见
+            const loginSection = document.getElementById('login-section');
+            const registerSection = document.getElementById('register-section');
+            if (loginSection) loginSection.style.display = 'block';
+            if (registerSection) registerSection.style.display = 'none';
+        }
     }
 });
         
@@ -6669,25 +6631,20 @@ function deleteTemplateFromFirebase(templateId) {
 
 // ============== QUICK COPY BILL SYSTEM ==============
 function initQuickCopySystem() {
-    document.addEventListener('click', function (e) {
-
-        // 向上寻找 .fa-clone（最安全）
-        const cloneIcon = e.target.closest('.fa-clone');
-        if (!cloneIcon) return;
-
-        // 找到所在的表格行
-        const billRow = cloneIcon.closest('tr');
-        if (!billRow) return;
-
-        const billId = billRow.dataset.billId || billRow.dataset.id;
-        const billType = billRow.dataset.billType;
-
-        if (billId && billType) {
-            quickCopyBill(billId, billType);
+    // Quick copy button in bill rows
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('fa-clone') || e.target.parentElement.classList.contains('fa-clone')) {
+            const billRow = e.target.closest('tr');
+            if (billRow) {
+                const billId = billRow.dataset.billId || billRow.dataset.id;
+                const billType = billRow.dataset.billType;
+                
+                if (billId && billType) {
+                    quickCopyBill(billId, billType);
+                }
+            }
         }
     });
-}
-
     
     // Quick copy modal
     if (document.getElementById('confirm-copy-bill')) {
@@ -6703,6 +6660,7 @@ function initQuickCopySystem() {
             }
         });
     }
+}
 
 function quickCopyBill(billId, billType) {
     let bill = null;
@@ -7779,28 +7737,13 @@ function initEnhancedRegistration() {
         });
     }
     
-    // Form submission - 修复这里
+    // Form submission
     const registerForm = document.getElementById('enhanced-register-form');
     if (registerForm) {
-        // 移除旧的监听器
-        registerForm.removeEventListener('submit', handleEnhancedRegistration);
-        
-        // 添加新的监听器
         registerForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            console.log("Register form submitted");
             handleEnhancedRegistration();
         });
-        
-        // 修复注册按钮的点击事件
-        const registerBtn = document.getElementById('register-btn');
-        if (registerBtn) {
-            registerBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                console.log("Register button clicked");
-                handleEnhancedRegistration();
-            });
-        }
     }
 }
 
@@ -7924,7 +7867,7 @@ function validateEnhancedRegistration() {
     
     return true;
 }
-        
+
 function showRegistrationError(message) {
     const errorDiv = document.getElementById('register-error');
     const errorText = document.getElementById('register-error-text');
@@ -7947,75 +7890,144 @@ function showRegistrationSuccess(message) {
 }
 
 function handleEnhancedRegistration() {
-    if (!validateEnhancedRegistration()) return;
-
+    if (!validateEnhancedRegistration()) {
+        return;
+    }
+    
     const registerBtn = document.getElementById('register-btn');
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
-
+    const phone = document.getElementById('register-phone').value.trim();
+    const company = document.getElementById('register-company').value.trim();
+    const address = document.getElementById('register-address').value.trim();
+    const businessType = document.getElementById('register-business-type').value;
+    const newsletter = document.getElementById('register-newsletter').checked;
+    
+    // 显示加载状态
     const originalText = registerBtn.innerHTML;
     registerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
     registerBtn.disabled = true;
-
+    
+    // 清除之前的错误信息
     document.getElementById('register-error').style.display = 'none';
-
-    console.log("Starting registration for:", email);
-
-    firebase.auth()
-        .createUserWithEmailAndPassword(email, password)
-        .then((cred) => {
-            const user = cred.user;
-            console.log("User created:", user.uid);
-
-            return user.sendEmailVerification().then(() => user);
-        })
-        .then((user) => {
-            console.log("Verification email sent");
-
-            return firebase.firestore().collection('users').doc(user.uid).set({
-                email,
-                companyName: document.getElementById('register-company').value.trim(),
-                phone: document.getElementById('register-phone').value.trim() || null,
-                address: document.getElementById('register-address').value.trim() || null,
-                businessType: document.getElementById('register-business-type').value || 'other',
-                newsletterSubscription: document.getElementById('register-newsletter').checked,
-                emailVerified: false,
-                accountType: 'free',
-                accountStatus: 'active',
-                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                lastLogin: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
+    
+    console.log("Starting registration process for:", email);
+    
+    // 创建用户
+    auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+            const user = userCredential.user; // ✅ 正确获取用户对象
+            console.log("User created successfully:", user.uid);
+            
+            // 发送验证邮件
+            return user.sendEmailVerification()
+                .then(() => {
+                    console.log("Verification email sent to:", user.email);
+                    
+                    // 准备用户数据
+                    const userData = {
+                        uid: user.uid,
+                        email: email,
+                        companyName: company,
+                        phone: phone || null,
+                        address: address || null,
+                        businessType: businessType || 'other',
+                        newsletterSubscription: newsletter,
+                        emailVerified: false,
+                        accountType: 'free',
+                        accountStatus: 'active',
+                        createdAt: new Date().toISOString(),
+                        lastLogin: new Date().toISOString(),
+                        settings: {
+                            currency: 'RM',
+                            language: 'en',
+                            dateFormat: 'DD/MM/YYYY',
+                            taxRate: 6.0,
+                            notifications: true
+                        }
+                    };
+                    
+                    // 保存到 Firestore
+                    return db.collection('users').doc(user.uid).set(userData, { merge: true });
+                });
         })
         .then(() => {
+            // 注册成功
+            console.log("Registration completed successfully");
             registerBtn.innerHTML = '<i class="fas fa-check"></i> Account Created!';
+            
+            // 显示成功消息
             document.getElementById('register-success').style.display = 'block';
-            document.getElementById('register-success-text').textContent =
+            document.getElementById('register-success-text').textContent = 
                 'Registration successful! Please check your email to verify your account.';
-
-            showToast('Registration successful! Verification email sent.', 'success');
-
+            
+            showToast('Registration successful! Verification email sent. Please check your inbox.', 'success');
+            
+            // 3秒后自动跳转到登录页面
             setTimeout(() => {
-                firebase.auth().signOut().then(() => {
+                // 强制登出（防止未验证用户直接进入系统）
+                auth.signOut().then(() => {
+                    console.log("User signed out after registration (awaiting verification)");
+                    
+                    // 切换到登录页面
                     document.getElementById('register-section').style.display = 'none';
                     document.getElementById('login-section').style.display = 'block';
+                    
+                    // 预填邮箱
                     document.getElementById('email').value = email;
-
+                    
+                    // 重置注册表单
                     document.getElementById('enhanced-register-form').reset();
+                    
+                    // 重置按钮
                     registerBtn.innerHTML = originalText;
                     registerBtn.disabled = false;
+                    
+                    // 隐藏成功消息
                     document.getElementById('register-success').style.display = 'none';
+                    
+                    showToast('Please verify your email before logging in', 'info');
                 });
             }, 3000);
         })
         .catch((error) => {
+            // 处理错误
+            console.error("Registration error: ", error.code, error.message);
+            
+            let errorMessage = 'Registration failed. ';
+            
+            switch(error.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'This email is already registered.';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Invalid email address.';
+                    break;
+                case 'auth/operation-not-allowed':
+                    errorMessage = 'Email/password accounts are not enabled.';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Password must be at least 6 characters.';
+                    break;
+                case 'auth/network-request-failed':
+                    errorMessage = 'Network error. Please check your connection.';
+                    break;
+                case 'auth/user-disabled':
+                    errorMessage = 'This account has been disabled.';
+                    break;
+                default:
+                    errorMessage = error.message || 'Please try again.';
+            }
+            
+            // 显示错误
+            document.getElementById('register-error-text').textContent = errorMessage;
+            document.getElementById('register-error').style.display = 'block';
+            
+            // 重置按钮
             registerBtn.innerHTML = originalText;
             registerBtn.disabled = false;
-
-            document.getElementById('register-error-text').textContent = error.message;
-            document.getElementById('register-error').style.display = 'block';
-
-            showToast(error.message, 'error');
-            console.error("Registration error:", error);
+            
+            showToast(errorMessage, 'error');
         });
 }
 
@@ -8254,6 +8266,13 @@ function addResendVerificationButton(email) {
     });
 }
 
+        // 在 handleEnhancedRegistration 函数开始处添加：
+console.log("Starting registration process for:", email);
+// 在每个步骤后添加：
+console.log("User created successfully:", user.uid);
+console.log("Verification email sent");
+console.log("User data saved to Firestore");
+
         // 安全的 DOM 操作包装函数
 function safeDOMOperation(elementId, operation) {
     const element = document.getElementById(elementId);
@@ -8295,184 +8314,6 @@ function toggleElementVisibility(elementId, show) {
         return true;
     });
 }
-
-        // 页面加载时检查登录状态
-window.addEventListener('load', function() {
-    console.log("页面加载完成，检查认证状态...");
-    
-    // 检查Firebase认证状态
-    auth.onAuthStateChanged(function(user) {
-        console.log("认证状态变化，用户:", user ? user.email : "未登录");
-        
-        if (user && user.emailVerified) {
-            console.log("用户已登录且已验证，显示主界面");
-            
-            // 直接显示主界面
-            const authContainer = document.getElementById('auth-container');
-            const mainContainer = document.getElementById('main-container');
-            
-            if (authContainer && mainContainer) {
-                authContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
-                mainContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
-                
-                // 加载数据
-                setTimeout(() => {
-                    loadUserData();
-                    console.log("用户数据加载完成");
-                }, 500);
-            }
-        } else {
-            console.log("用户未登录或未验证，显示登录界面");
-        }
-    });
-    
-    // 检查当前URL，如果有错误参数则处理
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('error')) {
-        console.error("URL错误参数:", urlParams.get('error'));
-    }
-});
-
-        // ============== 唯一的UI控制函数 ==============
-function renderApp(user) {
-    const auth = document.getElementById("auth-container");
-    const main = document.getElementById("main-container");
-
-    console.log("🔥 renderApp called with user:", user?.email);
-
-    if (user && user.emailVerified) {
-        // 显示主界面
-        auth.style.display = "none";
-        auth.classList.add("hidden");
-        
-        main.style.display = "block";
-        main.classList.add("visible");
-
-        // 强制显示 dashboard
-        document.querySelectorAll(".page").forEach(p => {
-            p.style.display = "none";
-            p.classList.remove("active");
-        });
-
-        const dashboard = document.getElementById("dashboard");
-        if (dashboard) {
-            dashboard.style.display = "block";
-            dashboard.classList.add("active");
-        }
-
-    } else {
-        // 显示登录页
-        auth.style.display = "block";
-        auth.classList.remove("hidden");
-        
-        main.style.display = "none";
-        main.classList.remove("visible");
-    }
-}
-
-        // ============== 强制修复：防止空白页面 ==============
-// ============== 强制修复：防止空白页面（安全版） ==============
-(function() {
-    console.log("强制修复脚本开始执行...");
-    
-    // 使用不同的变量名避免冲突
-    const firebaseAuth = firebase.auth();
-    let renderLock = false;
-    
-    // 安全的样式修复函数
-    function forceFixUI() {
-        if (renderLock) return;
-        
-        const authEl = document.getElementById('auth-container');
-        const mainEl = document.getElementById('main-container');
-        const currentUser = firebaseAuth.currentUser;
-        
-        // 情况1：用户已登录且已验证，但主界面没显示
-        if (currentUser && currentUser.emailVerified) {
-            if (mainEl && (mainEl.style.display === 'none' || !mainEl.classList.contains('visible'))) {
-                console.log('🔧 检测到用户已登录但主界面隐藏，正在修复...');
-                renderLock = true;
-                
-                // 显示主界面，隐藏登录界面
-                if (authEl) {
-                    authEl.style.cssText = 'display: none !important';
-                    authEl.classList.add('hidden');
-                }
-                if (mainEl) {
-                    mainEl.style.cssText = 'display: block !important';
-                    mainEl.classList.add('visible');
-                }
-                
-                // 显示dashboard页面
-                document.querySelectorAll('.page').forEach(page => {
-                    page.style.display = 'none';
-                    page.classList.remove('active');
-                });
-                
-                const dashboard = document.getElementById('dashboard');
-                if (dashboard) {
-                    dashboard.style.display = 'block';
-                    dashboard.classList.add('active');
-                }
-                
-                // 确保所有图表正确初始化
-                setTimeout(() => {
-                    try {
-                        initCharts();
-                        console.log('图表重新初始化完成');
-                    } catch (e) {
-                        console.warn('图表初始化失败:', e);
-                    }
-                    renderLock = false;
-                }, 500);
-            }
-        }
-        // 情况2：用户未登录，但登录页没显示
-        else if (!currentUser) {
-            if (authEl && (authEl.style.display === 'none' || authEl.classList.contains('hidden'))) {
-                console.log('🔧 检测到用户未登录但登录页隐藏，正在修复...');
-                renderLock = true;
-                
-                // 显示登录界面，隐藏主界面
-                if (authEl) {
-                    authEl.style.cssText = 'display: block !important';
-                    authEl.classList.remove('hidden');
-                }
-                if (mainEl) {
-                    mainEl.style.cssText = 'display: none !important';
-                    mainEl.classList.remove('visible');
-                }
-                
-                setTimeout(() => { renderLock = false; }, 500);
-            }
-        }
-    }
-    
-    // 每秒钟检查一次UI状态
-    setInterval(forceFixUI, 1000);
-    
-    // 监听页面点击事件，用户交互时也检查
-    document.addEventListener('click', function() {
-        setTimeout(forceFixUI, 100);
-    });
-    
-    // 监听Firebase认证状态变化
-    firebaseAuth.onAuthStateChanged(function(user) {
-        console.log('🔥 Firebase认证状态变化，触发强制修复');
-        setTimeout(forceFixUI, 300);
-    });
-    
-    // 页面加载完成后立即检查
-    if (document.readyState === 'complete') {
-        setTimeout(forceFixUI, 1000);
-    } else {
-        window.addEventListener('load', function() {
-            setTimeout(forceFixUI, 1000);
-        });
-    }
-    
-    console.log("强制修复脚本已加载");
-})();
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
