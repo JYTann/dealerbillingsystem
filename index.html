@@ -8294,8 +8294,7 @@ window.addEventListener('load', function() {
     }
 });
 
-        // ============== 唯一的UI控制函数 ==============
-function renderApp(user) {
+  function renderApp(user) {
     const auth = document.getElementById("auth-container");
     const main = document.getElementById("main-container");
 
@@ -8305,11 +8304,12 @@ function renderApp(user) {
         // 显示主界面
         auth.style.display = "none";
         auth.classList.add("hidden");
-        
+
         main.style.display = "block";
+        main.classList.remove("hidden");
         main.classList.add("visible");
 
-        // 强制显示 dashboard
+        // 只在这里控制 page
         document.querySelectorAll(".page").forEach(p => {
             p.style.display = "none";
             p.classList.remove("active");
@@ -8325,115 +8325,11 @@ function renderApp(user) {
         // 显示登录页
         auth.style.display = "block";
         auth.classList.remove("hidden");
-        
+
         main.style.display = "none";
         main.classList.remove("visible");
     }
 }
-
-        // ============== 强制修复：防止空白页面 ==============
-// ============== 强制修复：防止空白页面（安全版） ==============
-(function() {
-    console.log("强制修复脚本开始执行...");
-    
-    // 使用不同的变量名避免冲突
-    const firebaseAuth = firebase.auth();
-    let renderLock = false;
-    
-    // 安全的样式修复函数
-    function forceFixUI() {
-        if (renderLock) return;
-        
-        const authEl = document.getElementById('auth-container');
-        const mainEl = document.getElementById('main-container');
-        const currentUser = firebaseAuth.currentUser;
-        
-        // 情况1：用户已登录且已验证，但主界面没显示
-        if (currentUser && currentUser.emailVerified) {
-            if (mainEl && (mainEl.style.display === 'none' || !mainEl.classList.contains('visible'))) {
-                console.log('🔧 检测到用户已登录但主界面隐藏，正在修复...');
-                renderLock = true;
-                
-                // 显示主界面，隐藏登录界面
-                if (authEl) {
-                    authEl.style.cssText = 'display: none !important';
-                    authEl.classList.add('hidden');
-                }
-                if (mainEl) {
-                    mainEl.style.cssText = 'display: block !important';
-                    mainEl.classList.add('visible');
-                }
-                
-                // 显示dashboard页面
-                document.querySelectorAll('.page').forEach(page => {
-                    page.style.display = 'none';
-                    page.classList.remove('active');
-                });
-                
-                const dashboard = document.getElementById('dashboard');
-                if (dashboard) {
-                    dashboard.style.display = 'block';
-                    dashboard.classList.add('active');
-                }
-                
-                // 确保所有图表正确初始化
-                setTimeout(() => {
-                    try {
-                        initCharts();
-                        console.log('图表重新初始化完成');
-                    } catch (e) {
-                        console.warn('图表初始化失败:', e);
-                    }
-                    renderLock = false;
-                }, 500);
-            }
-        }
-        // 情况2：用户未登录，但登录页没显示
-        else if (!currentUser) {
-            if (authEl && (authEl.style.display === 'none' || authEl.classList.contains('hidden'))) {
-                console.log('🔧 检测到用户未登录但登录页隐藏，正在修复...');
-                renderLock = true;
-                
-                // 显示登录界面，隐藏主界面
-                if (authEl) {
-                    authEl.style.cssText = 'display: block !important';
-                    authEl.classList.remove('hidden');
-                }
-                if (mainEl) {
-                    mainEl.style.cssText = 'display: none !important';
-                    mainEl.classList.remove('visible');
-                }
-                
-                setTimeout(() => { renderLock = false; }, 500);
-            }
-        }
-    }
-    
-    // 每秒钟检查一次UI状态
-    setInterval(forceFixUI, 1000);
-    
-    // 监听页面点击事件，用户交互时也检查
-    document.addEventListener('click', function() {
-        setTimeout(forceFixUI, 100);
-    });
-    
-    // 监听Firebase认证状态变化
-    firebaseAuth.onAuthStateChanged(function(user) {
-        console.log('🔥 Firebase认证状态变化，触发强制修复');
-        setTimeout(forceFixUI, 300);
-    });
-    
-    // 页面加载完成后立即检查
-    if (document.readyState === 'complete') {
-        setTimeout(forceFixUI, 1000);
-    } else {
-        window.addEventListener('load', function() {
-            setTimeout(forceFixUI, 1000);
-        });
-    }
-    
-    console.log("强制修复脚本已加载");
-})();
 
     </script>
 </body>
