@@ -12,6 +12,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.29/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Font Awesome -->
@@ -39,7 +40,7 @@
     --border-color: #444;
     --light-color: #333;
 }
-
+        
         body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background-color: var(--bg-color);
@@ -62,14 +63,24 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            min-height: 100vh;
         }
-        
+
+        /* 确保main-container正确显示 */
+.main-container.visible {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    position: relative !important;
+}
+
 /* 确保auth-container正确隐藏 */
 .auth-container.hidden {
     display: none !important;
     opacity: 0 !important;
     visibility: hidden !important;
+    position: absolute !important;
+    top: -9999px !important;
+    left: -9999px !important;
 }
         
         .sidebar {
@@ -581,7 +592,28 @@
     height: 2rem;
     color: var(--secondary-color);
 }
+/* 验证提醒样式 */
+#verification-reminder {
+    animation: fadeIn 0.5s ease;
+    border-left: 4px solid #ffc107;
+}
 
+#verification-reminder h6 {
+    color: #856404;
+}
+
+#verification-reminder p {
+    margin-bottom: 10px;
+}
+
+#resend-verification, #logout-unverified {
+    margin-top: 5px;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
 /* 成功/错误消息动画 */
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
@@ -670,7 +702,7 @@
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 9999;
+    z-index: 1000;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 50%;
@@ -936,22 +968,6 @@ tr:hover .template-actions {
         margin: 3px;
     }
 }
-
-/* 确保auth-container完全隐藏 */
-#auth-container.hidden {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-}
-
-/* 确保main-container正确显示 */
-#main-container.visible {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-
     </style>
 </head>
 <body>
@@ -5760,6 +5776,7 @@ setTimeout(populateBillDropdowns, 1000);
         }
         
         // Authentication functions
+        // 替换现有的登录按钮事件监听器：
 // 简化版本 - 移除复杂动画
 loginBtn.addEventListener('click', function() {
     const email = document.getElementById('email').value.trim();
@@ -5771,58 +5788,57 @@ loginBtn.addEventListener('click', function() {
         this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Signing in...';
         this.disabled = true;
         
-        // 清除之前的错误
-        loginError.style.display = 'none';
-        
-        console.log("尝试登录:", email);
-        
         auth.signInWithEmailAndPassword(email, password)
             .then((userCredential) => {
-                console.log("登录成功，用户:", userCredential.user.email);
-                
-                // 加载用户数据
-                loadUserData();
-                
-                // 更新按钮状态
+                // 登录成功
                 this.innerHTML = '<i class="fas fa-check me-2"></i>Success!';
                 
-                // 延迟恢复按钮
+                // 直接切换显示，不等待动画
                 setTimeout(() => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                }, 1000);
-                
-                showToast('Welcome back! Login successful!', 'success');
-                
-                // 强制重绘
-                setTimeout(() => {
-                    document.body.style.display = 'none';
-                    document.body.offsetHeight;
-                    document.body.style.display = '';
-                }, 50);
+                    // 立即隐藏登录容器，显示主容器
+                    authContainer.style.display = 'none';
+                    mainContainer.style.display = 'block';
+                    
+                    // 重置所有CSS变换
+                    authContainer.style.opacity = '1';
+                    authContainer.style.transform = 'none';
+                    mainContainer.style.opacity = '1';
+                    mainContainer.style.transform = 'none';
+                    mainContainer.style.transition = 'none';
+                    
+                    // 加载用户数据
+                    loadUserData();
+                    
+                    showToast('Welcome back! Login successful!', 'success');
+                    
+                    // 恢复按钮状态
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    }, 1000);
+                }, 300);
             })
             .catch((error) => {
-                console.error("登录错误:", error);
-                
                 // 恢复按钮状态
                 this.innerHTML = originalText;
                 this.disabled = false;
                 
                 // 显示错误
-                let errorMessage = 'Login failed. Please try again.';
-                if (error.code === 'auth/user-not-found') {
-                    errorMessage = 'No account found with this email.';
-                } else if (error.code === 'auth/wrong-password') {
-                    errorMessage = 'Incorrect password.';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Invalid email address.';
-                }
-                
-                loginError.textContent = errorMessage;
-                loginError.style.display = 'block';
+                handleLoginError(error);
+                console.error("Login error: ", error);
             });
     } else {
-        loginError.textContent = 'Please enter email and password.';
+        // 添加表单验证效果
+        if (!email) {
+            document.getElementById('email').classList.add('is-invalid');
+            document.getElementById('email').focus();
+        }
+        if (!password) {
+            document.getElementById('password').classList.add('is-invalid');
+            if (email) document.getElementById('password').focus();
+        }
+        
+        loginError.textContent = 'Please fill in all required fields.';
         loginError.style.display = 'block';
     }
 });
@@ -5833,6 +5849,8 @@ loginBtn.addEventListener('click', function() {
             auth.signInWithPopup(provider)
                 .then((result) => {
                     // Signed in
+                    authContainer.style.display = 'none';
+                    mainContainer.style.display = 'block';
                     loadUserData();
                     showToast('Google login successful!', 'success');
                 })
@@ -5882,6 +5900,9 @@ loginBtn.addEventListener('click', function() {
                 
                 showToast('Registration successful! You are now logged in.', 'success');
                 
+                // 自动登录
+                authContainer.style.display = 'none';
+                mainContainer.style.display = 'block';
                 loadUserData();
             })
             .catch((error) => {
@@ -5922,6 +5943,8 @@ loginBtn.addEventListener('click', function() {
         logoutBtn.addEventListener('click', function(e) {
             e.preventDefault();
             auth.signOut().then(() => {
+                authContainer.style.display = 'block';
+                mainContainer.style.display = 'none';
                 
                 // Clear all data from UI
                 if (periodicBillsList) periodicBillsList.innerHTML = '';
@@ -6151,78 +6174,180 @@ loginBtn.addEventListener('click', function() {
         auth.onAuthStateChanged((user) => {
     console.log("Auth state changed, user:", user ? user.email : "No user");
     
+    const authContainer = document.getElementById('auth-container');
+    const mainContainer = document.getElementById('main-container');
+    
     if (user) {
         // 检查邮箱是否已验证
         if (!user.emailVerified) {
             console.log("User email not verified:", user.email);
             
-            // 如果用户试图进入主界面，强制登出并显示提示
-            if (mainContainer.style.display === 'block') {
-                showToast('Please verify your email before accessing the system', 'warning');
-                
-                // 短暂延迟后登出
-                setTimeout(() => {
-                    auth.signOut();
-                }, 2000);
-                
-                // 显示验证提醒
-                const reminderHTML = `
-                    <div class="alert alert-warning mt-3">
-                        <h6><i class="fas fa-envelope"></i> Email Verification Required</h6>
-                        <p>Please check your email (${user.email}) for the verification link.</p>
-                        <button class="btn btn-sm btn-primary" id="resend-verification">
-                            <i class="fas fa-paper-plane"></i> Resend Verification Email
-                        </button>
-                    </div>
-                `;
-                
-                // 添加到登录页面
-                const authContainer = document.getElementById('auth-container');
-                if (authContainer && !document.getElementById('verification-reminder')) {
-                    authContainer.insertAdjacentHTML('beforeend', reminderHTML);
-                    
-                    // 添加重新发送验证邮件的功能
-                    document.getElementById('resend-verification').addEventListener('click', function() {
-    // ✅ 正确：使用 firebase.auth().currentUser
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-        currentUser.sendEmailVerification()
-            .then(() => {
-                showToast('Verification email resent. Please check your inbox.', 'success');
-            })
-            .catch(error => {
-                console.error("Error resending verification:", error);
-                showToast('Error resending verification email', 'error');
-            });
-    }
-});
-                }
+            // 强制显示登录页面
+            if (authContainer) {
+                authContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+            }
+            if (mainContainer) {
+                mainContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
             }
             
-            renderApp(null)
+            // 清除任何可能的主页面内容
+            if (mainContainer && mainContainer.classList.contains('visible')) {
+                mainContainer.classList.remove('visible');
+            }
+            
+            // 显示验证提醒
+            setTimeout(() => {
+                if (!document.getElementById('verification-reminder')) {
+                    const reminderHTML = `
+                        <div class="alert alert-warning mt-3" id="verification-reminder">
+                            <h6><i class="fas fa-envelope"></i> Email Verification Required</h6>
+                            <p>Please check your email (${user.email}) for the verification link.</p>
+                            <p class="mb-2 small">You need to verify your email before accessing the system.</p>
+                            <button class="btn btn-sm btn-primary" id="resend-verification">
+                                <i class="fas fa-paper-plane"></i> Resend Verification Email
+                            </button>
+                            <button class="btn btn-sm btn-secondary ms-2" id="logout-unverified">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </button>
+                        </div>
+                    `;
+                    
+                    // 添加到登录页面
+                    if (authContainer) {
+                        const existingReminder = document.getElementById('verification-reminder');
+                        if (!existingReminder) {
+                            const loginSection = document.getElementById('login-section');
+                            if (loginSection) {
+                                loginSection.insertAdjacentHTML('beforeend', reminderHTML);
+                            } else {
+                                authContainer.insertAdjacentHTML('beforeend', reminderHTML);
+                            }
+                            
+                            // 添加重新发送验证邮件的功能
+                            const resendBtn = document.getElementById('resend-verification');
+                            if (resendBtn) {
+                                resendBtn.addEventListener('click', function() {
+                                    const currentUser = auth.currentUser;
+                                    if (currentUser) {
+                                        currentUser.sendEmailVerification()
+                                            .then(() => {
+                                                showToast('Verification email resent. Please check your inbox.', 'success');
+                                            })
+                                            .catch(error => {
+                                                console.error("Error resending verification:", error);
+                                                showToast('Error resending verification email', 'error');
+                                            });
+                                    }
+                                });
+                            }
+                            
+                            // 添加注销按钮功能
+                            const logoutBtn = document.getElementById('logout-unverified');
+                            if (logoutBtn) {
+                                logoutBtn.addEventListener('click', function() {
+                                    auth.signOut();
+                                });
+                            }
+                        }
+                    }
+                }
+            }, 500);
+            
+            showToast('Please verify your email before accessing the system', 'warning');
+            return; // 重要：退出函数，不继续执行
+        }
+        
+        // 用户已登录且邮箱已验证
+        console.log("User is logged in and verified:", user.email);
+        
+        // 确保登录页面完全隐藏，主页面完全显示
+        setTimeout(() => {
+            if (authContainer) {
+                authContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+                authContainer.classList.add('hidden');
+            }
+            
+            if (mainContainer) {
+                mainContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+                mainContainer.classList.add('visible');
+                
+                // 移除验证提醒（如果存在）
+                const reminder = document.getElementById('verification-reminder');
+                if (reminder) reminder.remove();
+                
+                // 确保登录部分可见
+                const loginSection = document.getElementById('login-section');
+                const registerSection = document.getElementById('register-section');
+                if (loginSection) loginSection.style.display = 'block';
+                if (registerSection) registerSection.style.display = 'none';
+                
+                // 加载用户数据
+                loadUserData();
+            }
+        }, 100);
+        
+    } else {
+        // 用户未登录
+        console.log("No user logged in, showing auth container");
+        
+        setTimeout(() => {
+            if (authContainer) {
+                authContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
+                authContainer.classList.remove('hidden');
+                
+                // 确保登录部分可见
+                const loginSection = document.getElementById('login-section');
+                const registerSection = document.getElementById('register-section');
+                if (loginSection) loginSection.style.display = 'block';
+                if (registerSection) registerSection.style.display = 'none';
+                
+                // 移除验证提醒（如果存在）
+                const reminder = document.getElementById('verification-reminder');
+                if (reminder) reminder.remove();
+            }
+            
+            if (mainContainer) {
+                mainContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
+                mainContainer.classList.remove('visible');
+            }
+        }, 100);
+    }
+});
+            
+            // 保持显示登录页面
+            if (authContainer && mainContainer) {
+                authContainer.style.display = 'block';
+                mainContainer.style.display = 'none';
+            }
             return;
         }
         
         // 用户已登录且邮箱已验证
         console.log("User is logged in and verified:", user.email);
         
-        renderApp(user);
-        loadUserData();
-        
-        // 移除验证提醒（如果存在）
-        const reminder = document.getElementById('verification-reminder');
-        if (reminder) reminder.remove();
+        if (authContainer && mainContainer) {
+            authContainer.style.display = 'none';
+            mainContainer.style.display = 'block';
+            loadUserData();
+            
+            // 移除验证提醒（如果存在）
+            const reminder = document.getElementById('verification-reminder');
+            if (reminder) reminder.remove();
+        }
     } else {
         // 用户未登录
         console.log("No user logged in, showing auth container");
         
-        renderApp(null);
-        
-        // 确保登录页面可见
-        const loginSection = document.getElementById('login-section');
-        const registerSection = document.getElementById('register-section');
-        if (loginSection) loginSection.style.display = 'block';
-        if (registerSection) registerSection.style.display = 'none';
+        if (authContainer && mainContainer) {
+            authContainer.style.display = 'block';
+            mainContainer.style.display = 'none';
+            
+            // 确保登录页面可见
+            const loginSection = document.getElementById('login-section');
+            const registerSection = document.getElementById('register-section');
+            if (loginSection) loginSection.style.display = 'block';
+            if (registerSection) registerSection.style.display = 'none';
+        }
     }
 });
         
@@ -8041,6 +8166,17 @@ if (document.readyState === 'loading') {
     setTimeout(initializeAfterDOMReady, 500);
 }
 
+// 额外的安全措施
+window.addEventListener('load', function() {
+    console.log("Window fully loaded, final initialization...");
+    
+    // 重新绑定所有事件监听器
+    setTimeout(() => {
+        bindEventListeners();
+        updateAllUI();
+    }, 500);
+});
+
 // 修复事件监听器绑定的函数
 function bindEventListeners() {
     console.log("Binding event listeners...");
@@ -8258,110 +8394,6 @@ function toggleElementVisibility(elementId, show) {
         return true;
     });
 }
-
-        // 页面加载时检查登录状态
-window.addEventListener('load', function() {
-    console.log("页面加载完成，检查认证状态...");
-
-    setTimeout(() => {
-        document.body.style.display = 'none';
-        document.body.offsetHeight; // 强制重绘
-        document.body.style.display = '';
-    }, 100);
-    
-    // 检查Firebase认证状态
-    auth.onAuthStateChanged(function(user) {
-        console.log("认证状态变化，用户:", user ? user.email : "未登录");
-        
-        if (user && user.emailVerified) {
-            console.log("用户已登录且已验证，显示主界面");
-            
-            // 直接显示主界面
-            const authContainer = document.getElementById('auth-container');
-            const mainContainer = document.getElementById('main-container');
-            
-            if (authContainer && mainContainer) {
-                authContainer.style.cssText = 'display: none !important; opacity: 0 !important; visibility: hidden !important;';
-                mainContainer.style.cssText = 'display: block !important; opacity: 1 !important; visibility: visible !important;';
-                
-                // 加载数据
-                setTimeout(() => {
-                    loadUserData();
-                    console.log("用户数据加载完成");
-                }, 500);
-            }
-        } else {
-            console.log("用户未登录或未验证，显示登录界面");
-        }
-    });
-    
-    // 检查当前URL，如果有错误参数则处理
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.has('error')) {
-        console.error("URL错误参数:", urlParams.get('error'));
-    }
-});
-
-  function renderApp(user) {
-    const auth = document.getElementById("auth-container");
-    const main = document.getElementById("main-container");
-
-    console.log("🔥 renderApp called with user:", user?.email);
-
-    if (user && user.emailVerified) {
-        // 显示主界面
-        console.log("显示主界面");
-        
-        // 先隐藏登录界面
-        auth.style.display = "none";
-        auth.classList.add("hidden");
-        
-        // 延迟一小段时间显示主界面，避免CSS冲突
-        setTimeout(() => {
-            main.style.display = "block";
-            main.classList.remove("hidden");
-            main.classList.add("visible");
-            
-            // 只显示dashboard页面
-            document.querySelectorAll(".page").forEach(p => {
-                p.style.display = "none";
-                p.classList.remove("active");
-            });
-            
-            const dashboard = document.getElementById("dashboard");
-            if (dashboard) {
-                dashboard.style.display = "block";
-                dashboard.classList.add("active");
-            }
-            
-            // 强制重新绘制
-            document.body.offsetHeight;
-        }, 50);
-        
-    } else {
-        // 显示登录页
-        console.log("显示登录页");
-        
-        // 先隐藏主界面
-        main.style.display = "none";
-        main.classList.remove("visible");
-        main.classList.add("hidden");
-        
-        // 延迟一小段时间显示登录界面
-        setTimeout(() => {
-            auth.style.display = "block";
-            auth.classList.remove("hidden");
-            
-            // 确保登录部分显示
-            document.getElementById('login-section').style.display = 'block';
-            document.getElementById('register-section').style.display = 'none';
-            
-            // 强制重新绘制
-            document.body.offsetHeight;
-        }, 50);
-    }
-}
-
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
