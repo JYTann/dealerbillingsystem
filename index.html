@@ -671,7 +671,7 @@
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 1000;
+    z-index: 9999;
     background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 50%;
@@ -938,6 +938,20 @@ tr:hover .template-actions {
     }
 }
 
+/* 确保auth-container完全隐藏 */
+#auth-container.hidden {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* 确保main-container正确显示 */
+#main-container.visible {
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
 
     </style>
 </head>
@@ -8028,17 +8042,6 @@ if (document.readyState === 'loading') {
     setTimeout(initializeAfterDOMReady, 500);
 }
 
-// 额外的安全措施
-window.addEventListener('load', function() {
-    console.log("Window fully loaded, final initialization...");
-    
-    // 重新绑定所有事件监听器
-    setTimeout(() => {
-        bindEventListeners();
-        updateAllUI();
-    }, 500);
-});
-
 // 修复事件监听器绑定的函数
 function bindEventListeners() {
     console.log("Binding event listeners...");
@@ -8260,6 +8263,12 @@ function toggleElementVisibility(elementId, show) {
         // 页面加载时检查登录状态
 window.addEventListener('load', function() {
     console.log("页面加载完成，检查认证状态...");
+
+    setTimeout(() => {
+        document.body.style.display = 'none';
+        document.body.offsetHeight; // 强制重绘
+        document.body.style.display = '';
+    }, 100);
     
     // 检查Firebase认证状态
     auth.onAuthStateChanged(function(user) {
@@ -8302,32 +8311,55 @@ window.addEventListener('load', function() {
 
     if (user && user.emailVerified) {
         // 显示主界面
+        console.log("显示主界面");
+        
+        // 先隐藏登录界面
         auth.style.display = "none";
         auth.classList.add("hidden");
-
-        main.style.display = "block";
-        main.classList.remove("hidden");
-        main.classList.add("visible");
-
-        // 只在这里控制 page
-        document.querySelectorAll(".page").forEach(p => {
-            p.style.display = "none";
-            p.classList.remove("active");
-        });
-
-        const dashboard = document.getElementById("dashboard");
-        if (dashboard) {
-            dashboard.style.display = "block";
-            dashboard.classList.add("active");
-        }
-
+        
+        // 延迟一小段时间显示主界面，避免CSS冲突
+        setTimeout(() => {
+            main.style.display = "block";
+            main.classList.remove("hidden");
+            main.classList.add("visible");
+            
+            // 只显示dashboard页面
+            document.querySelectorAll(".page").forEach(p => {
+                p.style.display = "none";
+                p.classList.remove("active");
+            });
+            
+            const dashboard = document.getElementById("dashboard");
+            if (dashboard) {
+                dashboard.style.display = "block";
+                dashboard.classList.add("active");
+            }
+            
+            // 强制重新绘制
+            document.body.offsetHeight;
+        }, 50);
+        
     } else {
         // 显示登录页
-        auth.style.display = "block";
-        auth.classList.remove("hidden");
-
+        console.log("显示登录页");
+        
+        // 先隐藏主界面
         main.style.display = "none";
         main.classList.remove("visible");
+        main.classList.add("hidden");
+        
+        // 延迟一小段时间显示登录界面
+        setTimeout(() => {
+            auth.style.display = "block";
+            auth.classList.remove("hidden");
+            
+            // 确保登录部分显示
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('register-section').style.display = 'none';
+            
+            // 强制重新绘制
+            document.body.offsetHeight;
+        }, 50);
     }
 }
 
