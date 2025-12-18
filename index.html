@@ -3000,26 +3000,7 @@ const resetMessage = document.getElementById('reset-message');
             revenue: [12000, 19000, 15000, 21000, 22000, 24500],
             expenses: [9000, 12000, 11000, 15000, 16700, 18300]
         };
-        // 在脚本开头添加这个
-window.onerror = function(message, source, lineno, colno, error) {
-    console.log("Global error caught:", message, "at", source, "line", lineno);
-    
-    // 如果是classList错误，忽略它
-    if (message.includes('classList')) {
-        console.log("Ignoring classList error");
-        return true; // 阻止默认错误处理
-    }
-    
-    return false; // 继续默认错误处理
-};
-
-// 或者更精确地捕获特定错误
-window.addEventListener('error', function(e) {
-    if (e.message && e.message.includes('classList')) {
-        e.preventDefault();
-        console.log("Suppressed classList error");
-    }
-});
+        
         // Store bills data
         let bills = {
             periodic: [],
@@ -6126,132 +6107,50 @@ loginBtn.addEventListener('click', function() {
             });
         }
         
-        auth.onAuthStateChanged((user) => {
-    console.log("Auth state changed, user:", user ? user.email : "No user");
-    
+        // Check if user is already logged in
+        // 在 auth.onAuthStateChanged 部分修改：
+auth.onAuthStateChanged((user) => {
     if (user) {
-        // 检查邮箱是否已验证
-        if (!user.emailVerified) {
-            console.log("User email not verified:", user.email);
-            
-            // 如果用户试图进入主界面，强制登出并显示提示
-            if (mainContainer.style.display === 'block') {
-                showToast('Please verify your email before accessing the system', 'warning');
-                
-                // 短暂延迟后登出
-                setTimeout(() => {
-                    auth.signOut();
-                }, 2000);
-                
-                // 显示验证提醒
-                const reminderHTML = `
-                    <div class="alert alert-warning mt-3">
-                        <h6><i class="fas fa-envelope"></i> Email Verification Required</h6>
-                        <p>Please check your email (${user.email}) for the verification link.</p>
-                        <button class="btn btn-sm btn-primary" id="resend-verification">
-                            <i class="fas fa-paper-plane"></i> Resend Verification Email
-                        </button>
-                    </div>
-                `;
-                
-                // 添加到登录页面
-                const authContainer = document.getElementById('auth-container');
-                if (authContainer && !document.getElementById('verification-reminder')) {
-                    authContainer.insertAdjacentHTML('beforeend', reminderHTML);
-                    
-                    // 添加重新发送验证邮件的功能
-                    document.getElementById('resend-verification').addEventListener('click', function() {
-    // ✅ 正确：使用 firebase.auth().currentUser
-    const currentUser = auth.currentUser;
-    if (currentUser) {
-        currentUser.sendEmailVerification()
-            .then(() => {
-                showToast('Verification email resent. Please check your inbox.', 'success');
-            })
-            .catch(error => {
-                console.error("Error resending verification:", error);
-                showToast('Error resending verification email', 'error');
-            });
-    }
-});
-                }
-            }
-            
-            // 保持显示登录页面
-            if (authContainer && mainContainer) {
-                authContainer.style.display = 'block';
-                mainContainer.style.display = 'none';
-            }
-            return;
-        }
+        // 用户已登录
+        console.log("User logged in:", user.email);
         
-        // 用户已登录且邮箱已验证
-        console.log("User is logged in and verified:", user.email);
-        
-        if (authContainer && mainContainer) {
+        // 等待 DOM 完全加载
+        setTimeout(() => {
             authContainer.style.display = 'none';
             mainContainer.style.display = 'block';
-            loadUserData();
+            mainContainer.style.opacity = '0';
             
-            // 移除验证提醒（如果存在）
-            const reminder = document.getElementById('verification-reminder');
-            if (reminder) reminder.remove();
-        }
+            // 使用动画显示主界面
+            setTimeout(() => {
+                mainContainer.style.transition = 'opacity 0.5s ease';
+                mainContainer.style.opacity = '1';
+                loadUserData();
+            }, 100);
+        }, 100);
     } else {
         // 用户未登录
-        console.log("No user logged in, showing auth container");
+        console.log("No user logged in");
+        authContainer.style.display = 'block';
+        mainContainer.style.display = 'none';
         
-        if (authContainer && mainContainer) {
-            authContainer.style.display = 'block';
-            mainContainer.style.display = 'none';
-            
-            // 确保登录页面可见
-            const loginSection = document.getElementById('login-section');
-            const registerSection = document.getElementById('register-section');
-            if (loginSection) loginSection.style.display = 'block';
-            if (registerSection) registerSection.style.display = 'none';
-        }
+        // 确保登录页面可见
+        document.getElementById('login-section').style.display = 'block';
+        document.getElementById('register-section').style.display = 'none';
     }
 });
         
+        // Initialize the application
         document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM fully loaded, initializing app...");
-    
-    // 检查关键元素
-    const elements = {
-        'auth-container': document.getElementById('auth-container'),
-        'main-container': document.getElementById('main-container'),
-        'login-section': document.getElementById('login-section'),
-        'register-section': document.getElementById('register-section')
-    };
-    
-    // 记录元素状态
-    Object.entries(elements).forEach(([id, element]) => {
-        console.log(`${id}:`, element ? "Found" : "Not found");
-    });
-    
-    // 设置默认日期
-    setDefaultDates();
-    
-    // 初始化各个模块
-    try {
-        initCharts();
-        initBreakdown();
-        initProgressTracking();
-        initThemeToggle();
-        initResponsiveDesign();
-        initSmartCustomerSelection();
-        initManualRevenueExpenseSystem();
-        initEnhancedRegistration();
-        console.log("All modules initialized successfully");
-    } catch (error) {
-        console.error("Error initializing modules:", error);
-    }
-    
-    // 检查用户是否已经登录
-    const currentUser = auth.currentUser;
-    console.log("Current user on load:", currentUser ? currentUser.email : "No user");
-});
+            setDefaultDates();
+            initCharts();
+            initBreakdown();
+            initProgressTracking();
+            initThemeToggle();
+            initResponsiveDesign();
+            initSmartCustomerSelection();
+            initManualRevenueExpenseSystem();
+            initEnhancedRegistration();
+        });
 
         // Responsive design function
         function initResponsiveDesign() {
@@ -7897,11 +7796,6 @@ function handleEnhancedRegistration() {
     const registerBtn = document.getElementById('register-btn');
     const email = document.getElementById('register-email').value.trim();
     const password = document.getElementById('register-password').value;
-    const phone = document.getElementById('register-phone').value.trim();
-    const company = document.getElementById('register-company').value.trim();
-    const address = document.getElementById('register-address').value.trim();
-    const businessType = document.getElementById('register-business-type').value;
-    const newsletter = document.getElementById('register-newsletter').checked;
     
     // 显示加载状态
     const originalText = registerBtn.innerHTML;
@@ -7911,88 +7805,85 @@ function handleEnhancedRegistration() {
     // 清除之前的错误信息
     document.getElementById('register-error').style.display = 'none';
     
-    console.log("Starting registration process for:", email);
-    
     // 创建用户
     auth.createUserWithEmailAndPassword(email, password)
         .then((userCredential) => {
-            const user = userCredential.user; // ✅ 正确获取用户对象
-            console.log("User created successfully:", user.uid);
+            const user = userCredential.user;
             
-            // 发送验证邮件
+            // 立即发送验证邮件
             return user.sendEmailVerification()
                 .then(() => {
-                    console.log("Verification email sent to:", user.email);
-                    
-                    // 准备用户数据
-                    const userData = {
-                        uid: user.uid,
-                        email: email,
-                        companyName: company,
-                        phone: phone || null,
-                        address: address || null,
-                        businessType: businessType || 'other',
-                        newsletterSubscription: newsletter,
-                        emailVerified: false,
-                        accountType: 'free',
-                        accountStatus: 'active',
-                        createdAt: new Date().toISOString(),
-                        lastLogin: new Date().toISOString(),
-                        settings: {
-                            currency: 'RM',
-                            language: 'en',
-                            dateFormat: 'DD/MM/YYYY',
-                            taxRate: 6.0,
-                            notifications: true
-                        }
-                    };
-                    
-                    // 保存到 Firestore
-                    return db.collection('users').doc(user.uid).set(userData, { merge: true });
+                    return user;
                 });
+        })
+        .then((user) => {
+            // 收集其他用户信息
+            const phone = document.getElementById('register-phone').value.trim();
+            const company = document.getElementById('register-company').value.trim();
+            const address = document.getElementById('register-address').value.trim();
+            const businessType = document.getElementById('register-business-type').value;
+            const newsletter = document.getElementById('register-newsletter').checked;
+            
+            // 准备用户数据
+            const userData = {
+                email: email,
+                companyName: company,
+                phone: phone || null,
+                address: address || null,
+                businessType: businessType || 'other',
+                newsletterSubscription: newsletter,
+                emailVerified: false,
+                accountType: 'free',
+                accountStatus: 'active',
+                createdAt: new Date().toISOString(),
+                lastLogin: new Date().toISOString(),
+                settings: {
+                    currency: 'RM',
+                    language: 'en',
+                    dateFormat: 'DD/MM/YYYY',
+                    taxRate: 6.0,
+                    notifications: true
+                }
+            };
+            
+            // 保存到 Firestore
+            return db.collection('users').doc(user.uid).set(userData, { merge: true });
         })
         .then(() => {
             // 注册成功
-            console.log("Registration completed successfully");
             registerBtn.innerHTML = '<i class="fas fa-check"></i> Account Created!';
+            showToast('Registration successful! Verification email sent. Please check your inbox.', 'success');
             
             // 显示成功消息
             document.getElementById('register-success').style.display = 'block';
             document.getElementById('register-success-text').textContent = 
                 'Registration successful! Please check your email to verify your account.';
             
-            showToast('Registration successful! Verification email sent. Please check your inbox.', 'success');
-            
             // 3秒后自动跳转到登录页面
             setTimeout(() => {
-                // 强制登出（防止未验证用户直接进入系统）
-                auth.signOut().then(() => {
-                    console.log("User signed out after registration (awaiting verification)");
-                    
-                    // 切换到登录页面
-                    document.getElementById('register-section').style.display = 'none';
-                    document.getElementById('login-section').style.display = 'block';
-                    
-                    // 预填邮箱
-                    document.getElementById('email').value = email;
-                    
-                    // 重置注册表单
-                    document.getElementById('enhanced-register-form').reset();
-                    
-                    // 重置按钮
-                    registerBtn.innerHTML = originalText;
-                    registerBtn.disabled = false;
-                    
-                    // 隐藏成功消息
-                    document.getElementById('register-success').style.display = 'none';
-                    
-                    showToast('Please verify your email before logging in', 'info');
-                });
+                // 切换到登录页面
+                document.getElementById('register-section').style.display = 'none';
+                document.getElementById('login-section').style.display = 'block';
+                
+                // 预填邮箱
+                document.getElementById('email').value = email;
+                
+                // 重置注册表单
+                document.getElementById('enhanced-register-form').reset();
+                
+                // 重置按钮
+                registerBtn.innerHTML = originalText;
+                registerBtn.disabled = false;
+                
+                // 隐藏成功消息
+                document.getElementById('register-success').style.display = 'none';
+                
+                showToast('Please verify your email before logging in', 'info');
             }, 3000);
         })
         .catch((error) => {
             // 处理错误
-            console.error("Registration error: ", error.code, error.message);
+            console.error("Registration error: ", error);
             
             let errorMessage = 'Registration failed. ';
             
@@ -8007,13 +7898,10 @@ function handleEnhancedRegistration() {
                     errorMessage = 'Email/password accounts are not enabled.';
                     break;
                 case 'auth/weak-password':
-                    errorMessage = 'Password must be at least 6 characters.';
+                    errorMessage = 'Password is too weak.';
                     break;
                 case 'auth/network-request-failed':
                     errorMessage = 'Network error. Please check your connection.';
-                    break;
-                case 'auth/user-disabled':
-                    errorMessage = 'This account has been disabled.';
                     break;
                 default:
                     errorMessage = error.message || 'Please try again.';
@@ -8026,137 +7914,9 @@ function handleEnhancedRegistration() {
             // 重置按钮
             registerBtn.innerHTML = originalText;
             registerBtn.disabled = false;
-            
-            showToast(errorMessage, 'error');
         });
 }
 
-        // 在最后添加这个函数，确保 DOM 完全加载
-function initializeAfterDOMReady() {
-    console.log("Initializing after DOM ready...");
-    
-    // 检查所有必要的元素
-    const requiredElements = [
-        'auth-container',
-        'main-container',
-        'login-section',
-        'register-section',
-        'login-btn',
-        'register-btn'
-    ];
-    
-    requiredElements.forEach(id => {
-        const element = document.getElementById(id);
-        if (!element) {
-            console.error(`Element #${id} not found!`);
-        }
-    });
-    
-    // 延迟初始化图表和其他组件
-    setTimeout(() => {
-        try {
-            if (performanceChartInstance) {
-                performanceChartInstance.destroy();
-                performanceChartInstance = null;
-            }
-            if (profitLossChartInstance) {
-                profitLossChartInstance.destroy();
-                profitLossChartInstance = null;
-            }
-            
-            initCharts();
-            console.log("Charts re-initialized");
-        } catch (error) {
-            console.error("Error re-initializing charts:", error);
-        }
-    }, 1000);
-}
-
-// 使用多个事件监听器确保 DOM 就绪
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeAfterDOMReady);
-} else {
-    setTimeout(initializeAfterDOMReady, 500);
-}
-
-// 额外的安全措施
-window.addEventListener('load', function() {
-    console.log("Window fully loaded, final initialization...");
-    
-    // 重新绑定所有事件监听器
-    setTimeout(() => {
-        bindEventListeners();
-        updateAllUI();
-    }, 500);
-});
-
-// 修复事件监听器绑定的函数
-function bindEventListeners() {
-    console.log("Binding event listeners...");
-    
-    // 重新绑定重要的按钮事件
-    const loginBtn = document.getElementById('login-btn');
-    const registerBtn = document.getElementById('register-btn');
-    
-    if (loginBtn && !loginBtn.hasAttribute('data-bound')) {
-        loginBtn.setAttribute('data-bound', 'true');
-        loginBtn.addEventListener('click', function(e) {
-            console.log("Login button clicked");
-            // 原有的登录处理逻辑
-        });
-    }
-    
-    if (registerBtn && !registerBtn.hasAttribute('data-bound')) {
-        registerBtn.setAttribute('data-bound', 'true');
-        registerBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log("Register button clicked");
-            handleEnhancedRegistration();
-        });
-    }
-    
-    // 重新绑定导航链接
-    document.querySelectorAll('.sidebar a[data-page]').forEach(link => {
-        if (!link.hasAttribute('data-bound')) {
-            link.setAttribute('data-bound', 'true');
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const targetPage = this.getAttribute('data-page');
-                console.log("Navigating to:", targetPage);
-                // 原有的导航逻辑
-            });
-        }
-    });
-}
-
-function updateAllUI() {
-    try {
-        // 更新所有页面的UI状态
-        const activePage = document.querySelector('.page.active');
-        if (activePage) {
-            const pageId = activePage.id;
-            console.log("Updating UI for page:", pageId);
-            
-            // 根据页面ID更新相应内容
-            switch(pageId) {
-                case 'dashboard':
-                    updateDashboard();
-                    break;
-                case 'profit-loss':
-                    updateProfitLoss();
-                    break;
-                case 'progress-tracking':
-                    updateProgressView();
-                    break;
-                case 'inventory-tracking':
-                    updateInventoryList();
-                    break;
-            }
-        }
-    } catch (error) {
-        console.error("Error updating UI:", error);
-    }
-}
 // Social Sign-up Functions
 function socialSignUp(provider) {
     let authProvider;
@@ -8230,41 +7990,6 @@ function socialSignUp(provider) {
             showToast(errorMessage, 'error');
         });
 }
-        // 在页面中添加重新发送验证邮件的按钮
-function addResendVerificationButton(email) {
-    const loginForm = document.getElementById('login-section');
-    if (!loginForm || document.getElementById('resend-verification-btn')) return;
-    
-    const resendHTML = `
-        <div class="alert alert-info mt-3" id="verification-alert">
-            <p class="mb-1"><strong>Email Verification Required</strong></p>
-            <p class="mb-2 small">Please verify your email (${email}) to access the system.</p>
-            <button class="btn btn-sm btn-outline-primary" id="resend-verification-btn">
-                <i class="fas fa-paper-plane"></i> Resend Verification Email
-            </button>
-        </div>
-    `;
-    
-    loginForm.insertAdjacentHTML('beforeend', resendHTML);
-    
-    document.getElementById('resend-verification-btn').addEventListener('click', function() {
-        auth.fetchSignInMethodsForEmail(email)
-            .then((providers) => {
-                if (providers.length > 0) {
-                    // 重新发送验证邮件
-                    return auth.sendPasswordResetEmail(email);
-                }
-                throw new Error('Email not registered');
-            })
-            .then(() => {
-                showToast('Verification email resent. Please check your inbox.', 'success');
-            })
-            .catch(error => {
-                console.error("Error resending verification:", error);
-                showToast('Error resending verification email. Please try again.', 'error');
-            });
-    });
-}
 
         // 在 handleEnhancedRegistration 函数开始处添加：
 console.log("Starting registration process for:", email);
@@ -8272,48 +7997,6 @@ console.log("Starting registration process for:", email);
 console.log("User created successfully:", user.uid);
 console.log("Verification email sent");
 console.log("User data saved to Firestore");
-
-        // 安全的 DOM 操作包装函数
-function safeDOMOperation(elementId, operation) {
-    const element = document.getElementById(elementId);
-    if (!element) {
-        console.warn(`Element #${elementId} not found for operation:`, operation);
-        return false;
-    }
-    
-    try {
-        return operation(element);
-    } catch (error) {
-        console.error(`Error in DOM operation on #${elementId}:`, error);
-        return false;
-    }
-}
-
-// 安全地切换页面
-function navigateToPage(pageId) {
-    safeDOMOperation('main-container', (container) => {
-        // 隐藏所有页面
-        document.querySelectorAll('.page').forEach(page => {
-            page.classList.remove('active');
-        });
-        
-        // 显示目标页面
-        const targetPage = document.getElementById(pageId);
-        if (targetPage) {
-            targetPage.classList.add('active');
-            return true;
-        }
-        return false;
-    });
-}
-
-// 安全地显示/隐藏元素
-function toggleElementVisibility(elementId, show) {
-    safeDOMOperation(elementId, (element) => {
-        element.style.display = show ? 'block' : 'none';
-        return true;
-    });
-}
     </script>
 </body>
     <footer style="text-align:center; padding: 10px; margin-top:20px; color:#666; font-size:14px;">
